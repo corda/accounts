@@ -1,7 +1,6 @@
 package net.corda.gold
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.accounts.GoldBrick
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 

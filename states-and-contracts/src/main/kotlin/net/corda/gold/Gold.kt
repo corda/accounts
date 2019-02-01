@@ -1,5 +1,6 @@
-package net.corda.accounts
+package net.corda.gold
 
+import net.corda.accounts.model.Account
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.ContractState
@@ -19,8 +20,10 @@ data class GoldCommander(val id: String) : CommandData
 class GoldBrickContract : Contract {
     companion object {
         val MINE: GoldCommander = GoldCommander("MINE")
-        val TRANSFER_TO_ACCOUNT: GoldCommander = GoldCommander("ACCOUNT_TRANSFER")
-        val TRANSFER_TO_HOLDER: GoldCommander = GoldCommander("HOLDER_TRANSFER")
+        val TRANSFER_TO_ACCOUNT: GoldCommander =
+            GoldCommander("ACCOUNT_TRANSFER")
+        val TRANSFER_TO_HOLDER: GoldCommander =
+            GoldCommander("HOLDER_TRANSFER")
         val MELT: GoldCommander = GoldCommander("MELT")
     }
 
