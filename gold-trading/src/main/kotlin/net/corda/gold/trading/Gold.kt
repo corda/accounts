@@ -6,7 +6,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.transactions.LedgerTransaction
 
 @BelongsToContract(GoldBrickContract::class)
-data class GoldBrick(val owningAccount: AccountInfo? = null) : ContractState {
+data class LoanBook(val owningAccount: AccountInfo? = null) : ContractState {
     override val participants: List<AbstractParty>
         get() =
             if (owningAccount == null) {
@@ -44,11 +44,18 @@ class GoldBrickContract : Contract {
 
             goldCommand.value == TRANSFER_TO_ACCOUNT -> {
                 val accountData = tx.referenceInputRefsOfType(AccountInfo::class.java).single()
-                val outputGold = tx.outputsOfType(GoldBrick::class.java).single()
-                val inputGold = tx.inputsOfType(GoldBrick::class.java).single()
-                require(accountData.state.data.signingKey in goldCommand.signers){"The account that is receiving the gold must be a required signer"}
-                require(inputGold.owningAccount?.let { it.signingKey !in goldCommand.signers  }?: true){"The account that is sending the gold must be a required signer"}
-                require(accountData.state.data == outputGold.owningAccount) {"The account to transfer to must equal the account referenced in the transaction"}
+                val outputGold = tx.outputsOfType(LoanBook::class.java).single()
+                val inputGold = tx.inputsOfType(LoanBook::class.java).single()
+                require(accountData.state.data.signingKey in goldCommand.signers) { "The account that is receiving the gold must be a required signer" }
+
+                if (inputGold.owningAccount != null) {
+                    require(inputGold.owningAccount.signingKey in goldCommand.signers) { "The account that is sending the gold must be a required signer" }
+                    require(inputGold.owningAccount.accountHost.owningKey in goldCommand.signers) { "The hosting party for the account that is sending the gold must be a required signer" }
+                }
+
+                require(accountData.state.data.accountHost.owningKey in goldCommand.signers) { "The hosting party for the account that is receiving the gold must be a required signer" }
+
+                require(accountData.state.data == outputGold.owningAccount) { "The account to transfer to must equal the account referenced in the transaction" }
 
             }
             goldCommand.value == TRANSFER_TO_HOLDER -> {

@@ -1,6 +1,7 @@
 package net.corda.accounts.service
 
 import net.corda.accounts.flows.OpenNewAccountFlow
+import net.corda.accounts.flows.ShareAccountInfoWithNodes
 import net.corda.core.contracts.*
 import net.corda.core.crypto.DigitalSignature
 import net.corda.core.identity.AbstractParty
@@ -52,7 +53,7 @@ interface AccountService : SerializeAsToken {
     fun accountInfo(accountName: String): StateAndRef<AccountInfo>?
 
     // Returns the Party which hosts the account specified by account ID.
-    fun hostForAccount(accountId: UUID): Party
+    fun hostForAccount(accountId: UUID): Party?
 
     // Allows the account host to perform a vault query for the specified account ID.
     fun accountVaultQuery(
@@ -70,7 +71,7 @@ interface AccountService : SerializeAsToken {
 
     // Sends AccountInfo specified by the account ID, to the specified Party. The
     // receiving Party will be able to access the AccountInfo from their AccountService.
-    fun shareAccountInfoWithParty(accountId: UUID, party: Party)
+    fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean>
 }
 
 data class SignedAccountInfo(val info: AccountInfo, val hostSig: DigitalSignature.WithKey)
@@ -109,7 +110,6 @@ class AccountInfoContract : Contract {
     companion object {
         val OPEN = AccountCommands("OPEN")
         val MOVE_HOST = AccountCommands("MOVE_HOST")
-
     }
 
     override fun verify(tx: LedgerTransaction) {
@@ -171,8 +171,8 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             .map { it }.singleOrNull()
     }
 
-    override fun hostForAccount(accountId: UUID): Party {
-        TODO("not implemented")
+    override fun hostForAccount(accountId: UUID): Party? {
+        return accountInfo(accountId)?.state?.data?.accountHost
     }
 
     override fun accountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
@@ -187,8 +187,11 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
-    override fun shareAccountInfoWithParty(accountId: UUID, party: Party) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean> {
+        accountInfo(accountId)?.let {
+            return services.startFlow(ShareAccountInfoWithNodes(it, listOf(party))).returnValue.toCompletableFuture()
+        }
+        return CompletableFuture.completedFuture(false)
     }
 
 }
