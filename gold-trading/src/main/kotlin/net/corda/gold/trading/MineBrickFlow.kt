@@ -6,15 +6,15 @@ import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.transactions.TransactionBuilder
 
-class MineBrickFlow : FlowLogic<StateAndRef<LoanBook>>() {
+class MineBrickFlow(val accountToMineInto: StateAndRef<AccountInfo>) : FlowLogic<StateAndRef<LoanBook>>() {
 
     @Suspendable
     override fun call(): StateAndRef<LoanBook> {
 
         val transactionBuilder = TransactionBuilder()
         transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
-        transactionBuilder.addCommand(GoldBrickContract.MINE, serviceHub.myInfo.legalIdentities.first().owningKey)
-        transactionBuilder.addOutputState(LoanBook())
+        transactionBuilder.addCommand(LoanBookContract.MINE, serviceHub.myInfo.legalIdentities.first().owningKey)
+        transactionBuilder.addOutputState(LoanBook(accountToMineInto.state.data.signingKey))
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
         return subFlow(FinalityFlow(signedTx, listOf())).coreTransaction.outRefsOfType(LoanBook::class.java).single()
 

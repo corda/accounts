@@ -2,27 +2,21 @@ package net.corda.accounts.service
 
 import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ShareAccountInfoWithNodes
-import net.corda.core.contracts.*
-import net.corda.core.crypto.DigitalSignature
-import net.corda.core.identity.AbstractParty
+import net.corda.accounts.states.AccountInfo
+import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.schemas.MappedSchema
-import net.corda.core.serialization.CordaSerializable
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
-import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.utilities.getOrThrow
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
-import javax.persistence.Column
-import javax.persistence.Id
-import javax.persistence.Table
 
+@CordaService
 interface AccountService : SerializeAsToken {
 
     // Accounts which the calling node hosts.
@@ -46,6 +40,9 @@ interface AccountService : SerializeAsToken {
 
     // Returns the AccountInfo for an account name or account ID.
     fun accountInfo(accountId: UUID): StateAndRef<AccountInfo>?
+
+    // Returns the AccountInfo for a given owning key
+    fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
 
     // The assumption here is that Account names are unique at the node level but are not
     // guaranteed to be unique at the network level. The host Party can be used to
@@ -74,62 +71,9 @@ interface AccountService : SerializeAsToken {
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean>
 }
 
-data class SignedAccountInfo(val info: AccountInfo, val hostSig: DigitalSignature.WithKey)
-
-@CordaSerializable
-enum class AccountStatus {
-    ACTIVE,
-    INACTIVE
-}
-
-@BelongsToContract(AccountInfoContract::class)
-@Table(name = "ACCOUNTS")
-data class AccountInfo(
-    @Column(name = "name", unique = false, nullable = false)
-    val accountName: String,
-    @Column(name = "host", unique = false, nullable = false)
-    val accountHost: Party,
-    @Id
-    @Column(name = "id", unique = true, nullable = false)
-    val accountId: UUID,
-    override val linearId: UniqueIdentifier = UniqueIdentifier(accountName),
-    @Column(name = "status")
-    val status: AccountStatus = AccountStatus.ACTIVE,
-    @Column(name = "signingKey")
-    val signingKey: PublicKey
-) : LinearState {
-    override val participants: List<AbstractParty> get() = listOf(accountHost)
-}
-
-object AccountSchema : MappedSchema(AccountInfo::class.java, version = 1, mappedTypes = listOf(AccountInfo::class.java))
-
-class AccountInfoContract : Contract {
-
-    data class AccountCommands(private val step: String) : CommandData
-
-    companion object {
-        val OPEN = AccountCommands("OPEN")
-        val MOVE_HOST = AccountCommands("MOVE_HOST")
-    }
-
-    override fun verify(tx: LedgerTransaction) {
-        val accountCommand = tx.commands.requireSingleCommand(AccountCommands::class.java)
-        if (accountCommand.value == OPEN) {
-            require(tx.outputStates.size == 1) { "There should only ever be one output account state" }
-            val accountInfo = tx.outputsOfType(AccountInfo::class.java).single()
-            val requiredSigners = accountCommand.signers
-            require(requiredSigners.size == 1) { "There should only be one required signer for opening an account " }
-            require(requiredSigners.single() == accountInfo.accountHost.owningKey) { "Only the hosting node should be able to sign" }
-        } else {
-            throw NotImplementedError()
-        }
-    }
-
-}
-
-
 @CordaService
 class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
+
 
     override fun myAccounts(): List<AccountInfo> {
         return services.vaultService.queryBy(AccountInfo::class.java)
@@ -168,6 +112,12 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     override fun accountInfo(accountName: String): StateAndRef<AccountInfo>? {
         return services.vaultService.queryBy(AccountInfo::class.java).states
             .filter { it.state.data.accountName == accountName }
+            .map { it }.singleOrNull()
+    }
+
+    override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
+        return services.vaultService.queryBy(AccountInfo::class.java).states
+            .filter { it.state.data.signingKey == owningKey }
             .map { it }.singleOrNull()
     }
 

@@ -2,10 +2,14 @@ package net.corda.gold.test
 
 import net.corda.accounts.flows.GetAccountInfo
 import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.node.services.vault.builder
 import net.corda.core.utilities.getOrThrow
 import net.corda.gold.trading.LoanBook
 import net.corda.gold.trading.MineBrickFlow
 import net.corda.gold.trading.MoveGoldBrickToAccountFlow
+import net.corda.node.services.vault.VaultSchemaV1
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
@@ -148,6 +152,15 @@ class GoldTradingTests {
 
         Assert.assertThat(movedToNewAccountBrick.state.data.owningAccount, `is`(equalTo(newAccountOnA.state.data)))
 
+        val externalIDQuery = builder { VaultSchemaV1.StateToExternalId::externalId.equal(newAccountOnA.state.data.accountId) }
+        val queryCriteria = QueryCriteria.VaultCustomQueryCriteria(externalIDQuery)
+
+        val result = a.transaction {
+            a.services.vaultService.queryBy<LoanBook>(queryCriteria).states
+        }
+
+
+        println(result)
     }
 
     @Test

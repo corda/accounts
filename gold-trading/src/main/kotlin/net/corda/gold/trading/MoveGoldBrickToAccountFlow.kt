@@ -25,13 +25,23 @@ class MoveGoldBrickToAccountFlow(val accountId: UUID, val goldBrick: StateAndRef
 
 
         val accountInfoToMoveTo = accountService.accountInfo(accountId)
+
+        val inputTx = serviceHub.validatedTransactions.getTransaction(goldBrick.ref.txhash)
+
+
+       goldBrick.state.data.owningAccount?.let { accountService.accountInfo(it) }
+
+        if (goldBrick.state.data.owningAccount != null){
+
+        }
+
         val accountInfoToMoveFrom = goldBrick.state.data.owningAccount
 
 
         if (accountInfoToMoveTo == null) {
             throw IllegalStateException()
-        } else if (accountInfoToMoveFrom != null && accountInfoToMoveFrom.accountHost != serviceHub.myInfo.legalIdentities.first())
-            throw IllegalStateException("Attempting to move a gold brick from an account we do not host")
+        } else if (accountInfoToMoveFrom != null)
+            throw IllegalStateException("Attempting to move a gold brick from an account we do not know about")
         else {
             val transactionBuilder = TransactionBuilder()
             transactionBuilder.notary = goldBrick.state.notary
@@ -44,7 +54,7 @@ class MoveGoldBrickToAccountFlow(val accountId: UUID, val goldBrick: StateAndRef
                 accountInfoToMoveFrom?.signingKey
             )
 
-            transactionBuilder.addCommand(GoldBrickContract.TRANSFER_TO_ACCOUNT, requiredSigners)
+            transactionBuilder.addCommand(LoanBookContract.TRANSFER_TO_ACCOUNT, requiredSigners)
             transactionBuilder.addReferenceState(ReferencedStateAndRef(accountInfoToMoveTo))
             transactionBuilder.addOutputState(goldBrick.state.data.copy(owningAccount = accountInfoToMoveTo.state.data))
 
