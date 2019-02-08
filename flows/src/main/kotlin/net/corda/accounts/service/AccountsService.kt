@@ -3,15 +3,20 @@ package net.corda.accounts.service
 import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ShareAccountInfoWithNodes
 import net.corda.accounts.states.AccountInfo
+import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
+import net.corda.core.node.services.Vault
+import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.utilities.getOrThrow
+import net.corda.node.services.vault.VaultSchemaV1
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -93,6 +98,10 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         return services.startFlow(OpenNewAccountFlow(accountName, accountId)).returnValue.getOrThrow()
     }
 
+    fun createAccount(accountName: String, carbonCopyReceivers: List<Party>): CompletableFuture<StateAndRef<AccountInfo>> {
+        return services.startFlow(OpenNewAccountFlow(accountName, carbonCopyReceivers)).returnValue.toCompletableFuture()
+    }
+
     override fun freshKeyForAccount(accountId: UUID): AnonymousParty {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -126,7 +135,11 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     override fun accountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        TODO("not implemented")
+        val externalIDQuery = builder {
+            VaultSchemaV1.StateToExternalId::externalId.equal(accountId)
+        }
+        val joinedQuery = queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIDQuery, Vault.StateStatus.ALL))
+        return services.vaultService.queryBy<ContractState>(joinedQuery).states
     }
 
     override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {

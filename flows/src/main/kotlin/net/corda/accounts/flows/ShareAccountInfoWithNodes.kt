@@ -8,6 +8,7 @@ import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
+import net.corda.node.services.keys.BasicHSMKeyManagementService
 
 @StartableByRPC
 @StartableByService
@@ -36,9 +37,15 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
 class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>(){
     @Suspendable
     override fun call() {
-        subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
+        val receivedAccount =
+            subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
         val partyAndCertificate = otherSession.receive(PartyAndCertificate::class.java).unwrap { it }
-        serviceHub.identityService.verifyAndRegisterIdentity(partyAndCertificate)
+        receivedAccount?.let { account ->
+            serviceHub.withEntityManager {
+                persist(BasicHSMKeyManagementService.PublicKeyHashToExternalId(account.accountId, account.signingKey))
+            }
+            serviceHub.identityService.verifyAndRegisterIdentity(partyAndCertificate)
+        }
     }
 
 }

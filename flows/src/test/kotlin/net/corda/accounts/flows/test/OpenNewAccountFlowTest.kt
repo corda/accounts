@@ -1,7 +1,7 @@
 package net.corda.accounts.flows.test
 
 import net.corda.accounts.flows.OpenNewAccountFlow
-import net.corda.accounts.service.AccountInfo
+import net.corda.accounts.states.AccountInfo
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -20,7 +20,7 @@ class OpenNewAccountFlowTest{
     @Before
     fun setup() {
         network = MockNetwork(
-            listOf("net.corda.accounts.model", "net.corda.accounts.service"), MockNetworkParameters(
+            listOf("net.corda.accounts.model", "net.corda.accounts.service", "net.corda.accounts.contracts"), MockNetworkParameters(
                 networkParameters = testNetworkParameters(
                     minimumPlatformVersion = 4
                 )
