@@ -10,6 +10,7 @@ import net.corda.core.utilities.getOrThrow
 import net.corda.gold.trading.IssueLoanBookFlow
 import net.corda.gold.trading.LoanBook
 import net.corda.gold.trading.MoveLoanBookToNewAccount
+import net.corda.gold.trading.SplitLoanFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
@@ -332,5 +333,30 @@ class LoanBookTradingTests {
 
         Assert.assertThat(account2States.size, `is`(0))
         Assert.assertThat(account3States.size, `is`(0))
+    }
+
+
+    @Test
+    fun `it should be possible to split a loan`() {
+        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val account1Future = accountServiceOnA.createAccount("ACCOUNT_1", listOf(b.info.legalIdentities.first()))
+        network.runNetwork()
+        val account1Created = account1Future.getOrThrow()
+        val miningFuture1 = a.startFlow(IssueLoanBookFlow(100, account1Created))
+        network.runNetwork()
+        val loanBook = miningFuture1.getOrThrow()
+
+        val splitFuture = a.startFlow(SplitLoanFlow(loanBook, 51))
+        network.runNetwork()
+        val splitLoanBooks = splitFuture.getOrThrow()
+
+        val loansInAccount1OnB = accountServiceOnB.accountVaultQuery(
+            account1Future.getOrThrow().state.data.accountId,
+            QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
+        ) as List<StateAndRef<LoanBook>>
+
+        Assert.assertThat(splitLoanBooks.sortedBy { it.state.data.valueInUSD }, `is`(equalTo(loansInAccount1OnB.sortedBy { it.state.data.valueInUSD })))
+
     }
 }

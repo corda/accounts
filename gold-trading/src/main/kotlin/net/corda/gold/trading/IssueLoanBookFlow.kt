@@ -5,11 +5,13 @@ import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.StartableByRPC
 import net.corda.core.transactions.TransactionBuilder
 import java.util.*
 
+@StartableByRPC
 class IssueLoanBookFlow(val valueInUsd: Long, val accountToMineInto: StateAndRef<AccountInfo>? = null, val dealId: UUID = UUID.randomUUID()) : FlowLogic<StateAndRef<LoanBook>>() {
-
+    constructor(valueInUsd: Long, accountToMineInto: StateAndRef<AccountInfo>) : this(valueInUsd, accountToMineInto, UUID.randomUUID())
     @Suspendable
     override fun call(): StateAndRef<LoanBook> {
 

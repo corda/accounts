@@ -25,10 +25,10 @@ import java.util.concurrent.CompletableFuture
 interface AccountService : SerializeAsToken {
 
     // Accounts which the calling node hosts.
-    fun myAccounts(): List<AccountInfo>
+    fun myAccounts(): List<StateAndRef<AccountInfo>>
 
     // Returns all accounts, including those hosted by other nodes.
-    fun allAccounts(): List<AccountInfo>
+    fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     // Creates a new account and returns the AccountInfo StateAndRef.
     fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>>
@@ -77,17 +77,16 @@ interface AccountService : SerializeAsToken {
 }
 
 @CordaService
-class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
+class KeyManagementBackedAccountService(private val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
 
 
-    override fun myAccounts(): List<AccountInfo> {
+    override fun myAccounts(): List<StateAndRef<AccountInfo>> {
         return services.vaultService.queryBy(AccountInfo::class.java)
             .states.filter { it.state.data.accountHost == services.myInfo.legalIdentities.first() }
-            .map { it.state.data }
     }
 
-    override fun allAccounts(): List<AccountInfo> {
-        return services.vaultService.queryBy(AccountInfo::class.java).states.map { it.state.data }
+    override fun allAccounts(): List<StateAndRef<AccountInfo>> {
+        return services.vaultService.queryBy(AccountInfo::class.java).states
     }
 
     override fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>> {

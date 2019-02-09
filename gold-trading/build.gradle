@@ -5,7 +5,7 @@ apply plugin: 'net.corda.plugins.quasar-utils'
 
 cordapp {
     info {
-        name "CorDapp Example"
+        name "Loan Book Trading"
         vendor "Corda Open Source"
         targetPlatformVersion corda_platform_version.toInteger()
         minimumPlatformVersion corda_platform_version.toInteger()
@@ -54,6 +54,12 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+
+    nodeDefaults {
+        cordapp project(':states-and-contracts')
+        cordapp project(':flows')
+    }
+    
     directory "./build/nodes"
     node {
         name "O=Notary,L=London,C=GB"
@@ -63,7 +69,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10001")
             adminAddress("localhost:10002")
         }
-        cordapps = [project(":states-and-contracts"), project(":flows")]
     }
     node {
         name "O=PartyA,L=London,C=GB"
@@ -72,7 +77,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10005")
             adminAddress("localhost:10006")
         }
-        cordapps = [project(":states-and-contracts"), project(":flows")]
         rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
@@ -82,7 +86,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10009")
             adminAddress("localhost:10010")
         }
-        cordapps = [project(":states-and-contracts"), project(":flows")]
         rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
@@ -92,7 +95,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10013")
             adminAddress("localhost:10014")
         }
-        cordapps = [project(":states-and-contracts"), project(":flows")]
         rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 }
