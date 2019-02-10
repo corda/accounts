@@ -1,10 +1,14 @@
-package net.corda.agent
+package net.corda.fundmanager
 
 import net.corda.accounts.flows.GetAccountsFlow
+import net.corda.accounts.flows.OpenNewAccountFlow
+import net.corda.accounts.flows.ShareAccountInfoWithNodes
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.utilities.toBase58String
-import net.corda.gold.trading.*
+import net.corda.gold.trading.LoanBook
+import net.corda.gold.trading.MoveLoanBookToNewAccount
+import net.corda.gold.trading.SplitLoanFlow
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -13,19 +17,13 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
 @RestController
-class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @Autowired private val agentAccountProvider: AgentAccountProvider) {
+class AgentController(@Autowired private val rpcConnection: NodeRPCConnection) {
 
     @RequestMapping("/loans", method = [RequestMethod.GET])
-    fun getLoans(): List<LoanBookView> {
-        return getAllLoans().map { it.toLoanBookView() }
-    }
-
-    private fun getAllLoans() = rpcConnection.proxy.startFlowDynamic(GetAllLoansOwnedByAccountFlow::class.java, agentAccountProvider.agentAccount).returnValue.get()
-
-    @RequestMapping("/createLoan", method = [RequestMethod.GET])
-    fun createLoan(): LoanBookView {
-        return rpcConnection.proxy.startFlowDynamic(IssueLoanBookFlow::class.java, 10_000_000L, agentAccountProvider.agentAccount).returnValue.get()
-            .let { it.toLoanBookView() }
+    fun getAllLoansForHostedAccounts(): List<LoanBookView> {
+        val nodeParty = rpcConnection.proxy.nodeInfo().legalIdentities.first()
+        val hostedAccounts = getAllAccounts().filter { it.state.data.accountHost == nodeParty }.map { it.state.data.signingKey }
+        return getAllLoans().filter { it.state.data.owningAccount in hostedAccounts }.map { it.toLoanBookView() }
     }
 
     @RequestMapping("/accounts", method = [RequestMethod.GET])
@@ -33,7 +31,23 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
         return getAllAccounts().map { it.toAccountView() }
     }
 
-    private fun getAllAccounts() = rpcConnection.proxy.startFlowDynamic(GetAccountsFlow::class.java, false).returnValue.get()
+    @RequestMapping("/accounts/create/{accountName}/{administrator}", method = [RequestMethod.GET])
+    fun createAccount(@PathVariable("accountName") accountName: String, @PathVariable("administrator") administrator: String): StateAndRef<AccountInfo> {
+        val administratorParty = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == administrator }.single().legalIdentities.first()
+        return rpcConnection.proxy.startFlowDynamic(OpenNewAccountFlow::class.java, accountName, listOf(administratorParty)).returnValue.get()
+    }
+
+    @RequestMapping("/accounts/share/{accountKey}/{party}", method = [RequestMethod.GET])
+    fun shareAccount(@PathVariable("accountKey") accountKey: String, @PathVariable("party") party: String){
+        val partyToShareWith = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == party }.single().legalIdentities.first()
+        val accountToShare = getAllAccounts().filter { it.state.data.signingKey.toBase58String() == accountKey }.single()
+        rpcConnection.proxy.startFlowDynamic(ShareAccountInfoWithNodes::class.java, accountToShare, listOf(partyToShareWith))
+    }
+
+    @RequestMapping("/parties")
+    fun allParties(): List<String> {
+        return rpcConnection.proxy.networkMapSnapshot().map { it.legalIdentities.first().name.toString() }
+    }
 
     @RequestMapping("/loan/split/{txHash}/{txIdx}", method = [RequestMethod.GET])
     fun splitLoan(@PathVariable("txHash") txHash: String, @PathVariable("txIdx") txIdx: Int): List<LoanBookView> {
@@ -51,7 +65,6 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
     }
 
 
-
     data class AccountInfoView(
         val accountName: String,
         val accountHost: String,
@@ -61,6 +74,12 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
     )
 
     data class LoanBookView(val dealId: UUID, val valueInUSD: Long, val owningAccount: String? = null, val index: Int, val txHash: String)
+
+    private fun getAllLoans(): List<StateAndRef<LoanBook>> {
+        return rpcConnection.proxy.vaultQuery(LoanBook::class.java).states
+    }
+
+    private fun getAllAccounts() = rpcConnection.proxy.startFlowDynamic(GetAccountsFlow::class.java, false).returnValue.get()
 
 }
 
