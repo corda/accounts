@@ -5,6 +5,7 @@ import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ShareAccountInfoWithNodes
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.toBase58String
 import net.corda.gold.trading.LoanBook
 import net.corda.gold.trading.MoveLoanBookToNewAccount
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController
 import java.util.*
 
 @RestController
-class AgentController(@Autowired private val rpcConnection: NodeRPCConnection) {
+class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection) {
 
     @RequestMapping("/loans", method = [RequestMethod.GET])
     fun getAllLoansForHostedAccounts(): List<LoanBookView> {
@@ -26,22 +27,29 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection) {
         return getAllLoans().filter { it.state.data.owningAccount in hostedAccounts }.map { it.toLoanBookView() }
     }
 
+    @RequestMapping("/me", method = [RequestMethod.GET])
+    fun getMyParty(): String {
+        val nodeParty = rpcConnection.proxy.nodeInfo().legalIdentities.first()
+        return nodeParty.name.toString()
+    }
+
     @RequestMapping("/accounts", method = [RequestMethod.GET])
-    fun accountsKnown(): List<AccountInfoView> {
-        return getAllAccounts().map { it.toAccountView() }
+    fun accountsKnownAndHosted(): List<AccountInfoView> {
+        val nodeParty = rpcConnection.proxy.nodeInfo().legalIdentities.first()
+        return getAllAccounts().filter { it.state.data.accountHost == nodeParty }.map { it.toAccountView() }
     }
 
     @RequestMapping("/accounts/create/{accountName}/{administrator}", method = [RequestMethod.GET])
-    fun createAccount(@PathVariable("accountName") accountName: String, @PathVariable("administrator") administrator: String): StateAndRef<AccountInfo> {
+    fun createAccount(@PathVariable("accountName") accountName: String, @PathVariable("administrator") administrator: String): AccountInfoView {
         val administratorParty = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == administrator }.single().legalIdentities.first()
-        return rpcConnection.proxy.startFlowDynamic(OpenNewAccountFlow::class.java, accountName, listOf(administratorParty)).returnValue.get()
+        return rpcConnection.proxy.startFlowDynamic(OpenNewAccountFlow::class.java, accountName, listOf(administratorParty)).returnValue.get().toAccountView()
     }
 
     @RequestMapping("/accounts/share/{accountKey}/{party}", method = [RequestMethod.GET])
-    fun shareAccount(@PathVariable("accountKey") accountKey: String, @PathVariable("party") party: String){
+    fun shareAccount(@PathVariable("accountKey") accountKey: String, @PathVariable("party") party: String) {
         val partyToShareWith = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == party }.single().legalIdentities.first()
         val accountToShare = getAllAccounts().filter { it.state.data.signingKey.toBase58String() == accountKey }.single()
-        rpcConnection.proxy.startFlowDynamic(ShareAccountInfoWithNodes::class.java, accountToShare, listOf(partyToShareWith))
+        rpcConnection.proxy.startFlowDynamic(ShareAccountInfoWithNodes::class.java, accountToShare, listOf(partyToShareWith)).returnValue.getOrThrow()
     }
 
     @RequestMapping("/parties")
@@ -83,9 +91,9 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection) {
 
 }
 
-private fun StateAndRef<AccountInfo>.toAccountView(): AgentController.AccountInfoView {
+private fun StateAndRef<AccountInfo>.toAccountView(): ManagerController.AccountInfoView {
     val data = this.state.data
-    return AgentController.AccountInfoView(
+    return ManagerController.AccountInfoView(
         data.accountName,
         data.accountHost.name.toString(),
         data.accountId,
@@ -93,7 +101,7 @@ private fun StateAndRef<AccountInfo>.toAccountView(): AgentController.AccountInf
         data.carbonCopyReivers.map { it.name.toString() })
 }
 
-private fun StateAndRef<LoanBook>.toLoanBookView(): AgentController.LoanBookView {
+private fun StateAndRef<LoanBook>.toLoanBookView(): ManagerController.LoanBookView {
     val data = this.state.data
-    return AgentController.LoanBookView(data.dealId, data.valueInUSD, data.owningAccount?.toBase58String(), this.ref.index, this.ref.txhash.toString())
+    return ManagerController.LoanBookView(data.dealId, data.valueInUSD, data.owningAccount?.toBase58String(), this.ref.index, this.ref.txhash.toString())
 }

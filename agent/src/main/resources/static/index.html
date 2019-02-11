@@ -66,7 +66,6 @@
             buttonsCell.appendChild(splitButton);
 
             let accountsDropDown = document.createElement("select");
-            accountsDropDown.className = "styled-select";
 
             accounts.forEach(account => {
                 let textToDisplay = account.accountName + "@" + account.accountHost;
@@ -89,7 +88,12 @@
             buttonsCell.appendChild(accountsDropDown);
 
             moveButton.onclick = function () {
-                console.log(this.select.options[this.select.selectedIndex].backingObject);
+                let account = this.select.options[this.select.selectedIndex].backingObject;
+                console.log("moving " + `${loan.txHash}/${loan.index}` + " to account " + `${account.accountName} @ ${account.accountHost}`);
+                this.disabled = true;
+                makeRequest("GET", `/loan/move/${loan.txHash}/${loan.index}/${account.key}`).then(done => {
+                    location.reload()
+                });
             };
 
             splitButton.onclick = function () {

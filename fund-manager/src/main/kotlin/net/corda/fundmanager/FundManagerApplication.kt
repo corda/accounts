@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Bean
 import java.util.*
 
 @SpringBootApplication
-open class Application {
+open class FundManagerApplication {
 
     @Bean
     open fun commandLineRunner(ctx: ApplicationContext): CommandLineRunner {
@@ -25,7 +25,7 @@ open class Application {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            SpringApplication.run(Application::class.java, *args)
+            SpringApplication.run(FundManagerApplication::class.java, *args)
         }
     }
 
