@@ -37,3 +37,11 @@ allprojects {
         mavenLocal()
     }
 }
+
+
+def deployNodesTask = tasks.getByPath(':gold-trading:deployNodes')
+
+task runNodes(type: Exec, dependsOn: [deployNodesTask]) {
+    workingDir = new File(project(":gold-trading").buildDir, "nodes")
+    commandLine "bash", "runnodes"
+}
