@@ -16,7 +16,9 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
 
     @RequestMapping("/loans", method = [RequestMethod.GET])
     fun getAllLoansKnownAbout(): List<LoanBookView> {
-        return getAllLoans().map { it.toLoanBookView() }
+        val nodeParty = rpcConnection.proxy.nodeInfo().legalIdentities.first()
+        val accountsIAmReceiverFor = getAllAccounts().filter { nodeParty in it.state.data.carbonCopyReivers }.map { it.state.data }.map { it.signingKey }.toSet()
+        return getAllLoans().filter { it.state.data.owningAccount in accountsIAmReceiverFor }.map { it.toLoanBookView() }
     }
 
     @RequestMapping("/me", method = [RequestMethod.GET])

@@ -33,10 +33,15 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
         return nodeParty.name.toString()
     }
 
-    @RequestMapping("/accounts", method = [RequestMethod.GET])
+    @RequestMapping("/accounts/hosted", method = [RequestMethod.GET])
     fun accountsKnownAndHosted(): List<AccountInfoView> {
         val nodeParty = rpcConnection.proxy.nodeInfo().legalIdentities.first()
         return getAllAccounts().filter { it.state.data.accountHost == nodeParty }.map { it.toAccountView() }
+    }
+
+    @RequestMapping("/accounts/all", method = [RequestMethod.GET])
+    fun allKnownAccounts(): List<AccountInfoView> {
+        return getAllAccounts().map{ it.toAccountView() }
     }
 
     @RequestMapping("/accounts/create/{accountName}/{administrator}", method = [RequestMethod.GET])

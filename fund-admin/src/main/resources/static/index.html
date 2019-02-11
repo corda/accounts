@@ -40,74 +40,13 @@
 
     let loansPromise = makeRequest("GET", "/loans").then(text => JSON.parse(text));
     let accountsPromise = makeRequest("GET", "/accounts").then(text => JSON.parse(text));
-    makeRequest("GET", "/me").then(name => document.getElementById("managerName").innerText = name);
-    let partyLoadingPromise = makeRequest("GET", "/parties").then(text => JSON.parse(text));
-    partyLoadingPromise.then(parties => {
-            let adminSelect = document.getElementById("adminSelect");
-            parties.forEach(party => {
-                let optionForParty = document.createElement("option");
-                optionForParty.innerText = party;
-                optionForParty.party = party;
-                adminSelect.appendChild(optionForParty);
-            });
-            let createAccountButton = document.getElementById("createAccountBtn");
-            createAccountButton.onclick = function () {
-                this.disabled = true;
+    makeRequest("GET", "/me").then(name => document.getElementById("trusteeName").innerText = name);
 
-                let accountNameInput = document.getElementById("accountName");
-                let accountName = accountNameInput.value;
 
-                let selectedParty = adminSelect.options[adminSelect.selectedIndex].party;
-                makeRequest("GET", `/accounts/create/${accountName}/${selectedParty}`).then(done => location.reload())
-            }
-        }
-    );
-
-    Promise.all([loansPromise, accountsPromise, partyLoadingPromise]).then(results => {
+    Promise.all([loansPromise, accountsPromise]).then(results => {
 
         let loans = results[0];
         let accounts = results[1];
-        let parties = results[2];
-
-        let accountsTable = document.createElement("table");
-        accounts.forEach(account => {
-
-            let row = document.createElement("tr");
-
-            let accountNameCell = document.createElement("td");
-            let accountHeader = document.createElement("h5");
-            accountHeader.style.display = "inline";
-            accountHeader.innerText = account.accountName;
-            accountNameCell.appendChild(accountHeader);
-
-            let partyDropDown = document.createElement("select");
-            let buttonCell = document.createElement("td");
-            let shareButton = document.createElement("button");
-            shareButton.innerText = "Share with party: ";
-            shareButton.onclick = function () {
-                this.disabled = true;
-                makeRequest("GET", `/accounts/share/${account.key}/${partyDropDown.options[partyDropDown.selectedIndex].party}`).then(done => shareButton.disabled = false);
-            };
-            buttonCell.appendChild(shareButton);
-
-            let dropDownCell = document.createElement("td");
-
-            parties.forEach(party => {
-                let optionForParty = document.createElement("option");
-                optionForParty.innerText = party;
-                optionForParty.party = party;
-                partyDropDown.appendChild(optionForParty);
-            });
-
-            dropDownCell.appendChild(partyDropDown);
-
-            row.appendChild(accountNameCell);
-            row.appendChild(buttonCell);
-            row.appendChild(dropDownCell);
-
-            accountsTable.appendChild(row);
-        });
-        document.getElementById("accountsHolder").appendChild(accountsTable);
 
         //begin loan grouping
 
@@ -120,7 +59,7 @@
 
             let account = accountsIndexedByKey[accountKey];
             let accountHeader = document.createElement("h4");
-            accountHeader.innerText = account.accountName;
+            accountHeader.innerText = account.accountName + " @ " + account.accountHost;
 
             loansHolder.appendChild(accountHeader);
 
@@ -132,56 +71,14 @@
                 let loanRow = document.createElement("tr");
                 let dealIdCell = document.createElement("td");
                 let valueCell = document.createElement("td");
-                let buttonsCell = document.createElement("td");
 
                 dealIdCell.innerText = loan.dealId;
                 valueCell.innerText = loan.valueInUSD;
 
-                let splitButton = document.createElement("button");
-                splitButton.innerText = "split";
-                buttonsCell.appendChild(splitButton);
 
-                let accountsDropDown = document.createElement("select");
-                accountsDropDown.className = "styled-select";
-
-                accounts.forEach(account => {
-                    let textToDisplay = account.accountName + "@" + account.accountHost;
-                    let option = document.createElement("option");
-                    option.innerText = textToDisplay;
-                    accountsDropDown.appendChild(option);
-                    option.backingObject = account;
-                });
-
-                let spacer = document.createElement("tt");
-                spacer.innerText = "     ";
-                buttonsCell.appendChild(spacer);
-
-
-                let moveButton = document.createElement("button");
-                moveButton.select = accountsDropDown;
-
-                moveButton.innerText = "move to account: ";
-                buttonsCell.appendChild(moveButton);
-                buttonsCell.appendChild(accountsDropDown);
-
-                moveButton.onclick = function () {
-                    let account = this.select.options[this.select.selectedIndex].backingObject;
-                    console.log("moving " + `${loan.txHash}/${loan.index}` + " to account " + `${account.accountName} @ ${account.accountHost}`);
-                    this.disabled = true;
-                    makeRequest("GET", `/loan/move/${loan.txHash}/${loan.index}/${account.key}`).then(done => {
-                        location.reload()
-                    });
-                };
-
-                splitButton.onclick = function () {
-                    makeRequest("GET", `/loan/split/${loan.txHash}/${loan.index}`).then(whenDone => {
-                        location.reload();
-                    })
-                };
 
                 loanRow.appendChild(dealIdCell);
                 loanRow.appendChild(valueCell);
-                loanRow.appendChild(buttonsCell);
                 loanTable.appendChild(loanRow);
 
             });
@@ -192,27 +89,8 @@
 </script>
 
 <body>
-<h1>Hello, Fund Manager <tt id="managerName"></tt></h1>
+<h1>Hello, Trustee <tt id="trusteeName"></tt></h1>
 
-<table>
-    <tr>
-        <td><label> Name:
-            <input id="accountName" type="text">
-        </label></td>
-        <td>
-            <label>Trustee
-                <select id="adminSelect"></select>
-            </label>
-        </td>
-        <td>
-            <button id="createAccountBtn">Create New Account!</button>
-        </td>
-    </tr>
-</table>
-
-<div id="accountsHolder">
-    <h3>Accounts</h3>
-</div>
 
 <div id="loansHolder">
     <h3>Loans</h3>

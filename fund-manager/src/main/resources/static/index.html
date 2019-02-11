@@ -39,8 +39,9 @@
     }
 
     let loansPromise = makeRequest("GET", "/loans").then(text => JSON.parse(text));
-    let accountsPromise = makeRequest("GET", "/accounts").then(text => JSON.parse(text));
-    makeRequest("GET", "/me").then(name => document.getElementById("managerName").innerText = name)
+    let localAccountsPromise = makeRequest("GET", "/accounts/hosted").then(text => JSON.parse(text));
+    let allAccountsPromise = makeRequest("GET", "/accounts/all").then(text => JSON.parse(text));
+    makeRequest("GET", "/me").then(name => document.getElementById("managerName").innerText = name);
 
     let partyLoadingPromise = makeRequest("GET", "/parties").then(text => JSON.parse(text));
     partyLoadingPromise.then(parties => {
@@ -67,11 +68,12 @@
         }
     );
 
-    Promise.all([loansPromise, accountsPromise, partyLoadingPromise]).then(results => {
+    Promise.all([loansPromise, localAccountsPromise, partyLoadingPromise, allAccountsPromise]).then(results => {
 
         let loans = results[0];
         let accounts = results[1];
         let parties = results[2];
+        let allAccounts = results[3];
 
         let accountsTable = document.createElement("table");
         accounts.forEach(account => {
@@ -148,7 +150,7 @@
                 let accountsDropDown = document.createElement("select");
                 accountsDropDown.className = "styled-select";
 
-                accounts.forEach(account => {
+                allAccounts.forEach(account => {
                     let textToDisplay = account.accountName + "@" + account.accountHost;
                     let option = document.createElement("option");
                     option.innerText = textToDisplay;
@@ -208,7 +210,7 @@
             <input id="accountName" type="text">
         </label></td>
         <td>
-            <label>Administrator
+            <label>Trustee
                 <select id="adminSelect"></select>
             </label>
         </td>
