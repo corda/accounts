@@ -46,7 +46,7 @@ class MoveLoanBookToNewAccount(val accountId: UUID, val loanBook: StateAndRef<Lo
             transactionBuilder.addCommand(LoanBookContract.TRANSFER_TO_ACCOUNT, requiredSigners)
             transactionBuilder.addReferenceState(ReferencedStateAndRef(accountInfoToMoveTo))
 
-            if (loanBook.state.data.owningAccount != null){
+            if (loanBook.state.data.owningAccount != null) {
                 transactionBuilder.addReferenceState(ReferencedStateAndRef(currentHoldingAccount!!))
             }
 
@@ -85,10 +85,10 @@ class MoveLoanBookToNewAccount(val accountId: UUID, val loanBook: StateAndRef<Lo
 }
 
 @InitiatingFlow
-class CarbonCopyFlow(val toCarbonCopy: List<Party>, val txToBroadcast: SignedTransaction) : FlowLogic<Unit>(){
+class CarbonCopyFlow(val toCarbonCopy: List<Party>, val txToBroadcast: SignedTransaction) : FlowLogic<Unit>() {
     @Suspendable
     override fun call(): Unit {
-        for (party in toCarbonCopy) {
+        for (party in toCarbonCopy.filter { it != serviceHub.myInfo.legalIdentities.first() }) {
             val session = initiateFlow(party)
             subFlow(SendTransactionFlow(session, txToBroadcast))
         }
@@ -96,7 +96,7 @@ class CarbonCopyFlow(val toCarbonCopy: List<Party>, val txToBroadcast: SignedTra
 }
 
 @InitiatedBy(CarbonCopyFlow::class)
-class RecordCarbonCopyFlow(val otherSession: FlowSession): FlowLogic<Unit>(){
+class RecordCarbonCopyFlow(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val recievedTx = subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
