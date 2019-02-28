@@ -10,7 +10,7 @@ import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
-import net.corda.node.services.keys.BasicHSMKeyManagementService
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 @StartableByService
@@ -34,7 +34,7 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID, pr
             .single()
 
         serviceHub.withEntityManager {
-            persist(BasicHSMKeyManagementService.PublicKeyHashToExternalId(accountId, resultOfIssuance.state.data.signingKey))
+            persist(PublicKeyHashToExternalId(accountId, resultOfIssuance.state.data.signingKey))
         }
         serviceHub.identityService.verifyAndRegisterIdentity(newAccountKeyAndCert)
         subFlow(ShareAccountInfoWithNodes(resultOfIssuance, resultOfIssuance.state.data.carbonCopyReivers))

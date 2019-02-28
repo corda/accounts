@@ -8,7 +8,7 @@ import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.keys.BasicHSMKeyManagementService
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 
 @StartableByRPC
 @StartableByService
@@ -42,7 +42,7 @@ class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>(){
         val partyAndCertificate = otherSession.receive(PartyAndCertificate::class.java).unwrap { it }
         receivedAccount?.let { account ->
             serviceHub.withEntityManager {
-                persist(BasicHSMKeyManagementService.PublicKeyHashToExternalId(account.accountId, account.signingKey))
+                persist(PublicKeyHashToExternalId(account.accountId, account.signingKey))
             }
             serviceHub.identityService.verifyAndRegisterIdentity(partyAndCertificate)
         }

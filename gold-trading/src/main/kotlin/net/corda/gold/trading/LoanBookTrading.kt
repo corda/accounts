@@ -6,6 +6,7 @@ import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.internal.sumByLong
 import net.corda.core.transactions.LedgerTransaction
+import net.corda.core.utilities.toSHA256Bytes
 import java.security.PublicKey
 import java.util.*
 
@@ -79,4 +80,31 @@ class LoanBookContract : Contract {
         }
 
     }
+}
+
+
+data class LoanData(
+    val loanValue: Long,
+    val loanInterestRate: Double,
+    val issuerRefName: String,
+    val issuer: AbstractParty,
+    override val linearId: UniqueIdentifier = UniqueIdentifier(issuerRefName + " issued by " + issuer.owningKey.toSHA256Bytes())
+) : LinearState {
+    override val participants: List<AbstractParty>
+        get() = listOf(issuer)
+}
+
+
+data class LoanDataCommands(val id: String) : CommandData
+
+class LoanDataContract : Contract {
+    companion object {
+        val ISSUE: LoanCommands = LoanCommands("ISSUE")
+    }
+
+    override fun verify(tx: LedgerTransaction) {
+        TODO("not implemented")
+    }
+
+
 }
