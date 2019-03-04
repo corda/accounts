@@ -1,4 +1,21 @@
+buildscript {
+
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda'
+        }
+        mavenLocal()
+    }
+    
+    dependencies{
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
+    }
+}
+
 apply plugin: 'kotlin'
+apply plugin: 'kotlin-jpa'
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'

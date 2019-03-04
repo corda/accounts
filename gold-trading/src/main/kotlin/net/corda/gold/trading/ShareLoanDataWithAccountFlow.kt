@@ -1,5 +1,6 @@
 package net.corda.gold.trading
 
+import net.corda.accounts.flows.StateRefToTextConverter
 import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.InitiatingFlow

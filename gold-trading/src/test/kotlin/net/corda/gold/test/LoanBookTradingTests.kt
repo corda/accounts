@@ -235,7 +235,7 @@ class LoanBookTradingTests {
         miningFuture2.getOrThrow()
 
 
-        val loansInAccount1 = accountServiceOnA.accountVaultQuery(
+        val loansInAccount1 = accountServiceOnA.ownedByAccountVaultQuery(
             account1Created.state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         )
@@ -250,7 +250,7 @@ class LoanBookTradingTests {
         network.runNetwork()
         moveToAccount1Future.getOrThrow()
 
-        val loansInAccount1AfterMove = accountServiceOnA.accountVaultQuery(
+        val loansInAccount1AfterMove = accountServiceOnA.ownedByAccountVaultQuery(
             account1Created.state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         )
@@ -262,7 +262,7 @@ class LoanBookTradingTests {
 
 
         //ACCOUNT 3 SHOULD BE LEFT UNCHANGED
-        val account3States = accountServiceOnA.accountVaultQuery(
+        val account3States = accountServiceOnA.ownedByAccountVaultQuery(
             account3Future.getOrThrow().state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         ) as List<StateAndRef<LoanBook>>
@@ -295,7 +295,7 @@ class LoanBookTradingTests {
 
         //QUERY ON B - IT SHOULD HAVE RECEIVED AN UPDATE AND UPDATED IT'S RECORDS
         val loansInAccount1 = b.transaction {
-            accountServiceOnB.accountVaultQuery(
+            accountServiceOnB.ownedByAccountVaultQuery(
                 account1Created.state.data.accountId,
                 QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
             )
@@ -310,7 +310,7 @@ class LoanBookTradingTests {
         network.runNetwork()
         moveToAccount1Future.getOrThrow()
 
-        val loansInAccount1AfterMove = accountServiceOnB.accountVaultQuery(
+        val loansInAccount1AfterMove = accountServiceOnB.ownedByAccountVaultQuery(
             account1Created.state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         )
@@ -320,13 +320,13 @@ class LoanBookTradingTests {
         //WITH VALUE 100 + 101
         Assert.assertThat(loansInAccount1AfterMove.sumByLong { (it.state.data as LoanBook).valueInUSD }, `is`(201L))
 
-        val account2States = accountServiceOnB.accountVaultQuery(
+        val account2States = accountServiceOnB.ownedByAccountVaultQuery(
             account2Future.getOrThrow().state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         ) as List<StateAndRef<LoanBook>>
 
         //B SHOULD NOT KNOW ANYTHING ABOUT ACCOUNT 2 OR ACCOUNT 3
-        val account3States = accountServiceOnB.accountVaultQuery(
+        val account3States = accountServiceOnB.ownedByAccountVaultQuery(
             account3Future.getOrThrow().state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         ) as List<StateAndRef<LoanBook>>
@@ -351,7 +351,7 @@ class LoanBookTradingTests {
         network.runNetwork()
         val splitLoanBooks = splitFuture.getOrThrow()
 
-        val loansInAccount1OnB = accountServiceOnB.accountVaultQuery(
+        val loansInAccount1OnB = accountServiceOnB.ownedByAccountVaultQuery(
             account1Future.getOrThrow().state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         ) as List<StateAndRef<LoanBook>>

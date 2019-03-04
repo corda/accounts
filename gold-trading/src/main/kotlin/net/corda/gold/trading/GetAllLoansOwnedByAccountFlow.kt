@@ -14,7 +14,7 @@ class GetAllLoansOwnedByAccountFlow(private val account: StateAndRef<AccountInfo
 
     override fun call(): List<StateAndRef<LoanBook>> {
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-        return accountService.accountVaultQuery(
+        return accountService.ownedByAccountVaultQuery(
             account.state.data.accountId,
             QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
         ) as List<StateAndRef<LoanBook>>

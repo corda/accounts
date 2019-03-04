@@ -58,7 +58,12 @@ interface AccountService : SerializeAsToken {
     fun hostForAccount(accountId: UUID): Party?
 
     // Allows the account host to perform a vault query for the specified account ID.
-    fun accountVaultQuery(
+    fun ownedByAccountVaultQuery(
+        accountId: UUID,
+        queryCriteria: QueryCriteria
+    ): List<StateAndRef<*>>
+
+    fun broadcastedToAccountVaultQuery(
         accountId: UUID,
         queryCriteria: QueryCriteria
     ): List<StateAndRef<*>>
@@ -74,10 +79,13 @@ interface AccountService : SerializeAsToken {
     // Sends AccountInfo specified by the account ID, to the specified Party. The
     // receiving Party will be able to access the AccountInfo from their AccountService.
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean>
+
+    fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CompletableFuture<StateAndRef<T>>
 }
 
 @CordaService
 class KeyManagementBackedAccountService(private val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
+
 
 
     override fun myAccounts(): List<StateAndRef<AccountInfo>> {
@@ -133,12 +141,16 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return accountInfo(accountId)?.state?.data?.accountHost
     }
 
-    override fun accountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
+    override fun ownedByAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         val externalIDQuery = builder {
             VaultSchemaV1.StateToExternalId::externalId.equal(accountId)
         }
         val joinedQuery = queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIDQuery, Vault.StateStatus.ALL))
         return services.vaultService.queryBy<ContractState>(joinedQuery).states
+    }
+
+    override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
+        TODO("not implemented")
     }
 
     override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
@@ -154,6 +166,10 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
             return services.startFlow(ShareAccountInfoWithNodes(it, listOf(party))).returnValue.toCompletableFuture()
         }
         return CompletableFuture.completedFuture(false)
+    }
+
+    override fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CompletableFuture<StateAndRef<T>> {
+        TODO("not implemented")
     }
 
 }
