@@ -61,6 +61,16 @@ interface AccountService : SerializeAsToken {
 
     // Allows the account host to perform a vault query for the specified account ID.
     fun ownedByAccountVaultQuery(
+        accountIds: List<UUID>,
+        queryCriteria: QueryCriteria
+    ): List<StateAndRef<*>>
+
+    fun broadcastedToAccountVaultQuery(
+        accountIds: List<UUID>,
+        queryCriteria: QueryCriteria
+    ): List<StateAndRef<*>>
+
+    fun ownedByAccountVaultQuery(
         accountId: UUID,
         queryCriteria: QueryCriteria
     ): List<StateAndRef<*>>
@@ -142,28 +152,28 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return accountInfo(accountId)?.state?.data?.accountHost
     }
 
-    override fun ownedByAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
+    override fun ownedByAccountVaultQuery(accountIds: List<UUID>, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         val externalIDQuery = builder {
-            VaultSchemaV1.StateToExternalId::externalId.equal(accountId)
+            VaultSchemaV1.StateToExternalId::externalId.`in`(accountIds)
         }
         val joinedQuery = queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIDQuery, Vault.StateStatus.ALL))
         return services.vaultService.queryBy<ContractState>(joinedQuery).states
     }
 
-    override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
+    override fun ownedByAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
+        return ownedByAccountVaultQuery(listOf(accountId), queryCriteria)
+    }
+
+    override fun broadcastedToAccountVaultQuery(accountIds: List<UUID>, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         val externalIdQuery = builder {
-            AllowedToSeeStateMapping::externalId.equal(accountId)
+            AllowedToSeeStateMapping::externalId.`in`(accountIds)
         }
-        val joinedQuery =  queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIdQuery, Vault.StateStatus.ALL))
+        val joinedQuery = queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIdQuery, Vault.StateStatus.ALL))
         return services.vaultService.queryBy<ContractState>(joinedQuery).states
     }
 
-    override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun deactivateAccount(accountId: UUID) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
+        return broadcastedToAccountVaultQuery(listOf(accountId), queryCriteria)
     }
 
     override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean> {
@@ -177,7 +187,14 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return accountInfo(accountId)?.state?.data?.let {
             services.startFlow(ShareStateWithAccountFlow(accountInfo = it, state = state)).returnValue.toCompletableFuture().thenApply { state }
         } ?: CompletableFuture<StateAndRef<T>>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }
+    }
 
+    override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    override fun deactivateAccount(accountId: UUID) {
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
 }

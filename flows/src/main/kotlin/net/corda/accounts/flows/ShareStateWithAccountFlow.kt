@@ -18,6 +18,7 @@ import java.util.*
 import javax.persistence.*
 
 @StartableByRPC
+@StartableByService
 @InitiatingFlow
 class ShareStateWithAccountFlow<T : ContractState>(val accountInfo: AccountInfo, val state: StateAndRef<T>) : FlowLogic<Unit>() {
     @Suspendable
@@ -27,9 +28,8 @@ class ShareStateWithAccountFlow<T : ContractState>(val accountInfo: AccountInfo,
         subFlow(SendTransactionFlow(session, transaction!!))
         session.send(state.ref)
         session.send(accountInfo)
-        val result = session.receive<RESULT_OF_PERMISSIONING>().unwrap { it }
-
-        if (result == RESULT_OF_PERMISSIONING.FAIL) {
+        val result = session.receive<ResultOfPermissioning>().unwrap { it }
+        if (result == ResultOfPermissioning.FAIL) {
             throw FlowException("Counterparty failed to permission state")
         }
 
@@ -49,15 +49,15 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
                 val newEntry = AllowedToSeeStateMapping(null, accountInfo.accountId, PersistentStateRef(stateToPermission))
                 persist(newEntry)
             }
-            otherSession.send(RESULT_OF_PERMISSIONING.OK)
+            otherSession.send(ResultOfPermissioning.OK)
         } catch (e: Exception) {
-            otherSession.send(RESULT_OF_PERMISSIONING.FAIL)
+            otherSession.send(ResultOfPermissioning.FAIL)
         }
     }
 }
 
 @CordaSerializable
-enum class RESULT_OF_PERMISSIONING {
+enum class ResultOfPermissioning {
     OK, FAIL
 }
 
@@ -74,7 +74,6 @@ data class AllowedToSeeStateMapping(
     @Type(type = "uuid-char")
     var externalId: UUID?,
 
-    @Column(name = "state_ref", nullable = false)
     override var stateRef: PersistentStateRef?
 ) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
     constructor() : this(null, null, null)

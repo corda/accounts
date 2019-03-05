@@ -41,7 +41,10 @@
     let loansPromise = makeRequest("GET", "/loans").then(text => JSON.parse(text));
     let localAccountsPromise = makeRequest("GET", "/accounts/hosted").then(text => JSON.parse(text));
     let allAccountsPromise = makeRequest("GET", "/accounts/all").then(text => JSON.parse(text));
+    let allUsersPromise = makeRequest("GET", "/users/all").then(text => JSON.parse(text));
+
     makeRequest("GET", "/me").then(name => document.getElementById("managerName").innerText = name);
+    makeRequest("GET", "/users/current").then(name => document.getElementById("userNameInfo").innerText = ` (Logged in as ${name})`);
 
     let partyLoadingPromise = makeRequest("GET", "/parties").then(text => JSON.parse(text));
     partyLoadingPromise.then(parties => {
@@ -68,12 +71,13 @@
         }
     );
 
-    Promise.all([loansPromise, localAccountsPromise, partyLoadingPromise, allAccountsPromise]).then(results => {
+    Promise.all([loansPromise, localAccountsPromise, partyLoadingPromise, allAccountsPromise, allUsersPromise]).then(results => {
 
         let loans = results[0];
         let accounts = results[1];
         let parties = results[2];
         let allAccounts = results[3];
+        let allUsers = results[4];
 
         let accountsTable = document.createElement("table");
         accounts.forEach(account => {
@@ -110,6 +114,31 @@
             row.appendChild(accountNameCell);
             row.appendChild(buttonCell);
             row.appendChild(dropDownCell);
+
+
+            let permissionButton = document.createElement("button");
+            permissionButton.innerText = "Permission account to user: ";
+            let permissionDropDown = document.createElement("select");
+
+            allUsers.forEach(user => {
+                let optionForUser = document.createElement("option");
+                optionForUser.user = user;
+                optionForUser.innerText = user;
+                permissionDropDown.appendChild(optionForUser)
+            });
+
+            let permissionButtonCell = document.createElement("td");
+            let permissionDropDownCell = document.createElement("td");
+
+            permissionButtonCell.appendChild(permissionButton);
+            permissionDropDownCell.appendChild(permissionDropDown);
+
+            row.appendChild(permissionButtonCell);
+            row.appendChild(permissionDropDownCell);
+
+            permissionButton.onclick = function () {
+                makeRequest("GET", `/users/permission/${permissionDropDown.options[permissionDropDown.selectedIndex].user}/${account.key}`).then(_ => location.reload());
+            };
 
             accountsTable.appendChild(row);
         });
@@ -189,43 +218,105 @@
                 loanRow.appendChild(valueCell);
                 loanRow.appendChild(buttonsCell);
                 loanTable.appendChild(loanRow);
-
-
             });
-
-
         });
+    });
+
+    allUsersPromise.then(usersList => {
+
+
+        let usersTable = document.getElementById("userTable");
+
+        usersList.forEach(user => {
+
+            let row = document.createElement("tr");
+
+            let userNameCell = document.createElement("td");
+            let loginButtonCell = document.createElement("td");
+            userNameCell.innerText = user;
+            let loginButton = document.createElement("button");
+            loginButton.innerText = "Login as User";
+
+            loginButton.onclick = function () {
+                makeRequest("GET", `/users/login/${user}`).then(response => location.reload())
+            };
+
+            loginButtonCell.appendChild(loginButton);
+
+            row.appendChild(userNameCell);
+            row.appendChild(loginButtonCell);
+
+            usersTable.appendChild(row);
+
+        })
 
 
     });
 
+    function createWebUser() {
+        let userToCreate = document.getElementById("userToCreate").value;
+        if (userToCreate.length > 5) {
+            makeRequest("GET", `/users/create/${userToCreate}`)
+                .then(_ => {
+                    location.reload();
+                })
+        }
+    }
+
+
 </script>
 
 <body>
-<h1>Hello, Fund Manager <tt id="managerName"></tt></h1>
+<h1>Hello, Fund Manager <tt id="managerName"></tt> <tt id="userNameInfo"></tt></h1>
 
-<table>
-    <tr>
-        <td><label> Name:
-            <input id="accountName" type="text">
-        </label></td>
-        <td>
-            <label>Trustee
-                <select id="adminSelect"></select>
-            </label>
-        </td>
-        <td>
-            <button id="createAccountBtn">Create New Account!</button>
-        </td>
-    </tr>
-</table>
+<div style=" border: 5px solid black; margin-bottom: 5px">
+    <h3> User Management </h3>
 
-<div id="accountsHolder">
-    <h3>Accounts</h3>
+    <table id="userTable">
+
+    </table>
+
+    <table>
+        <tr>
+            <td>
+                <label>Username:
+                    <input type="text" id="userToCreate">
+                </label>
+            </td>
+            <td>
+                <button onclick="createWebUser()">Create User</button>
+            </td>
+        </tr>
+    </table>
 </div>
 
-<div id="loansHolder">
-    <h3>Loans</h3>
+<div></div>
+
+<div style="border: 5px solid black">
+    <h3> Loan Management </h3>
+    <table>
+        <tr>
+            <td><label> Name:
+                <input id="accountName" type="text">
+            </label></td>
+            <td>
+                <label>Trustee
+                    <select id="adminSelect"></select>
+                </label>
+            </td>
+            <td>
+                <button id="createAccountBtn">Create New Account!</button>
+            </td>
+        </tr>
+    </table>
+
+    <div id="accountsHolder">
+        <h3>Accounts</h3>
+    </div>
+
+    <div id="loansHolder">
+        <h3>Loans</h3>
+    </div>
 </div>
 
 
