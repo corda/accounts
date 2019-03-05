@@ -1,7 +1,9 @@
 package net.corda.accounts.service
 
+import net.corda.accounts.flows.AllowedToSeeStateMapping
 import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ShareAccountInfoWithNodes
+import net.corda.accounts.flows.ShareStateWithAccountFlow
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -87,7 +89,6 @@ interface AccountService : SerializeAsToken {
 class KeyManagementBackedAccountService(private val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
 
 
-
     override fun myAccounts(): List<StateAndRef<AccountInfo>> {
         return services.vaultService.queryBy(AccountInfo::class.java)
             .states.filter { it.state.data.accountHost == services.myInfo.legalIdentities.first() }
@@ -150,7 +151,11 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
     }
 
     override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        TODO("not implemented")
+        val externalIdQuery = builder {
+            AllowedToSeeStateMapping::externalId.equal(accountId)
+        }
+        val joinedQuery =  queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIdQuery, Vault.StateStatus.ALL))
+        return services.vaultService.queryBy<ContractState>(joinedQuery).states
     }
 
     override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
@@ -169,7 +174,10 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
     }
 
     override fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CompletableFuture<StateAndRef<T>> {
-        TODO("not implemented")
+        return accountInfo(accountId)?.state?.data?.let {
+            services.startFlow(ShareStateWithAccountFlow(accountInfo = it, state = state)).returnValue.toCompletableFuture().thenApply { state }
+        } ?: CompletableFuture<StateAndRef<T>>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }
+
     }
 
 }

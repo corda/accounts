@@ -8,7 +8,10 @@ import net.corda.core.contracts.StateRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
+import net.corda.core.schemas.DirectStatePersistable
 import net.corda.core.schemas.MappedSchema
+import net.corda.core.schemas.PersistentStateRef
+import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.unwrap
 import org.hibernate.annotations.Type
 import java.util.*
@@ -24,6 +27,12 @@ class ShareStateWithAccountFlow<T : ContractState>(val accountInfo: AccountInfo,
         subFlow(SendTransactionFlow(session, transaction!!))
         session.send(state.ref)
         session.send(accountInfo)
+        val result = session.receive<RESULT_OF_PERMISSIONING>().unwrap { it }
+
+        if (result == RESULT_OF_PERMISSIONING.FAIL) {
+            throw FlowException("Counterparty failed to permission state")
+        }
+
     }
 }
 
@@ -34,33 +43,41 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
         subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
         val stateToPermission = otherSession.receive<StateRef>().unwrap { it }
         val accountInfo = otherSession.receive<AccountInfo>().unwrap { it }
-        serviceHub.withEntityManager {
-            val existingEntry = find(AllowedToSeeStateMapping::class.java, accountInfo.accountId) ?: AllowedToSeeStateMapping(accountInfo.accountId, listOf())
-            val newEntry = existingEntry.copy(stateRef = existingEntry.stateRef!! + listOf(stateToPermission))
-            persist(newEntry)
+
+        try {
+            serviceHub.withEntityManager {
+                val newEntry = AllowedToSeeStateMapping(null, accountInfo.accountId, PersistentStateRef(stateToPermission))
+                persist(newEntry)
+            }
+            otherSession.send(RESULT_OF_PERMISSIONING.OK)
+        } catch (e: Exception) {
+            otherSession.send(RESULT_OF_PERMISSIONING.FAIL)
         }
     }
+}
 
+@CordaSerializable
+enum class RESULT_OF_PERMISSIONING {
+    OK, FAIL
 }
 
 
 @Entity
-@Table(name = "account_to_state_refs", indexes = [Index(name = "external_id_pk_idx", columnList = "external_id")])
+@Table(name = "account_to_state_refs", indexes = [Index(name = "external_id_idx", columnList = "external_id")])
 data class AllowedToSeeStateMapping(
 
     @Id
-    @Column(name = "external_id", unique = true, nullable = false)
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    var id: Long?,
+
+    @Column(name = "external_id", unique = false, nullable = false)
     @Type(type = "uuid-char")
     var externalId: UUID?,
 
     @Column(name = "state_ref", nullable = false)
-    @Convert(converter = StateRefToTextConverter::class)
-    @ElementCollection
-    var stateRef: List<StateRef>?
-
-
-) : MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
-    constructor() : this(null, null)
+    override var stateRef: PersistentStateRef?
+) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
+    constructor() : this(null, null, null)
 }
 
 @Converter

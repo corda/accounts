@@ -1,17 +1,25 @@
 package net.corda.accounts.flows.test
 
-import net.corda.accounts.flows.*
+import net.corda.accounts.flows.OpenNewAccountFlow
+import net.corda.accounts.flows.ReceiveStateForAccountFlow
+import net.corda.accounts.flows.ShareAccountInfoWithNodes
+import net.corda.accounts.flows.ShareStateWithAccountFlow
+import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
+import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.collection.IsIterableContainingInAnyOrder
+import org.hamcrest.core.IsEqual
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.util.concurrent.CompletableFuture
 
 class AccountsFlowTests {
 
@@ -61,33 +69,78 @@ class AccountsFlowTests {
     @Test
     fun `should share state with only specified account`() {
 
-        val futureA = a.startFlow(OpenNewAccountFlow("A_Account"))
-        val futureB = b.startFlow(OpenNewAccountFlow("B_Account"))
+        val futureA1 = a.startFlow(OpenNewAccountFlow("A_Account1"))
+        val futureA2 = a.startFlow(OpenNewAccountFlow("A_Account2"))
+        val futureA3 = a.startFlow(OpenNewAccountFlow("A_Account3"))
+
+        val futureB1 = b.startFlow(OpenNewAccountFlow("B_Account1"))
+        val futureB2 = b.startFlow(OpenNewAccountFlow("B_Account2"))
+        val futureB3 = b.startFlow(OpenNewAccountFlow("B_Account3"))
 
         network.runNetwork()
-        val accountCreatedOnA = futureA.getOrThrow()
-        val accountCreatedOnB = futureB.getOrThrow()
 
-        val shareToAFuture = b.startFlow(ShareAccountInfoWithNodes(accountCreatedOnB, listOf(a.info.legalIdentities.first())))
+        val shareB1ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB2ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB3ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
         network.runNetwork()
 
-        shareToAFuture.getOrThrow()
+        CompletableFuture.allOf(shareB1ToAFuture, shareB2ToAFuture, shareB3ToAFuture).getOrThrow()
 
-        //share accountA with ONLY accountB rather than the entire B node
-        val resultOfPermissionedShare = a.startFlow(ShareStateWithAccountFlow(accountCreatedOnB.state.data, accountCreatedOnA))
+        //share accountA1 with ONLY accountB1 rather than the entire B node
+        val resultOfPermissionedShareA1B1 = a.startFlow(ShareStateWithAccountFlow(futureB1.getOrThrow().state.data, futureA1.getOrThrow())).toCompletableFuture()
+        //share accountA2 with ONLY accountB2 rather than the entire B node
+        val resultOfPermissionedShareA2B2 = a.startFlow(ShareStateWithAccountFlow(futureB2.getOrThrow().state.data, futureA2.getOrThrow())).toCompletableFuture()
+        //share accountA3 with ONLY accountB3 rather than the entire B node
+        val resultOfPermissionedShareA3B3 = a.startFlow(ShareStateWithAccountFlow(futureB3.getOrThrow().state.data, futureA3.getOrThrow())).toCompletableFuture()
         network.runNetwork()
-        resultOfPermissionedShare.getOrThrow()
+        CompletableFuture.allOf(resultOfPermissionedShareA1B1, resultOfPermissionedShareA2B2, resultOfPermissionedShareA3B3).getOrThrow()
 
-        val permissionedStatesForAccountB = b.transaction {
-            b.services.withEntityManager {
-                val itemFound = find(AllowedToSeeStateMapping::class.java, accountCreatedOnB.state.data.accountId).copy()
-                println(itemFound)
-                itemFound
-            }
-        }
 
-        //AccountB should be permissioned to look at AccountA
-        Assert.assertThat(permissionedStatesForAccountB.stateRef, IsIterableContainingInAnyOrder.containsInAnyOrder(accountCreatedOnA.ref))
+        val permissionedStatesForAccountB1 = b.transaction {
+            val cordaService = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+            cordaService.broadcastedToAccountVaultQuery(
+                futureB1.getOrThrow().state.data.accountId,
+                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+            )
+        }.map { it.ref }
+
+        val permissionedStatesForAccountB2 = b.transaction {
+            val cordaService = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+            cordaService.broadcastedToAccountVaultQuery(
+                futureB2.getOrThrow().state.data.accountId,
+                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+            )
+        }.map { it.ref }
+
+        val permissionedStatesForAccountB3 = b.transaction {
+            val cordaService = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+            cordaService.broadcastedToAccountVaultQuery(
+                futureB3.getOrThrow().state.data.accountId,
+                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+            )
+        }.map { it.ref }
+
+        //AccountB1 should be permissioned to look at AccountA1
+        Assert.assertThat(permissionedStatesForAccountB1, `is`(IsEqual.equalTo(listOf(futureA1.getOrThrow().ref))))
+        //AccountB2 should be permissioned to look at AccountA2
+        Assert.assertThat(permissionedStatesForAccountB2, `is`(IsEqual.equalTo(listOf(futureA2.getOrThrow().ref))))
+        //AccountB3 should be permissioned to look at AccountA3
+        Assert.assertThat(permissionedStatesForAccountB3, `is`(IsEqual.equalTo(listOf(futureA3.getOrThrow().ref))))
+
+        //share accountA1 with ONLY accountB3 rather than the entire B node
+        val resultOfPermissionedShareA1B3 = a.startFlow(ShareStateWithAccountFlow(futureB3.getOrThrow().state.data, futureA1.getOrThrow())).toCompletableFuture()
+        network.runNetwork()
+        resultOfPermissionedShareA1B3.getOrThrow()
+
+        val permissionedStatesForAccountB3AfterA1Shared = b.transaction {
+            val cordaService = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+            cordaService.broadcastedToAccountVaultQuery(
+                futureB3.getOrThrow().state.data.accountId,
+                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+            )
+        }.map { it.ref }
+
+        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (IsIterableContainingInAnyOrder.containsInAnyOrder(futureA3.getOrThrow().ref, futureA1.getOrThrow().ref)))
 
     }
 }
