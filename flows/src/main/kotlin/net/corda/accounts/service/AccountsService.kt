@@ -116,7 +116,7 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return services.startFlow(OpenNewAccountFlow(accountName, accountId)).returnValue.getOrThrow()
     }
 
-    fun createAccount(accountName: String, carbonCopyReceivers: List<Party>): CompletableFuture<StateAndRef<AccountInfo>> {
+    fun createAccount(accountName: String, carbonCopyReceivers: List<AccountInfo>): CompletableFuture<StateAndRef<AccountInfo>> {
         return services.startFlow(OpenNewAccountFlow(accountName, carbonCopyReceivers)).returnValue.toCompletableFuture()
     }
 

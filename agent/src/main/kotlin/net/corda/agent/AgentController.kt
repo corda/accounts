@@ -3,14 +3,17 @@ package net.corda.agent
 import net.corda.accounts.flows.GetAccountsFlow
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.messaging.startFlow
+import net.corda.core.utilities.getOrThrow
 import net.corda.core.utilities.toBase58String
 import net.corda.gold.trading.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestMethod
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.*
 import java.util.*
+import javax.servlet.http.HttpServletRequest
+
+const val USER_ATTRIBUTE: String = "USER"
 
 @RestController
 class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @Autowired private val agentAccountProvider: AgentAccountProvider) {
@@ -50,14 +53,48 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
         return getAllLoans().map { it.toLoanBookView() }
     }
 
+    @RequestMapping("/users/all", method = [RequestMethod.GET])
+    fun getAllUsers(): List<String> {
+        return rpcConnection.proxy.startFlowDynamic(GetAllWebUsersFlow::class.java).returnValue.getOrThrow().sortedBy { it }
+    }
+
+    @RequestMapping("/users/create/{userName}", method = [RequestMethod.GET])
+    fun createUser(@PathVariable("userName") userName: String): String {
+        return rpcConnection.proxy.startFlow(::NewWebAccountFlow, userName).returnValue.getOrThrow().webAccount!!
+    }
+
+
+    @RequestMapping("/users/login/{userName}", method = [RequestMethod.GET])
+    fun loginAsUser(@PathVariable("userName") userName: String, request: HttpServletRequest): String {
+        val sessionToUse = request.getSession(true)
+        sessionToUse.setAttribute(USER_ATTRIBUTE, userName)
+        return "OK"
+    }
+
+    @RequestMapping("/users/permission/{userName}/{accountKey}", method = [RequestMethod.GET])
+    fun permissionUserToAccount(@PathVariable("userName") userName: String, @PathVariable("accountKey") accountKey: String, request: HttpServletRequest): String {
+        val accountToUse = getAllAccounts().single { it.state.data.signingKey.toBase58String() == accountKey }
+        rpcConnection.proxy.startFlow(::PermissionWebLoginToAccountFlow, userName, accountToUse.state.data.accountId, true).returnValue.getOrThrow()
+        return "OK"
+    }
+
+    @RequestMapping("/users/current", method = [RequestMethod.GET])
+    fun getCurrentUser(request: HttpServletRequest): String {
+        return validateSessionUser(request)
+    }
+
+    private fun validateSessionUser(request: HttpServletRequest): String {
+        val session = request.getSession(true)
+        val contextUser = session.getAttribute(USER_ATTRIBUTE) ?: throw UnAuthorisedException()
+        return contextUser as String
+    }
 
 
     data class AccountInfoView(
         val accountName: String,
         val accountHost: String,
         val accountId: UUID,
-        val key: String?,
-        val carbonCopyReivers: List<String> = listOf()
+        val key: String?
     )
 
     data class LoanBookView(val dealId: UUID, val valueInUSD: Long, val owningAccount: String? = null, val index: Int, val txHash: String)
@@ -65,16 +102,22 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
 }
 
 private fun StateAndRef<AccountInfo>.toAccountView(): AgentController.AccountInfoView {
-    val data = this.state.data
+    return this.state.data.toAccountView()
+}
+
+private fun AccountInfo.toAccountView(): AgentController.AccountInfoView {
     return AgentController.AccountInfoView(
-        data.accountName,
-        data.accountHost.name.toString(),
-        data.accountId,
-        data.signingKey.toBase58String(),
-        data.carbonCopyReivers.map { it.name.toString() })
+        this.accountName,
+        this.accountHost.name.toString(),
+        this.accountId,
+        this.signingKey.toBase58String()
+    )
 }
 
 private fun StateAndRef<LoanBook>.toLoanBookView(): AgentController.LoanBookView {
     val data = this.state.data
     return AgentController.LoanBookView(data.dealId, data.valueInUSD, data.owningAccount?.toBase58String(), this.ref.index, this.ref.txhash.toString())
 }
+
+@ResponseStatus(value = HttpStatus.UNAUTHORIZED, reason = "Not Logged in")
+class UnAuthorisedException : RuntimeException()

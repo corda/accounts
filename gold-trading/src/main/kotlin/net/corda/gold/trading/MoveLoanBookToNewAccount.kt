@@ -1,12 +1,12 @@
 package net.corda.gold.trading
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.flows.ShareStateWithAccountFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.contracts.ReferencedStateAndRef
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.TransactionSignature
 import net.corda.core.flows.*
-import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -76,31 +76,14 @@ class MoveLoanBookToNewAccount(val accountId: UUID, val loanBook: StateAndRef<Lo
                 LoanBook::class.java
             ).single()
 
-            val toCarbonCopy = accountInfoToMoveTo.state.data.carbonCopyReivers + (currentHoldingAccount?.state?.data?.carbonCopyReivers ?: listOf())
+            val toCarbonCopy = accountInfoToMoveTo.state.data.carbonCopyReceivers + (currentHoldingAccount?.state?.data?.carbonCopyReceivers ?: listOf())
 
-            subFlow(CarbonCopyFlow(toCarbonCopy, signedTx))
+            toCarbonCopy.forEach {accountToNotify ->
+                subFlow(ShareStateWithAccountFlow(accountToNotify, movedState))
+            }
+
             return movedState
         }
-    }
-}
-
-@InitiatingFlow
-class CarbonCopyFlow(val toCarbonCopy: List<Party>, val txToBroadcast: SignedTransaction) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call(): Unit {
-        for (party in toCarbonCopy.filter { it != serviceHub.myInfo.legalIdentities.first() }) {
-            val session = initiateFlow(party)
-            subFlow(SendTransactionFlow(session, txToBroadcast))
-        }
-    }
-}
-
-@InitiatedBy(CarbonCopyFlow::class)
-class RecordCarbonCopyFlow(val otherSession: FlowSession) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        val recievedTx = subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
-        logger.info("Successfully recorded carcbon copy transaction: ${recievedTx.id}")
     }
 }
 
@@ -111,8 +94,8 @@ class AccountSigningResponder(val otherSession: FlowSession) : FlowLogic<Unit>()
     override fun call() {
         //this is always going to be the "receiving" side of the transaction
         val transactionToSign = otherSession.receive(SignedTransaction::class.java).unwrap { it }
-        val goldBrick = transactionToSign.coreTransaction.outputsOfType(LoanBook::class.java).single()
-        val signatureForTxAccount = serviceHub.createSignature(transactionToSign, goldBrick.owningAccount!!)
+        val loanBook = transactionToSign.coreTransaction.outputsOfType(LoanBook::class.java).single()
+        val signatureForTxAccount = serviceHub.createSignature(transactionToSign, loanBook.owningAccount!!)
         val signatureForTxNode = serviceHub.createSignature(transactionToSign, serviceHub.myInfo.legalIdentities.first().owningKey)
         otherSession.send(listOf(signatureForTxAccount, signatureForTxNode))
         if (otherSession.counterparty != serviceHub.myInfo.legalIdentities.first()) {

@@ -8,6 +8,8 @@ import net.corda.core.schemas.MappedSchema
 import net.corda.core.serialization.CordaSerializable
 import org.hibernate.annotations.Type
 import java.util.*
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
 import javax.persistence.*
 
 @StartableByRPC
@@ -27,11 +29,13 @@ class GetAllWebUsersFlow : FlowLogic<List<String>>() {
 class GetWebUserFlow(val userToFind: String) : FlowLogic<WebAccountPermissioning?>() {
     @Suspendable
     override fun call(): WebAccountPermissioning? {
-        return serviceHub.withEntityManager {
-            val foundAccount = find(WebAccountPermissioning::class.java, userToFind)
-            val loadedAccount = foundAccount.copy(permissionedAccounts = foundAccount.permissionedAccounts?.map { it })
-            loadedAccount
-        }
+        val refHolder = AtomicReference<WebAccountPermissioning?>()
+        serviceHub.withEntityManager(Consumer { em ->
+            val foundAccount = em.find(WebAccountPermissioning::class.java, userToFind)
+            val loadedAccount = foundAccount?.copy(permissionedAccounts = foundAccount.permissionedAccounts?.map { it })
+            refHolder.set(loadedAccount)
+        })
+        return refHolder.get()
     }
 }
 

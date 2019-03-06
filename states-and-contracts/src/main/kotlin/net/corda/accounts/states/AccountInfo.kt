@@ -30,7 +30,7 @@ data class AccountInfo(
     val status: AccountStatus = AccountStatus.ACTIVE,
     @Column(name = "signingKey")
     val signingKey: PublicKey,
-    val carbonCopyReivers: List<Party> = listOf()
+    val carbonCopyReceivers: List<AccountInfo> = listOf()
 ) : LinearState {
     override val participants: List<AbstractParty> get() = listOf(accountHost)
 }

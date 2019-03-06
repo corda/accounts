@@ -1,6 +1,7 @@
 package net.corda.gold.trading
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.flows.ShareStateWithAccountFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.contracts.ReferencedStateAndRef
 import net.corda.core.contracts.StateAndRef
@@ -48,8 +49,16 @@ class SplitLoanFlow(private val oldLoanBook: StateAndRef<LoanBook>, private val 
         val locallySignedTx = serviceHub.signInitialTransaction(txBuilder, keysToSignWith)
 
         val notarisedTransaction = subFlow(FinalityFlow(locallySignedTx, emptyList()))
-        subFlow(CarbonCopyFlow(account.state.data.carbonCopyReivers, notarisedTransaction))
-        return notarisedTransaction.coreTransaction.outRefsOfType()
+
+        val splitLoans = notarisedTransaction.coreTransaction.outRefsOfType<LoanBook>()
+
+        account.state.data.carbonCopyReceivers.forEach { accountToShareTo ->
+            splitLoans.forEach { loanStateToShare ->
+                subFlow(ShareStateWithAccountFlow(accountToShareTo, loanStateToShare))
+            }
+        }
+
+        return splitLoans
     }
 
 }

@@ -1,6 +1,7 @@
 package net.corda.gold.test
 
 import net.corda.accounts.flows.GetAccountInfo
+import net.corda.accounts.flows.ReceiveStateForAccountFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.internal.sumByLong
@@ -30,7 +31,7 @@ class LoanBookTradingTests {
     @Before
     fun setup() {
         network = MockNetwork(
-            listOf("net.corda.gold", "net.corda.accounts.service", "net.corda.accounts.contracts"), MockNetworkParameters(
+            listOf("net.corda.gold", "net.corda.accounts.service", "net.corda.accounts.contracts", "net.corda.accounts.flows"), MockNetworkParameters(
                 networkParameters = testNetworkParameters(
                     minimumPlatformVersion = 4
                 )
@@ -41,6 +42,8 @@ class LoanBookTradingTests {
 
         a.registerInitiatedFlow(GetAccountInfo::class.java)
         b.registerInitiatedFlow(GetAccountInfo::class.java)
+        a.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
+        b.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
         network.runNetwork()
     }
 
@@ -277,8 +280,11 @@ class LoanBookTradingTests {
         val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
         val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
 
+        val defaultAccountOnBFuture = accountServiceOnB.createAccount("DEFAULT_ACCOUNT_ON_B")
+        network.runNetwork()
+
         //CREATE AN ACCOUNT ON A WITH A CARBON COPY RECEIVER OF B
-        val account1Future = accountServiceOnA.createAccount("ACCOUNT_1", listOf(b.info.legalIdentities.first()))
+        val account1Future = accountServiceOnA.createAccount("ACCOUNT_1", listOf(defaultAccountOnBFuture.getOrThrow().state.data))
         val account2Future = accountServiceOnA.createAccount("ACCOUNT_2")
         val account3Future = accountServiceOnA.createAccount("ACCOUNT_3")
 
@@ -340,7 +346,12 @@ class LoanBookTradingTests {
     fun `it should be possible to split a loan`() {
         val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
         val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val account1Future = accountServiceOnA.createAccount("ACCOUNT_1", listOf(b.info.legalIdentities.first()))
+
+        val defaultAccountOnBFuture = accountServiceOnB.createAccount("DEFAULT_ACCOUNT_ON_B")
+        network.runNetwork()
+
+
+        val account1Future = accountServiceOnA.createAccount("ACCOUNT_1", listOf(defaultAccountOnBFuture.getOrThrow().state.data))
         network.runNetwork()
         val account1Created = account1Future.getOrThrow()
         val miningFuture1 = a.startFlow(IssueLoanBookFlow(100, account1Created))

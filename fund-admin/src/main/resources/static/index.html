@@ -39,19 +39,27 @@
     }
 
     let loansPromise = makeRequest("GET", "/loans").then(text => JSON.parse(text));
-    let accountsPromise = makeRequest("GET", "/accounts").then(text => JSON.parse(text));
+    let hostedAccountsPromise = makeRequest("GET", "/accounts").then(text => JSON.parse(text));
+    let allAccountsPromise = makeRequest("GET", "/accounts/all").then(text => JSON.parse(text));
+    let allUsersPromise = makeRequest("GET", "/users/all").then(text => JSON.parse(text));
+    let allPartiesPromise = makeRequest("GET", "/parties").then(text => JSON.parse(text));
+    makeRequest("GET", "/users/current").then(name => document.getElementById("userNameInfo").innerText = ` (Logged in as ${name})`);
+
     makeRequest("GET", "/me").then(name => document.getElementById("trusteeName").innerText = name);
 
 
-    Promise.all([loansPromise, accountsPromise]).then(results => {
+    Promise.all([loansPromise, hostedAccountsPromise, allUsersPromise, allPartiesPromise, allAccountsPromise]).then(results => {
 
         let loans = results[0];
         let accounts = results[1];
+        let allUsers = results[2];
+        let allParties = results[3];
+        let allKnownAccounts = results[4];
 
         //begin loan grouping
 
         let loansGroupedByAccountKey = _.groupBy(loans, loan => loan.owningAccount);
-        let accountsIndexedByKey = _.keyBy(accounts, account => account.key);
+        let accountsIndexedByKey = _.keyBy(allKnownAccounts, account => account.key);
 
 
         let loansHolder = document.getElementById("loansHolder");
@@ -76,7 +84,6 @@
                 valueCell.innerText = loan.valueInUSD;
 
 
-
                 loanRow.appendChild(dealIdCell);
                 loanRow.appendChild(valueCell);
                 loanTable.appendChild(loanRow);
@@ -84,18 +91,176 @@
             });
         });
 
+        let accountsTable = document.createElement("table");
+        accounts.forEach(account => {
+
+            let row = document.createElement("tr");
+
+            let accountNameCell = document.createElement("td");
+            let accountHeader = document.createElement("h5");
+            accountHeader.style.display = "inline";
+            accountHeader.innerText = account.accountName;
+            accountNameCell.appendChild(accountHeader);
+
+            let partyDropDown = document.createElement("select");
+            let buttonCell = document.createElement("td");
+            let shareButton = document.createElement("button");
+            shareButton.innerText = "Share with party: ";
+            shareButton.onclick = function () {
+                this.disabled = true;
+                makeRequest("GET", `/accounts/share/${account.key}/${partyDropDown.options[partyDropDown.selectedIndex].party}`).then(done => shareButton.disabled = false);
+            };
+            buttonCell.appendChild(shareButton);
+
+            let dropDownCell = document.createElement("td");
+
+            allParties.forEach(party => {
+                let optionForParty = document.createElement("option");
+                optionForParty.innerText = party;
+                optionForParty.party = party;
+                partyDropDown.appendChild(optionForParty);
+            });
+
+            dropDownCell.appendChild(partyDropDown);
+
+            row.appendChild(accountNameCell);
+            row.appendChild(buttonCell);
+            row.appendChild(dropDownCell);
+
+
+            let permissionButton = document.createElement("button");
+            permissionButton.innerText = "Permission account to user: ";
+            let permissionDropDown = document.createElement("select");
+
+            allUsers.forEach(user => {
+                let optionForUser = document.createElement("option");
+                optionForUser.user = user;
+                optionForUser.innerText = user;
+                permissionDropDown.appendChild(optionForUser)
+            });
+
+            let permissionButtonCell = document.createElement("td");
+            let permissionDropDownCell = document.createElement("td");
+
+            permissionButtonCell.appendChild(permissionButton);
+            permissionDropDownCell.appendChild(permissionDropDown);
+
+            row.appendChild(permissionButtonCell);
+            row.appendChild(permissionDropDownCell);
+
+            permissionButton.onclick = function () {
+                makeRequest("GET", `/users/permission/${permissionDropDown.options[permissionDropDown.selectedIndex].user}/${account.key}`).then(_ => location.reload());
+            };
+
+            accountsTable.appendChild(row);
+        });
+
+
+        document.getElementById("accountsHolder").appendChild(accountsTable)
+
+        let createAccountButton = document.getElementById("createAccountBtn");
+        createAccountButton.onclick = function () {
+            this.disabled = true;
+            let accountNameInput = document.getElementById("accountName");
+            let accountName = accountNameInput.value;
+            makeRequest("GET", `/accounts/create/${accountName}/${null}`).then(done => location.reload())
+        }
+
     });
+
+    allUsersPromise.then(usersList => {
+        let usersTable = document.getElementById("userTable");
+        usersList.forEach(user => {
+
+            let row = document.createElement("tr");
+
+            let userNameCell = document.createElement("td");
+            let loginButtonCell = document.createElement("td");
+            userNameCell.innerText = user;
+            let loginButton = document.createElement("button");
+            loginButton.innerText = "Login as User";
+
+            loginButton.onclick = function () {
+                makeRequest("GET", `/users/login/${user}`).then(response => location.reload())
+            };
+
+            loginButtonCell.appendChild(loginButton);
+
+            row.appendChild(userNameCell);
+            row.appendChild(loginButtonCell);
+
+            usersTable.appendChild(row);
+
+        })
+
+
+    });
+
+    function createWebUser() {
+        let userToCreate = document.getElementById("userToCreate").value;
+        if (userToCreate.length > 5) {
+            makeRequest("GET", `/users/create/${userToCreate}`)
+                .then(_ => {
+                    location.reload();
+                })
+        }
+    }
+
 
 </script>
 
 <body>
-<h1>Hello, Trustee <tt id="trusteeName"></tt></h1>
 
 
-<div id="loansHolder">
-    <h3>Loans</h3>
+<h1>Hello, Trustee <tt id="trusteeName"></tt> <tt id="userNameInfo"></tt></h1>
+
+<div style=" border: 5px solid black; margin-bottom: 5px">
+    <h3> User Management </h3>
+
+    <table id="userTable">
+
+    </table>
+
+    <table>
+        <tr>
+            <td>
+                <label>Username:
+                    <input type="text" id="userToCreate">
+                </label>
+            </td>
+            <td>
+                <button onclick="createWebUser()">Create User</button>
+            </td>
+        </tr>
+    </table>
 </div>
 
+
+<div style="border: 5px solid black; margin-bottom: 5px">
+    <div id="accountsHolder">
+        <h3>Accounts</h3>
+    </div>
+
+    <table>
+        <tr>
+            <td><label> Name:
+                <input id="accountName" type="text">
+            </label></td>
+            <td>
+                <button id="createAccountBtn">Create New Account!</button>
+            </td>
+        </tr>
+    </table>
+
+</div>
+
+
+<div style="border: 5px solid black">
+    <h3> Loan Management </h3>
+    <div id="loansHolder">
+        <h3>Loans</h3>
+    </div>
+</div>
 
 </body>
 </html>

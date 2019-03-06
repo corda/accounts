@@ -31,7 +31,7 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
 
     private fun validateSessionUser(request: HttpServletRequest): String {
         val session = request.getSession(true)
-        val contextUser = session.getAttribute(USER_ATTRIBUTE) ?: throw UnAuthorisedException()
+        val contextUser = session.getAttribute(USER_ATTRIBUTE) ?: "AdminUser"
         return contextUser as String
     }
 
@@ -52,16 +52,20 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
         return getAllAccounts().map { it.toAccountView() }
     }
 
-    @RequestMapping("/accounts/create/{accountName}/{administrator}", method = [RequestMethod.GET])
-    fun createAccount(@PathVariable("accountName") accountName: String, @PathVariable("administrator") administrator: String): AccountInfoView {
-        val administratorParty = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == administrator }.single().legalIdentities.first()
-        return rpcConnection.proxy.startFlowDynamic(OpenNewAccountFlow::class.java, accountName, listOf(administratorParty)).returnValue.get().toAccountView()
+    @RequestMapping("/accounts/create/{accountName}/{administratorAccountKey}", method = [RequestMethod.GET])
+    fun createAccount(@PathVariable("accountName") accountName: String, @PathVariable("administratorAccountKey") administratorAccountKey: String?): AccountInfoView {
+        val adminAccountList = if (administratorAccountKey == "null"){
+                listOf()
+        }else{
+            listOf(getAllAccounts().single { it.state.data.signingKey.toBase58String() == administratorAccountKey }.state.data)
+        }
+        return rpcConnection.proxy.startFlow(::OpenNewAccountFlow, accountName, adminAccountList).returnValue.get().toAccountView()
     }
 
     @RequestMapping("/accounts/share/{accountKey}/{party}", method = [RequestMethod.GET])
     fun shareAccount(@PathVariable("accountKey") accountKey: String, @PathVariable("party") party: String) {
         val partyToShareWith = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == party }.single().legalIdentities.first()
-        val accountToShare = getAllAccounts().filter { it.state.data.signingKey.toBase58String() == accountKey }.single()
+        val accountToShare = getAllAccounts().single { it.state.data.signingKey.toBase58String() == accountKey }
         rpcConnection.proxy.startFlowDynamic(ShareAccountInfoWithNodes::class.java, accountToShare, listOf(partyToShareWith)).returnValue.getOrThrow()
     }
 
@@ -121,8 +125,7 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
         val accountName: String,
         val accountHost: String,
         val accountId: UUID,
-        val key: String?,
-        val carbonCopyReivers: List<String> = listOf()
+        val key: String?
     )
 
     data class LoanBookView(val dealId: UUID, val valueInUSD: Long, val owningAccount: String? = null, val index: Int, val txHash: String)
@@ -143,8 +146,8 @@ private fun StateAndRef<AccountInfo>.toAccountView(): ManagerController.AccountI
         data.accountName,
         data.accountHost.name.toString(),
         data.accountId,
-        data.signingKey.toBase58String(),
-        data.carbonCopyReivers.map { it.name.toString() })
+        data.signingKey.toBase58String()
+    )
 }
 
 private fun StateAndRef<LoanBook>.toLoanBookView(): ManagerController.LoanBookView {

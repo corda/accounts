@@ -47,12 +47,13 @@
     makeRequest("GET", "/users/current").then(name => document.getElementById("userNameInfo").innerText = ` (Logged in as ${name})`);
 
     let partyLoadingPromise = makeRequest("GET", "/parties").then(text => JSON.parse(text));
-    partyLoadingPromise.then(parties => {
+
+    allAccountsPromise.then(accounts => {
             let adminSelect = document.getElementById("adminSelect");
-            parties.forEach(party => {
+            accounts.forEach(account => {
                 let optionForParty = document.createElement("option");
-                optionForParty.innerText = party;
-                optionForParty.party = party;
+                optionForParty.innerText = account.accountName + "@" + account.accountHost;
+                optionForParty.account = account;
                 adminSelect.appendChild(optionForParty);
             });
 
@@ -63,10 +64,9 @@
                 let accountNameInput = document.getElementById("accountName");
                 let accountName = accountNameInput.value;
 
-                let selectedParty = adminSelect.options[adminSelect.selectedIndex].party;
-                makeRequest("GET", `/accounts/create/${accountName}/${selectedParty}`).then(done => location.reload())
-
-
+                let selectedOption = adminSelect.options[adminSelect.selectedIndex];
+                let selectedAccount = selectedOption ? selectedOption.account : null;
+                makeRequest("GET", `/accounts/create/${accountName}/${selectedAccount ? selectedAccount.key : null}`).then(done => location.reload())
             }
         }
     );

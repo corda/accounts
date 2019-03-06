@@ -8,16 +8,15 @@ import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
-import net.corda.core.identity.Party
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 @StartableByService
 @StartableByRPC
-class OpenNewAccountFlow(private val id: String, private val accountId: UUID, private val carbonCopyList: List<Party> = listOf()) : FlowLogic<StateAndRef<AccountInfo>>() {
+class OpenNewAccountFlow(private val id: String, private val accountId: UUID, private val carbonCopyList: List<AccountInfo> = listOf()) : FlowLogic<StateAndRef<AccountInfo>>() {
     constructor(id: String) : this(id, UUID.randomUUID())
-    constructor(id: String, carbonCopyList: List<Party>) : this(id, UUID.randomUUID(), carbonCopyList)
+    constructor(id: String, carbonCopyList: List<AccountInfo>) : this(id, UUID.randomUUID(), carbonCopyList)
 
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
@@ -25,7 +24,7 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID, pr
         transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
         val newAccountKeyAndCert = serviceHub.keyManagementService.freshKeyAndCert(serviceHub.myInfo.legalIdentitiesAndCerts.first(), false)
         val newAccount =
-            AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId, signingKey = newAccountKeyAndCert.owningKey, carbonCopyReivers = carbonCopyList)
+            AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId, signingKey = newAccountKeyAndCert.owningKey, carbonCopyReceivers = carbonCopyList)
         transactionBuilder.addOutputState(newAccount)
         transactionBuilder.addCommand(AccountInfoContract.OPEN, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
@@ -37,7 +36,8 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID, pr
             persist(PublicKeyHashToExternalId(accountId, resultOfIssuance.state.data.signingKey))
         }
         serviceHub.identityService.verifyAndRegisterIdentity(newAccountKeyAndCert)
-        subFlow(ShareAccountInfoWithNodes(resultOfIssuance, resultOfIssuance.state.data.carbonCopyReivers))
+        val nodesToNotifyAboutAccount = resultOfIssuance.state.data.carbonCopyReceivers.map { it.accountHost }
+        subFlow(ShareAccountInfoWithNodes(resultOfIssuance, nodesToNotifyAboutAccount))
         return resultOfIssuance
     }
 

@@ -12,6 +12,7 @@ import net.corda.core.schemas.DirectStatePersistable
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentStateRef
 import net.corda.core.serialization.CordaSerializable
+import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.unwrap
 import org.hibernate.annotations.Type
 import java.util.*
@@ -51,6 +52,7 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
             }
             otherSession.send(ResultOfPermissioning.OK)
         } catch (e: Exception) {
+            contextLogger().error("Permissioning error:", e)
             otherSession.send(ResultOfPermissioning.FAIL)
         }
     }
