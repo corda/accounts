@@ -17,7 +17,6 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
-import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.vault.VaultSchemaV1
 import java.security.PublicKey
 import java.util.*
@@ -33,11 +32,11 @@ interface AccountService : SerializeAsToken {
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     // Creates a new account and returns the AccountInfo StateAndRef.
-    fun createAccount(accountName: String): StateAndRef<AccountInfo>
+    fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>>
 
     // Overload for creating an account with a specific account ID.
     fun createAccount(accountName: String, accountId: UUID):
-            StateAndRef<AccountInfo>
+            CompletableFuture<StateAndRef<AccountInfo>>
 
     // Creates a new KeyPair, links it to the account and returns the publickey.
     fun freshKeyForAccount(accountId: UUID): AnonymousParty
@@ -108,12 +107,12 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return services.vaultService.queryBy(AccountInfo::class.java).states
     }
 
-    override fun createAccount(accountName: String): StateAndRef<AccountInfo> {
-        return services.startFlow(OpenNewAccountFlow(accountName)).returnValue.getOrThrow()
+    override fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>> {
+        return services.startFlow(OpenNewAccountFlow(accountName)).returnValue.toCompletableFuture()
     }
 
-    override fun createAccount(accountName: String, accountId: UUID): StateAndRef<AccountInfo> {
-        return services.startFlow(OpenNewAccountFlow(accountName, accountId)).returnValue.getOrThrow()
+    override fun createAccount(accountName: String, accountId: UUID): CompletableFuture<StateAndRef<AccountInfo>> {
+        return services.startFlow(OpenNewAccountFlow(accountName, accountId)).returnValue.toCompletableFuture()
     }
 
     override fun freshKeyForAccount(accountId: UUID): AnonymousParty {
