@@ -1,16 +1,16 @@
 package net.corda.gold.trading
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.CollectSignaturesWithAccountsFlow
+import net.corda.accounts.SignTransactionWithAccountsFlow
+import net.corda.accounts.addCommand
 import net.corda.accounts.flows.ShareStateWithAccountFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
-import net.corda.core.contracts.ReferencedStateAndRef
+import net.corda.accounts.signInitialTransactionWithAccounts
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.crypto.TransactionSignature
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
-import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
-import net.corda.core.utilities.unwrap
 import java.util.*
 
 
@@ -32,52 +32,30 @@ class MoveLoanBookToNewAccount(val accountId: UUID, val loanBook: StateAndRef<Lo
         } else if (currentHoldingAccount == null && loanBook.state.data.owningAccount != null)
             throw IllegalStateException("Attempting to move a loan book from an account we do not know about")
         else {
-            val transactionBuilder = TransactionBuilder()
-            transactionBuilder.notary = loanBook.state.notary
-            transactionBuilder.addInputState(loanBook)
+            val signingAccounts = listOfNotNull(accountInfoToMoveTo, currentHoldingAccount)
 
-            val requiredSigners = listOfNotNull(
-                accountInfoToMoveTo.state.data.signingKey,
-                accountInfoToMoveTo.state.data.accountHost.owningKey,
-                currentHoldingAccount?.state?.data?.accountHost?.owningKey,
-                currentHoldingAccount?.state?.data?.signingKey
-            )
+            val transactionBuilder = TransactionBuilder(loanBook.state.notary)
+                    .addInputState(loanBook)
+                    .addOutputState(loanBook.state.data.copy(owningAccount = accountInfoToMoveTo.state.data.signingKey))
+                    .addCommand(LoanBookContract.TRANSFER_TO_ACCOUNT, signingAccounts)
 
-            transactionBuilder.addCommand(LoanBookContract.TRANSFER_TO_ACCOUNT, requiredSigners)
-            transactionBuilder.addReferenceState(ReferencedStateAndRef(accountInfoToMoveTo))
-
-            if (loanBook.state.data.owningAccount != null) {
-                transactionBuilder.addReferenceState(ReferencedStateAndRef(currentHoldingAccount!!))
-            }
-
-            transactionBuilder.addOutputState(loanBook.state.data.copy(owningAccount = accountInfoToMoveTo.state.data.signingKey))
-
-            //sign with our node key AND the private key which corresponds with this account - it must be in our kms as we are the hosts of the original account
-            val keysToSignWith =
-                listOfNotNull(currentHoldingAccount?.state?.data?.signingKey, serviceHub.myInfo.legalIdentities.first().owningKey)
-
-            val locallySignedTx = serviceHub.signInitialTransaction(
-                transactionBuilder,
-                keysToSignWith
-            )
+            val locallySignedTx = serviceHub.signInitialTransactionWithAccounts(transactionBuilder)
 
             val sessionForAccountToSendTo = initiateFlow(accountInfoToMoveTo.state.data.accountHost)
-            sessionForAccountToSendTo.send(locallySignedTx)
-            val signaturesFromCounterParty = sessionForAccountToSendTo.receive<List<TransactionSignature>>().unwrap { it }
-            val signatures = locallySignedTx.sigs + signaturesFromCounterParty
-            val fullySignedExceptForNotaryTx = SignedTransaction(locallySignedTx.txBits, signatures)
+            val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesWithAccountsFlow(locallySignedTx, listOf(sessionForAccountToSendTo)))
 
             val signedTx = subFlow(
                 FinalityFlow(
                     fullySignedExceptForNotaryTx,
                     listOf(sessionForAccountToSendTo).filter { sessionForAccountToSendTo.counterparty != serviceHub.myInfo.legalIdentities.first() })
             )
+
             val movedState = signedTx.coreTransaction.outRefsOfType(
                 LoanBook::class.java
             ).single()
 
+            // notifying observers
             val toCarbonCopy = accountInfoToMoveTo.state.data.carbonCopyReceivers + (currentHoldingAccount?.state?.data?.carbonCopyReceivers ?: listOf())
-
             toCarbonCopy.forEach {accountToNotify ->
                 subFlow(ShareStateWithAccountFlow(accountToNotify, movedState))
             }
@@ -85,6 +63,7 @@ class MoveLoanBookToNewAccount(val accountId: UUID, val loanBook: StateAndRef<Lo
             return movedState
         }
     }
+
 }
 
 @InitiatedBy(MoveLoanBookToNewAccount::class)
@@ -92,17 +71,13 @@ class AccountSigningResponder(val otherSession: FlowSession) : FlowLogic<Unit>()
 
     @Suspendable
     override fun call() {
-        //this is always going to be the "receiving" side of the transaction
-        val transactionToSign = otherSession.receive(SignedTransaction::class.java).unwrap { it }
-        val loanBook = transactionToSign.coreTransaction.outputsOfType(LoanBook::class.java).single()
-        val signatureForTxAccount = serviceHub.createSignature(transactionToSign, loanBook.owningAccount!!)
-        val signatureForTxNode = serviceHub.createSignature(transactionToSign, serviceHub.myInfo.legalIdentities.first().owningKey)
-        otherSession.send(listOf(signatureForTxAccount, signatureForTxNode))
+        val tx = subFlow(SignTransactionWithAccountsFlow(otherSession))
+
         if (otherSession.counterparty != serviceHub.myInfo.legalIdentities.first()) {
             subFlow(
                 ReceiveFinalityFlow(
                     otherSession,
-                    expectedTxId = transactionToSign.id,
+                    expectedTxId = tx.id,
                     statesToRecord = StatesToRecord.ALL_VISIBLE
                 )
             )
@@ -110,5 +85,3 @@ class AccountSigningResponder(val otherSession: FlowSession) : FlowLogic<Unit>()
     }
 
 }
-
-
