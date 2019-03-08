@@ -8,8 +8,8 @@ buildscript {
         }
         mavenLocal()
     }
-    
-    dependencies{
+
+    dependencies {
         classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
     }
 }
@@ -26,22 +26,12 @@ cordapp {
     info {
         name "Accounts SDK - Flows"
         vendor "Corda Open Source"
-        targetPlatformVersion corda_platform_version.toInteger()
-        minimumPlatformVersion corda_platform_version.toInteger()
+        targetPlatformVersion Math.round(corda_release_version.toFloat())
+        minimumPlatformVersion Math.round(corda_release_version.toFloat())
     }
 }
 
 sourceSets {
-    main {
-        resources {
-            srcDir "../config/dev"
-        }
-    }
-    test {
-        resources {
-            srcDir "../config/test"
-        }
-    }
     integrationTest {
         kotlin {
             compileClasspath += main.output + test.output
@@ -77,13 +67,4 @@ dependencies {
 task integrationTest(type: Test, dependsOn: []) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
-}
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        languageVersion = "1.2"
-        apiVersion = "1.2"
-        jvmTarget = "1.8"
-        javaParameters = true   // Useful for reflection.
-    }
 }

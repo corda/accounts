@@ -2,46 +2,132 @@ buildscript {
     ext {
         corda_release_group = 'net.corda'
         corda_release_version = '4.0'
-        corda_gradle_plugins_version = '4.0.38'
+        corda_gradle_plugins_version = '4.0.42'
+        mavenVersion = '3.1.0'
+        maven_resolver_version = "1.1.1"
         kotlin_version = '1.2.71'
         junit_version = '4.12'
         quasar_version = '0.7.10'
-        corda_platform_version = '4'
+        log4j_version = '2.9.1'
     }
 
     repositories {
-        mavenCentral()
         jcenter()
-        maven {
-            url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda'
-        }
-        mavenLocal()
+        mavenCentral()
+        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
     }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
         classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
+        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
     }
+}
+
+plugins {
+    id "com.jfrog.artifactory" version "4.7.5"
 }
 
 allprojects {
+    version "1.0-SNAPSHOT"
+    group "com.r3.accounts-sdk"
+
+    configurations.all {
+        resolutionStrategy {
+            // Force dependencies to use the same version of Kotlin
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jre8:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version"
+            force "org.jetbrains.kotlin:kotlin-reflect:$kotlin_version"
+        }
+    }
+}
+
+subprojects {
+    buildscript {
+        repositories {
+            jcenter()
+            mavenCentral()
+        }
+    }
+
     repositories {
         jcenter()
         mavenCentral()
-        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
-        // can be removed post-release - used to get nightly snapshot build
-        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-dev' }
         maven { url 'https://jitpack.io' }
-        mavenLocal()
+        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
+        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
+    }
+
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions {
+            languageVersion = "1.2"
+            apiVersion = "1.2"
+            jvmTarget = "1.8"
+            javaParameters = true   // Useful for reflection.
+        }
+    }
+}
+
+def publishProjects = subprojects
+
+configure(publishProjects) { subproject ->
+    apply plugin: 'kotlin'
+    apply plugin: 'maven-publish'
+    apply plugin: 'com.jfrog.artifactory'
+
+    task sourceJar(type: Jar, dependsOn: subproject.classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: subproject.javadoc) {
+        classifier = 'javadoc'
+        from javadoc.destinationDir
+    }
+
+    task install(dependsOn: 'publishToMavenLocal')
+
+    publishing {
+        publications {
+            create(subproject.name, MavenPublication) {
+                from components.java
+
+                groupId subproject.group
+                artifactId subproject.name
+                artifact tasks.sourceJar
+                artifact tasks.javadocJar
+
+                pom {
+                    description = subproject.description
+                }
+            }
+        }
     }
 }
 
 
-def deployNodesTask = tasks.getByPath(':gold-trading:deployNodes')
+artifactory {
+    publish {
+        contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
+        repository {
+            repoKey = 'corda-dev'
+            username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+            password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+        }
 
-task runNodes(type: Exec, dependsOn: [deployNodesTask]) {
-    workingDir = new File(project(":gold-trading").buildDir, "nodes")
-    commandLine "bash", "runnodes"
+        defaults {
+            if (publishProjects.contains(project)) {
+                publications(project.name)
+            }
+        }
+    }
+}
+
+wrapper {
+    gradleVersion = "4.10.2"
+    distributionType = Wrapper.DistributionType.ALL
 }

@@ -33,7 +33,7 @@ interface AccountService : SerializeAsToken {
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     // Creates a new account and returns the AccountInfo StateAndRef.
-    fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>>
+    fun createAccount(accountName: String): StateAndRef<AccountInfo>
 
     // Overload for creating an account with a specific account ID.
     fun createAccount(accountName: String, accountId: UUID):
@@ -108,16 +108,12 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return services.vaultService.queryBy(AccountInfo::class.java).states
     }
 
-    override fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>> {
-        return services.startFlow(OpenNewAccountFlow(accountName)).returnValue.toCompletableFuture()
+    override fun createAccount(accountName: String): StateAndRef<AccountInfo> {
+        return services.startFlow(OpenNewAccountFlow(accountName)).returnValue.getOrThrow()
     }
 
     override fun createAccount(accountName: String, accountId: UUID): StateAndRef<AccountInfo> {
         return services.startFlow(OpenNewAccountFlow(accountName, accountId)).returnValue.getOrThrow()
-    }
-
-    fun createAccount(accountName: String, carbonCopyReceivers: List<AccountInfo>): CompletableFuture<StateAndRef<AccountInfo>> {
-        return services.startFlow(OpenNewAccountFlow(accountName, carbonCopyReceivers)).returnValue.toCompletableFuture()
     }
 
     override fun freshKeyForAccount(accountId: UUID): AnonymousParty {
