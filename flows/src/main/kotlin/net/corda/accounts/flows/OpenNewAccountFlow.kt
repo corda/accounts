@@ -38,4 +38,7 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
         return resultOfIssuance
     }
 
+
 }
+
+
