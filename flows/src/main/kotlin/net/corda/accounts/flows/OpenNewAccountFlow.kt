@@ -21,9 +21,8 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
     override fun call(): StateAndRef<AccountInfo> {
         val transactionBuilder = TransactionBuilder()
         transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
-        val newAccountKeyAndCert = serviceHub.keyManagementService.freshKeyAndCert(serviceHub.myInfo.legalIdentitiesAndCerts.first(), false)
-        val newAccount =
-            AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId, signingKey = newAccountKeyAndCert.owningKey)
+        val newKey = serviceHub.keyManagementService.freshKey()
+        val newAccount = AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId, signingKey = newKey)
         transactionBuilder.addOutputState(newAccount)
         transactionBuilder.addCommand(AccountInfoContract.OPEN, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
@@ -32,9 +31,8 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
             .single()
 
         serviceHub.withEntityManager {
-            persist(PublicKeyHashToExternalId(accountId, resultOfIssuance.state.data.signingKey))
+            persist(PublicKeyHashToExternalId(accountId, newKey))
         }
-        serviceHub.identityService.verifyAndRegisterIdentity(newAccountKeyAndCert)
         return resultOfIssuance
     }
 
