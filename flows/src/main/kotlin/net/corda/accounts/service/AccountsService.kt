@@ -1,14 +1,19 @@
 package net.corda.accounts.service
 
+import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.flows.AllowedToSeeStateMapping
 import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ShareAccountInfoWithNodes
 import net.corda.accounts.flows.ShareStateWithAccountFlow
 import net.corda.accounts.states.AccountInfo
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import net.corda.core.internal.concurrent.asCordaFuture
+import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
@@ -32,11 +37,11 @@ interface AccountService : SerializeAsToken {
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     // Creates a new account and returns the AccountInfo StateAndRef.
-    fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>>
+    fun createAccount(accountName: String): CordaFuture<StateAndRef<AccountInfo>>
 
     // Overload for creating an account with a specific account ID.
     fun createAccount(accountName: String, accountId: UUID):
-            CompletableFuture<StateAndRef<AccountInfo>>
+            CordaFuture<StateAndRef<AccountInfo>>
 
     // Creates a new KeyPair, links it to the account and returns the publickey.
     fun freshKeyForAccount(accountId: UUID): AnonymousParty
@@ -89,64 +94,75 @@ interface AccountService : SerializeAsToken {
 
     // Sends AccountInfo specified by the account ID, to the specified Party. The
     // receiving Party will be able to access the AccountInfo from their AccountService.
-    fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean>
+    fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
-    fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CompletableFuture<StateAndRef<T>>
+    fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 }
 
 @CordaService
-class KeyManagementBackedAccountService(private val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
+class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
 
 
+    @Suspendable
     override fun myAccounts(): List<StateAndRef<AccountInfo>> {
         return services.vaultService.queryBy(AccountInfo::class.java)
             .states.filter { it.state.data.accountHost == services.myInfo.legalIdentities.first() }
     }
 
+    @Suspendable
     override fun allAccounts(): List<StateAndRef<AccountInfo>> {
         return services.vaultService.queryBy(AccountInfo::class.java).states
     }
 
-    override fun createAccount(accountName: String): CompletableFuture<StateAndRef<AccountInfo>> {
-        return services.startFlow(OpenNewAccountFlow(accountName)).returnValue.toCompletableFuture()
+    @Suspendable
+    override fun createAccount(accountName: String): CordaFuture<StateAndRef<AccountInfo>> {
+        return flowAwareStartFlow(OpenNewAccountFlow(accountName))
     }
 
-    override fun createAccount(accountName: String, accountId: UUID): CompletableFuture<StateAndRef<AccountInfo>> {
-        return services.startFlow(OpenNewAccountFlow(accountName, accountId)).returnValue.toCompletableFuture()
+    @Suspendable
+    override fun createAccount(accountName: String, accountId: UUID): CordaFuture<StateAndRef<AccountInfo>> {
+        return flowAwareStartFlow(OpenNewAccountFlow(accountName, accountId))
     }
 
+    @Suspendable
     override fun freshKeyForAccount(accountId: UUID): AnonymousParty {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    @Suspendable
     override fun accountKeys(accountId: UUID): List<PublicKey> {
         return services.vaultService.queryBy(AccountInfo::class.java).states
             .filter { it.state.data.accountId == accountId }
             .map { it.state.data.signingKey }
     }
 
+    @Suspendable
     override fun accountInfo(accountId: UUID): StateAndRef<AccountInfo>? {
         return services.vaultService.queryBy(AccountInfo::class.java).states
             .filter { it.state.data.accountId == accountId }
             .map { it }.singleOrNull()
     }
 
+    @Suspendable
     override fun accountInfo(accountName: String): StateAndRef<AccountInfo>? {
         return services.vaultService.queryBy(AccountInfo::class.java).states
             .filter { it.state.data.accountName == accountName }
             .map { it }.singleOrNull()
     }
 
+    @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
         return services.vaultService.queryBy(AccountInfo::class.java).states
             .filter { it.state.data.signingKey == owningKey }
             .map { it }.singleOrNull()
     }
 
+    @Suspendable
     override fun hostForAccount(accountId: UUID): Party? {
         return accountInfo(accountId)?.state?.data?.accountHost
     }
 
+    @Suspendable
     override fun ownedByAccountVaultQuery(accountIds: List<UUID>, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         val externalIDQuery = builder {
             VaultSchemaV1.StateToExternalId::externalId.`in`(accountIds)
@@ -155,10 +171,12 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return services.vaultService.queryBy<ContractState>(joinedQuery).states
     }
 
+    @Suspendable
     override fun ownedByAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         return ownedByAccountVaultQuery(listOf(accountId), queryCriteria)
     }
 
+    @Suspendable
     override fun broadcastedToAccountVaultQuery(accountIds: List<UUID>, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         val externalIdQuery = builder {
             AllowedToSeeStateMapping::externalId.`in`(accountIds)
@@ -167,29 +185,52 @@ class KeyManagementBackedAccountService(private val services: AppServiceHub) : A
         return services.vaultService.queryBy<ContractState>(joinedQuery).states
     }
 
+    @Suspendable
     override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
         return broadcastedToAccountVaultQuery(listOf(accountId), queryCriteria)
     }
 
-    override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CompletableFuture<Boolean> {
-        accountInfo(accountId)?.let {
-            return services.startFlow(ShareAccountInfoWithNodes(it, listOf(party))).returnValue.toCompletableFuture()
+    @Suspendable
+    override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit> {
+        val foundAccount = accountInfo(accountId)
+        return if (foundAccount != null){
+            flowAwareStartFlow(ShareAccountInfoWithNodes(foundAccount, listOf(party)))
+        }else{
+            CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
         }
-        return CompletableFuture.completedFuture(false)
     }
 
-    override fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CompletableFuture<StateAndRef<T>> {
-        return accountInfo(accountId)?.state?.data?.let {
-            services.startFlow(ShareStateWithAccountFlow(accountInfo = it, state = state)).returnValue.toCompletableFuture().thenApply { state }
-        } ?: CompletableFuture<StateAndRef<T>>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }
+    @Suspendable
+    override fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit> {
+        val foundAccount = accountInfo(accountId)
+        return if (foundAccount != null) {
+            flowAwareStartFlow(ShareStateWithAccountFlow(accountInfo = foundAccount.state.data, state = state))
+        } else {
+            CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
+        }
+
     }
 
+    @Suspendable
     override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
+    @Suspendable
     override fun deactivateAccount(accountId: UUID) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+
+    @Suspendable
+    inline fun <reified T : Any> flowAwareStartFlow(flowLogic: FlowLogic<T>): CordaFuture<T> {
+        val currentFlow = FlowLogic.currentTopLevel
+        return if (currentFlow != null) {
+            val result = currentFlow.subFlow(flowLogic)
+            doneFuture(result)
+        } else {
+            this.services.startFlow(flowLogic).returnValue
+        }
     }
 
 }

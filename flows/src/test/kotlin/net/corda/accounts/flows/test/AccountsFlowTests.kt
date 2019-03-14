@@ -94,7 +94,7 @@ class AccountsFlowTests {
         //share accountA3 with ONLY accountB3 rather than the entire B node
         val resultOfPermissionedShareA3B3 = accountServiceOnA.broadcastStateToAccount(futureB3.getOrThrow().state.data.accountId, futureA3.getOrThrow())
         network.runNetwork()
-        CompletableFuture.allOf(resultOfPermissionedShareA1B1, resultOfPermissionedShareA2B2, resultOfPermissionedShareA3B3).getOrThrow()
+        CompletableFuture.allOf(resultOfPermissionedShareA1B1.toCompletableFuture(), resultOfPermissionedShareA2B2.toCompletableFuture(), resultOfPermissionedShareA3B3.toCompletableFuture()).getOrThrow()
 
 
         val permissionedStatesForAccountB1 = b.transaction {

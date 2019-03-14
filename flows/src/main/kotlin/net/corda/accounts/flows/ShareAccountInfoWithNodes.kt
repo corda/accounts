@@ -13,12 +13,11 @@ import net.corda.node.services.keys.PublicKeyHashToExternalId
 @StartableByRPC
 @StartableByService
 @InitiatingFlow
-class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val others: List<Party>) : FlowLogic<Boolean>() {
+class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val others: List<Party>) : FlowLogic<Unit>() {
 
     @Suspendable
-    override fun call(): Boolean {
+    override fun call() {
         val txToSend = serviceHub.validatedTransactions.getTransaction(account.ref.txhash)
-
         txToSend?.let {
             for (other in others) {
                 val session = initiateFlow(other)
@@ -26,9 +25,7 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
                 val certificate = serviceHub.identityService.certificateFromKey(account.state.data.signingKey)
                 session.send(certificate!!)
             }
-            return true
         }
-        return false
     }
 
 }
