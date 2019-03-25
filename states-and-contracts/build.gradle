@@ -10,8 +10,8 @@ cordapp {
     info {
         name "Accounts SDK - States and Contracts"
         vendor "Corda Open Source"
-        targetPlatformVersion Math.round(corda_release_version.toFloat())
-        minimumPlatformVersion Math.round(corda_release_version.toFloat())
+        targetPlatformVersion 4
+        minimumPlatformVersion 4
     }
 }
 

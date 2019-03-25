@@ -36,13 +36,13 @@ class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>(){
     override fun call() {
         val receivedAccount =
             subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
-        val partyAndCertificate = otherSession.receive(PartyAndCertificate::class.java).unwrap { it }
-        receivedAccount?.let { account ->
-            serviceHub.withEntityManager {
-                persist(PublicKeyHashToExternalId(account.accountId, account.signingKey))
-            }
-            serviceHub.identityService.verifyAndRegisterIdentity(partyAndCertificate)
-        }
+//        val partyAndCertificate = otherSession.receive(PartyAndCertificate::class.java).unwrap { it }
+//        receivedAccount?.let { account ->
+//            serviceHub.withEntityManager {
+//                persist(PublicKeyHashToExternalId(account.accountId, account.signingKey))
+//            }
+////            serviceHub.identityService.verifyAndRegisterIdentity(partyAndCertificate)
+//        }
     }
 
 }
