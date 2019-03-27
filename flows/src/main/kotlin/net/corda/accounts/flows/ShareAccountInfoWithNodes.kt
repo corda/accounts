@@ -8,6 +8,7 @@ import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
+import net.corda.node.services.api.IdentityServiceInternal
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 
 @StartableByRPC
@@ -23,7 +24,6 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
                 val session = initiateFlow(other)
                 subFlow(SendTransactionFlow(session, txToSend))
                 val certificate = serviceHub.identityService.certificateFromKey(account.state.data.signingKey)
-                session.send(certificate!!)
             }
         }
     }
@@ -31,18 +31,14 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
 }
 
 @InitiatedBy(ShareAccountInfoWithNodes::class)
-class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>(){
+class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val receivedAccount =
-            subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
-//        val partyAndCertificate = otherSession.receive(PartyAndCertificate::class.java).unwrap { it }
-//        receivedAccount?.let { account ->
-//            serviceHub.withEntityManager {
-//                persist(PublicKeyHashToExternalId(account.accountId, account.signingKey))
-//            }
-////            serviceHub.identityService.verifyAndRegisterIdentity(partyAndCertificate)
-//        }
+                subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
+        receivedAccount?.let {
+            (serviceHub.identityService as IdentityServiceInternal).registerIdentityMapping(receivedAccount.accountHost, receivedAccount.signingKey)
+        }
     }
 
 }
