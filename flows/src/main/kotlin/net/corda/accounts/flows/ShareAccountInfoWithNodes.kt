@@ -23,7 +23,6 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
             for (other in others) {
                 val session = initiateFlow(other)
                 subFlow(SendTransactionFlow(session, txToSend))
-                val certificate = serviceHub.identityService.certificateFromKey(account.state.data.signingKey)
             }
         }
     }
@@ -36,9 +35,6 @@ class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>() {
     override fun call() {
         val receivedAccount =
                 subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
-        receivedAccount?.let {
-            (serviceHub.identityService as IdentityServiceInternal).registerIdentityMapping(receivedAccount.accountHost, receivedAccount.signingKey)
-        }
     }
 
 }

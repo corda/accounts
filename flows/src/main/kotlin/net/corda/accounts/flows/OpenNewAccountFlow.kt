@@ -9,8 +9,6 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.transactions.TransactionBuilder
-import net.corda.node.services.api.IdentityServiceInternal
-import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 @StartableByService
@@ -22,22 +20,14 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
     override fun call(): StateAndRef<AccountInfo> {
         val transactionBuilder = TransactionBuilder()
         transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
-        val freshKey = serviceHub.keyManagementService.freshKey()
-
         val newAccount =
-            AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId, signingKey = freshKey)
+            AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId)
         transactionBuilder.addOutputState(newAccount)
         transactionBuilder.addCommand(AccountInfoContract.OPEN, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
 
-        val resultOfIssuance = subFlow(FinalityFlow(signedTx, emptyList())).coreTransaction.outRefsOfType<AccountInfo>()
+        return subFlow(FinalityFlow(signedTx, emptyList())).coreTransaction.outRefsOfType<AccountInfo>()
             .single()
-
-        serviceHub.withEntityManager {
-            persist(PublicKeyHashToExternalId(accountId, resultOfIssuance.state.data.signingKey))
-        }
-        (serviceHub.identityService as IdentityServiceInternal).registerIdentityMapping(ourIdentity, freshKey)
-        return resultOfIssuance
     }
 
 }
