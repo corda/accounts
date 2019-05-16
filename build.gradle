@@ -31,7 +31,7 @@ plugins {
 }
 
 allprojects {
-    version "NEW_IDENTITY_SERVICE"
+    version "1.0-NEW-CI"
     group "com.r3.accounts-sdk"
 
     configurations.all {
