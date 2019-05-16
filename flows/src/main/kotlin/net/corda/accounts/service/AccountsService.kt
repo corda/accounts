@@ -131,9 +131,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(accountId: UUID): List<PublicKey> {
-        return services.vaultService.queryBy(AccountInfo::class.java).states
-            .filter { it.state.data.accountId == accountId }
-            .map { it.state.data.signingKey }
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     @Suspendable
@@ -152,9 +150,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
-        return services.vaultService.queryBy(AccountInfo::class.java).states
-            .filter { it.state.data.signingKey == owningKey }
-            .map { it }.singleOrNull()
+        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     @Suspendable

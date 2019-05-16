@@ -27,9 +27,8 @@ data class AccountInfo(
     val accountId: UUID,
     override val linearId: UniqueIdentifier = UniqueIdentifier(accountName),
     @Column(name = "status")
-    val status: AccountStatus = AccountStatus.ACTIVE,
-    @Column(name = "signingKey")
-    val signingKey: PublicKey
+    val status: AccountStatus = AccountStatus.ACTIVE
+
 ) : LinearState {
     override val participants: List<AbstractParty> get() = listOf(accountHost)
 }

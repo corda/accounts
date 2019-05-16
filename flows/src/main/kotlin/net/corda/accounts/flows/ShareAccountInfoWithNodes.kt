@@ -5,11 +5,7 @@ import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
-import net.corda.core.utilities.unwrap
-import net.corda.node.services.api.IdentityServiceInternal
-import net.corda.node.services.keys.PublicKeyHashToExternalId
 
 @StartableByRPC
 @StartableByService
@@ -23,7 +19,6 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
             for (other in others) {
                 val session = initiateFlow(other)
                 subFlow(SendTransactionFlow(session, txToSend))
-                val certificate = serviceHub.identityService.certificateFromKey(account.state.data.signingKey)
             }
         }
     }
@@ -34,11 +29,7 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
 class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val receivedAccount =
-                subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
-        receivedAccount?.let {
-            (serviceHub.identityService as IdentityServiceInternal).registerIdentityMapping(receivedAccount.accountHost, receivedAccount.signingKey)
-        }
+        subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
     }
 
 }

@@ -1,7 +1,7 @@
 buildscript {
     ext {
         corda_release_group = 'net.corda'
-        corda_release_version = '5.0-SNAPSHOT-NEW_IDENTITY_SERVICE'
+        corda_release_version = '5.0-NEW-CI'
         corda_gradle_plugins_version = '4.0.42'
         mavenVersion = '3.1.0'
         maven_resolver_version = "1.1.1"
