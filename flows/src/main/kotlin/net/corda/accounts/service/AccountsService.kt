@@ -93,6 +93,7 @@ interface AccountService : SerializeAsToken {
     // receiving Party will be able to access the AccountInfo from their AccountService.
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
+    // Sends the StateAndRef of a given entity, e.g. AccountInfo with a particular account specified by the accountId
     fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 }
 

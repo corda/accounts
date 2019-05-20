@@ -1,6 +1,6 @@
-package net.corda.accounts.states
+package net.corda.accounts.cordapp.sweepstake.states
 
-import net.corda.accounts.contracts.IdentityStateContract
+import net.corda.accounts.cordapp.sweepstake.contracts.IdentityStateContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
 import net.corda.core.identity.Party
