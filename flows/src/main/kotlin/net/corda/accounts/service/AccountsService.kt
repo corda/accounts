@@ -44,7 +44,7 @@ interface AccountService : SerializeAsToken {
             CordaFuture<StateAndRef<AccountInfo>>
 
     // Creates a new KeyPair, links it to the account and returns the publickey.
-    fun freshKeyForAccount(accountId: UUID): AnonymousParty
+//    fun freshKeyForAccount(accountId: UUID): AnonymousParty
 
     // Returns all the keys used by the account specified by the account ID.
     fun accountKeys(accountId: UUID): List<PublicKey>
@@ -87,10 +87,10 @@ interface AccountService : SerializeAsToken {
     // Updates the account info with new account details. This may involve creating a
     // new account on another node with the new details. Once the new account has
     // been created, all the states can be moved to the new account.
-    fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo)
+//    fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo)
 
     // De-activates the account.
-    fun deactivateAccount(accountId: UUID)
+//    fun deactivateAccount(accountId: UUID)
 
     // Sends AccountInfo specified by the account ID, to the specified Party. The
     // receiving Party will be able to access the AccountInfo from their AccountService.
@@ -124,10 +124,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         return flowAwareStartFlow(OpenNewAccountFlow(accountName, accountId))
     }
 
-    @Suspendable
-    override fun freshKeyForAccount(accountId: UUID): AnonymousParty {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
 
     @Suspendable
     override fun accountKeys(accountId: UUID): List<PublicKey> {
@@ -205,16 +201,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
         }
 
-    }
-
-    @Suspendable
-    override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    @Suspendable
-    override fun deactivateAccount(accountId: UUID) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
 

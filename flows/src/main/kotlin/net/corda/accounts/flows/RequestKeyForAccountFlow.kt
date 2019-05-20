@@ -61,7 +61,7 @@ enum class AccountSearchStatus {
 class SetAccountKeyPolicyFlow(val accountId: UUID) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        TODO("not available in V4 Corda") //To change body of created functions use File | Settings | File Templates.
+        TODO()
     }
 
 }
@@ -71,7 +71,7 @@ class SetAccountKeyPolicyFlow(val accountId: UUID) : FlowLogic<Unit>() {
 class GetAccountKeyPolicyFlow(val accountId: UUID) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        TODO("not available in V4 Corda") //To change body of created functions use File | Settings | File Templates.
+        TODO()
     }
 }
 

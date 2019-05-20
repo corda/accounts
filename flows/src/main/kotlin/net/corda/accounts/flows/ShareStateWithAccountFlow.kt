@@ -67,7 +67,6 @@ enum class ResultOfPermissioning {
 @Entity
 @Table(name = "account_to_state_refs", indexes = [Index(name = "external_id_idx", columnList = "external_id")])
 data class AllowedToSeeStateMapping(
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     var id: Long?,
@@ -79,17 +78,4 @@ data class AllowedToSeeStateMapping(
     override var stateRef: PersistentStateRef?
 ) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
     constructor() : this(null, null, null)
-}
-
-@Converter
-class StateRefToTextConverter : AttributeConverter<StateRef, String> {
-    val SEPERATOR: String = "|"
-
-    override fun convertToDatabaseColumn(stateRef: StateRef?): String? = stateRef?.txhash.toString().plus(SEPERATOR).plus(stateRef?.index.toString())
-
-    override fun convertToEntityAttribute(text: String?): StateRef? {
-        val parts = text?.split(SEPERATOR)
-        return parts?.let { StateRef(SecureHash.parse(it[0]), it[1].toInt()) }
-
-    }
 }

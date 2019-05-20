@@ -20,12 +20,16 @@ import javax.persistence.Table
 data class AccountInfo(
     @Column(name = "name", unique = false, nullable = false)
     val accountName: String,
+
     @Column(name = "host", unique = false, nullable = false)
     val accountHost: Party,
+
     @Id
     @Column(name = "id", unique = true, nullable = false)
     val accountId: UUID,
+
     override val linearId: UniqueIdentifier = UniqueIdentifier(accountName),
+
     @Column(name = "status")
     val status: AccountStatus = AccountStatus.ACTIVE
 
