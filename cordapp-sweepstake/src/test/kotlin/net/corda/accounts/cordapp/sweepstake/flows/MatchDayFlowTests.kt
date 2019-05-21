@@ -6,13 +6,13 @@ import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.crypto.random63BitValue
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.InitiatedBy
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
+import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
@@ -21,10 +21,12 @@ import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.startFlow
+import org.hamcrest.CoreMatchers
+import org.hamcrest.CoreMatchers.`is`
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.util.concurrent.CompletableFuture
 
 class MatchDayFlowTests {
 
@@ -49,7 +51,8 @@ class MatchDayFlowTests {
                         "net.corda.accounts.flows"),
                 cordappsForAllNodes = FINANCE_CORDAPPS,
                 networkSendManuallyPumped = false,
-                threadPerNode = true)
+                threadPerNode = true,
+                initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4))
 
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
@@ -62,7 +65,6 @@ class MatchDayFlowTests {
         mockNet.startNodes()
 
         aliceNode.registerInitiatedFlow(MatchDayWrapperHandler::class.java)
-
     }
 
     @After
@@ -74,30 +76,27 @@ class MatchDayFlowTests {
     fun `match day outcome`(){
         val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val testAccountA = aliceAccountService.createAccount("TEST_ACCOUNT_A").getOrThrow()
-        val teamA = aliceNode.services.startFlow(IssueTeamWrapper(testAccountA, WorldCupTeam(JAPAN))).resultFuture.getOrThrow()
-
-        //Share alice's account with charlie
-        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.accountId, charlieNode.info.legalIdentities.first()).getOrThrow()
+        val teamA = aliceNode.services.startFlow(IssueTeamWrapper(testAccountA, WorldCupTeam(JAPAN, true))).resultFuture.getOrThrow()
 
         val bobAccountService = bobNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val testAccountB = bobAccountService.createAccount("TEST_ACCOUNT_B").getOrThrow()
-        val teamB = aliceNode.services.startFlow(IssueTeamWrapper(testAccountB, WorldCupTeam(BELGIUM))).resultFuture.getOrThrow()
+        val teamB = bobNode.services.startFlow(IssueTeamWrapper(testAccountB, WorldCupTeam(BELGIUM, true))).resultFuture.getOrThrow()
 
+        //Share alice's account with charlie
+        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.accountId, charlieNode.info.legalIdentities.first()).getOrThrow()
         //Share bob's accounts with charlie
         bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.accountId, charlieNode.info.legalIdentities.first()).getOrThrow()
+        val charlieAccountService = charlieNode.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         val matchResult = charlieNode.services.startFlow(MatchDayWrapper(bob, teamA, teamB)).resultFuture.getOrThrow()
 
-    }
+        val result = charlieNode.database.transaction {
+            charlieNode.services.vaultService.queryBy(TeamState::class.java).states
+        }
 
-    @Test
-    fun `what`() {
-        println(random63BitValue().toChar())
-        println(random63BitValue())
-        println(random63BitValue())
-        println(random63BitValue())
-        println(random63BitValue())
-        println(random63BitValue())
+        println(result.size)
+//        Assert.assertThat(result.size, `is`(equalTo(1)))
+
     }
 }
 
@@ -117,5 +116,4 @@ private class MatchDayWrapperHandler(private val otherSession: FlowSession): Flo
     override fun call() {
         subFlow(MatchDayHandler(otherSession))
     }
-
 }

@@ -14,7 +14,7 @@ data class TeamState(val team: WorldCupTeam,
                      val owningAccountId: UUID,
                      val assignedToPlayer: Boolean? = false,
                      val owningKey: PublicKey? = null,
-                     override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
+                     override val linearId: UniqueIdentifier = UniqueIdentifier()): LinearState {
     override val participants: List<AbstractParty>
         get() = listOfNotNull(owningKey).map { AnonymousParty(it) }
 }

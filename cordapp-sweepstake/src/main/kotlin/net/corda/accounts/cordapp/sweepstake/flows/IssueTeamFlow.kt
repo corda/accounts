@@ -9,6 +9,7 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
+import net.corda.accounts.flows.RequestKeyForAccountFlow
 
 class IssueTeamFlow(
         private val accountInfo: StateAndRef<AccountInfo>,
@@ -16,14 +17,15 @@ class IssueTeamFlow(
 
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
+        val keyToUse = accountInfo.state.data.let {
+            subFlow(RequestKeyForAccountFlow(accountInfo = it))
+        }.owningKey
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(TournamentContract.ISSUE, serviceHub.myInfo.legalIdentities.first().owningKey)
-        txBuilder.addOutputState(TeamState(team, accountInfo.state.data.accountId, true))
+        txBuilder.addOutputState(TeamState(team, accountInfo.state.data.accountId, true, keyToUse))
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, listOf()))
         return finalizedTx.coreTransaction.outRefsOfType(TeamState::class.java).single()
     }
 }
 
-@CordaSerializable
-data class WorldCupTeam(val teamName: String)
