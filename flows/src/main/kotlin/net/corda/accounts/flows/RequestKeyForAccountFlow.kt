@@ -13,7 +13,6 @@ import java.util.*
 
 @InitiatingFlow
 class RequestKeyForAccountFlow(private val accountInfo: AccountInfo) : FlowLogic<AnonymousParty>() {
-
     @Suspendable
     override fun call(): AnonymousParty {
         val session = initiateFlow(accountInfo.accountHost)
