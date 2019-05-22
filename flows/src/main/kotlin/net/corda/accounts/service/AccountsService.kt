@@ -29,6 +29,7 @@ import net.corda.node.services.vault.VaultSchemaV1
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
+import java.util.function.Consumer
 
 @CordaService
 interface AccountService : SerializeAsToken {
@@ -147,12 +148,13 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
-        val uuid = services.withEntityManager {
-            val query = createQuery("select ${PublicKeyHashToExternalId::externalId.name} from ${PublicKeyHashToExternalId::class.java.name} where ${PublicKeyHashToExternalId::publicKeyHash.name} = :hash", UUID::class.java)
+        var uuid: UUID? = null
+        services.withEntityManager(Consumer { em ->
+            val query = em.createQuery("select ${PublicKeyHashToExternalId::externalId.name} from ${PublicKeyHashToExternalId::class.java.name} where ${PublicKeyHashToExternalId::publicKeyHash.name} = :hash", UUID::class.java)
             query.setParameter("hash", owningKey.toStringShort())
-            query.singleResult
-        }
-        return accountInfo(uuid)
+            uuid = query.resultList.firstOrNull()
+        })
+        return uuid?.let { accountInfo(it) }
     }
 
     @Suspendable

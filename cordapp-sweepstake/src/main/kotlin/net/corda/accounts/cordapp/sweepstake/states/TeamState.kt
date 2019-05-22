@@ -11,7 +11,6 @@ import java.util.*
 
 @BelongsToContract(TournamentContract::class)
 data class TeamState(val team: WorldCupTeam,
-                     val owningAccountId: UUID,
                      val assignedToPlayer: Boolean? = false,
                      val owningKey: PublicKey? = null,
                      override val linearId: UniqueIdentifier = UniqueIdentifier()): LinearState {

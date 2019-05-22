@@ -86,7 +86,10 @@ class IssueTeamTests {
 
         Assert.assertThat(future.state.data, `is`(notNullValue(TeamState::class.java)))
         Assert.assertThat(future.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
-        Assert.assertThat(future.state.data.owningAccountId, `is`(IsEqual.equalTo(testAccount.state.data.accountId)))
+
+        aliceNode.database.transaction {
+            Assert.assertThat(testAccount, `is`(IsEqual.equalTo(aliceAccountService.accountInfo(future.state.data.owningKey!!))))
+        }
     }
 }
 

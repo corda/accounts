@@ -13,7 +13,7 @@ import net.corda.accounts.flows.RequestKeyForAccountFlow
 
 class IssueTeamFlow(
         private val accountInfo: StateAndRef<AccountInfo>,
-        private val team: WorldCupTeam) : FlowLogic<StateAndRef<TeamState>>(){
+        private val team: WorldCupTeam) : FlowLogic<StateAndRef<TeamState>>() {
 
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
@@ -22,7 +22,7 @@ class IssueTeamFlow(
         }.owningKey
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(TournamentContract.ISSUE, serviceHub.myInfo.legalIdentities.first().owningKey)
-        txBuilder.addOutputState(TeamState(team, accountInfo.state.data.accountId, true, keyToUse))
+        txBuilder.addOutputState(TeamState(team, true, keyToUse))
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, listOf()))
         return finalizedTx.coreTransaction.outRefsOfType(TeamState::class.java).single()

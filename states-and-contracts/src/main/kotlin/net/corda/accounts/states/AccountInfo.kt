@@ -15,6 +15,7 @@ import javax.persistence.Table
 
 @BelongsToContract(AccountInfoContract::class)
 @Table(name = "ACCOUNTS")
+@CordaSerializable
 data class AccountInfo(
         @Column(name = "name", unique = false, nullable = false)
         val accountName: String,
