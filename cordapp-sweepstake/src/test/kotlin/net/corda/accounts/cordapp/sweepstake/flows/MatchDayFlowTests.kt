@@ -3,6 +3,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.BELGIUM
 import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.JAPAN
+import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -42,13 +43,7 @@ class MatchDayFlowTests {
     @Before
     fun before() {
         mockNet = InternalMockNetwork(
-                cordappPackages = listOf(
-                        "net.corda.accounts.cordapp.sweepstake.states",
-                        "net.corda.accounts.cordapp.sweepstake.contracts",
-                        "net.corda.accounts.cordapp.sweepstake.flows",
-                        "net.corda.accounts.service",
-                        "net.corda.accounts.contracts",
-                        "net.corda.accounts.flows"),
+                cordappPackages = REQUIRED_CORDAPP_PACKAGES,
                 cordappsForAllNodes = FINANCE_CORDAPPS,
                 networkSendManuallyPumped = false,
                 threadPerNode = true,

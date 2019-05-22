@@ -10,8 +10,11 @@ import net.corda.core.serialization.CordaSerializable
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.flows.RequestKeyForAccountFlow
+import net.corda.core.flows.FlowSession
+import net.corda.core.flows.ReceiveFinalityFlow
 
 class IssueTeamFlow(
+        private val sessions: Collection<FlowSession>,
         private val accountInfo: StateAndRef<AccountInfo>,
         private val team: WorldCupTeam) : FlowLogic<StateAndRef<TeamState>>(){
 
@@ -24,8 +27,15 @@ class IssueTeamFlow(
         txBuilder.addCommand(TournamentContract.ISSUE, serviceHub.myInfo.legalIdentities.first().owningKey)
         txBuilder.addOutputState(TeamState(team, accountInfo.state.data.accountId, true, keyToUse))
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
-        val finalizedTx = subFlow(FinalityFlow(signedTxLocally, listOf()))
+        val finalizedTx = subFlow(FinalityFlow(signedTxLocally, sessions))
         return finalizedTx.coreTransaction.outRefsOfType(TeamState::class.java).single()
+    }
+}
+
+class IssueTeamHandler(val otherSession: FlowSession) : FlowLogic<Unit>(){
+    @Suspendable
+    override fun call() {
+        subFlow(ReceiveFinalityFlow(otherSession))
     }
 }
 

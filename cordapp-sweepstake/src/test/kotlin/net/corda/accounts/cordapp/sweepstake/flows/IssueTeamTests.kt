@@ -2,12 +2,14 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.JAPAN
+import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.core.ALICE_NAME
@@ -41,13 +43,7 @@ class IssueTeamTests {
     @Before
     fun before() {
         mockNet = InternalMockNetwork(
-                cordappPackages = listOf(
-                        "net.corda.accounts.cordapp.sweepstake.states",
-                        "net.corda.accounts.cordapp.sweepstake.contracts",
-                        "net.corda.accounts.cordapp.sweepstake.flows",
-                        "net.corda.accounts.service",
-                        "net.corda.accounts.contracts",
-                        "net.corda.accounts.flows"),
+                cordappPackages = REQUIRED_CORDAPP_PACKAGES,
                 cordappsForAllNodes = FINANCE_CORDAPPS,
                 networkSendManuallyPumped = false,
                 threadPerNode = true)
@@ -61,6 +57,8 @@ class IssueTeamTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
+
+        bobNode.registerInitiatedFlow(IssueTeamWrapper::class.java)
 
     }
 
@@ -88,15 +86,15 @@ class IssueTeamTests {
         Assert.assertThat(future.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
         Assert.assertThat(future.state.data.owningAccountId, `is`(IsEqual.equalTo(testAccount.state.data.accountId)))
     }
-}
+    @Test
+    fun `issue `() {
+        val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val testAccount = aliceAccountService.createAccount("TEST_ACCOUNT").getOrThrow()
+        aliceAccountService.shareAccountInfoWithParty(testAccount.state.data.accountId, bobNode.info.singleIdentity())
+        val future = bobNode.services.startFlow(IssueTeamWrapper(testAccount, WorldCupTeam(JAPAN, true))).resultFuture.getOrThrow()
 
-@InitiatingFlow
-internal class IssueTeamWrapper(private val accountInfo: StateAndRef<AccountInfo>,
-                               private val team: WorldCupTeam): FlowLogic<StateAndRef<TeamState>>() {
-    @Suspendable
-    override fun call(): StateAndRef<TeamState> {
-        return(subFlow(IssueTeamFlow(accountInfo, team)))
+        Assert.assertThat(future.state.data, `is`(notNullValue(TeamState::class.java)))
+        Assert.assertThat(future.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
+        Assert.assertThat(future.state.data.owningAccountId, `is`(IsEqual.equalTo(testAccount.state.data.accountId)))
     }
 }
-
-
