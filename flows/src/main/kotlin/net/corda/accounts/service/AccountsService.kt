@@ -9,11 +9,13 @@ import net.corda.accounts.states.AccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
+import net.corda.core.internal.hash
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
@@ -22,6 +24,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 import net.corda.node.services.vault.VaultSchemaV1
 import java.security.PublicKey
 import java.util.*
@@ -84,10 +87,10 @@ interface AccountService : SerializeAsToken {
     // Updates the account info with new account details. This may involve creating a
     // new account on another node with the new details. Once the new account has
     // been created, all the states can be moved to the new account.
-    fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo)
+//    fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo)
 
     // De-activates the account.
-    fun deactivateAccount(accountId: UUID)
+//    fun deactivateAccount(accountId: UUID)
 
     // Sends AccountInfo specified by the account ID, to the specified Party. The
     // receiving Party will be able to access the AccountInfo from their AccountService.
@@ -144,7 +147,12 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
-        TODO("not implemented")
+        val uuid = services.withEntityManager {
+            val query = createQuery("select ${PublicKeyHashToExternalId::externalId.name} from ${PublicKeyHashToExternalId::class.java.name} where ${PublicKeyHashToExternalId::publicKeyHash.name} = :hash", UUID::class.java)
+            query.setParameter("hash", owningKey.toStringShort())
+            query.singleResult
+        }
+        return accountInfo(uuid)
     }
 
     @Suspendable
@@ -200,17 +208,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         }
 
     }
-
-    @Suspendable
-    override fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    @Suspendable
-    override fun deactivateAccount(accountId: UUID) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
 
     @Suspendable
     inline fun <reified T : Any> flowAwareStartFlow(flowLogic: FlowLogic<T>): CordaFuture<T> {
