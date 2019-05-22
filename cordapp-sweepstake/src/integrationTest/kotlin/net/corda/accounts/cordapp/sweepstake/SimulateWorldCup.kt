@@ -1,16 +1,25 @@
 package net.corda.accounts.cordapp.sweepstake
 
-import net.corda.accounts.cordapp.sweepstake.flows.generateParticipantsFromFile
-import net.corda.accounts.cordapp.sweepstake.flows.generateTeamsFromFile
+import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.cordapp.sweepstake.flows.*
+import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.REQUIRED_CORDAPP_PACKAGES
+import net.corda.accounts.flows.GetAccountsFlow
+import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.states.AccountInfo
 import net.corda.client.rpc.CordaRPCClient
+import net.corda.core.contracts.StateAndRef
+import net.corda.core.flows.FlowLogic
+import net.corda.core.flows.InitiatingFlow
+import net.corda.core.flows.StartableByRPC
 import net.corda.core.identity.CordaX500Name
+import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
+import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
-import net.corda.testing.core.TestIdentity
 import net.corda.testing.driver.DriverDSL
 import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.NodeHandle
@@ -21,12 +30,10 @@ import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
-
+/**
+ * Integration test to
+ */
 class SimulateWorldCup {
-
-    private val partyA = TestIdentity(ALICE_NAME)
-    private val partyB = TestIdentity(BOB_NAME)
-    private val partyC = TestIdentity(CHARLIE_NAME)
 
     @Test
     fun `world cup simulation of a 32 team knockout stage`() = withDriver {
@@ -54,10 +61,39 @@ class SimulateWorldCup {
         val players = generateParticipantsFromFile("src/test/resources/participants.txt")
         Assertions.assertThat(players).hasSize(32)
 
-        // Create accounts for participants
-        players.forEach {  }
+        val iterablePlayers = players.listIterator()
+        while (iterablePlayers.hasNext()) {
+            val player = iterablePlayers.next()
+            if (!player.hasAccount) {
+                proxyA.startFlow(::CreateAccountForPlayer, player).returnValue.getOrThrow()
+                iterablePlayers.set(player.copy(hasAccount = true))
+            }
+        }
+
+        verifyAllPlayersHaveBeenAssignedAccount(players)
+
+        // Share all of the newly created accounts with node B and node C
+        proxyA.startFlow(::ShareAccountInfo, proxyB.nodeInfo().legalIdentities.first()).returnValue.getOrThrow()
+        proxyA.startFlow(::ShareAccountInfo, proxyC.nodeInfo().legalIdentities.first()).returnValue.getOrThrow()
+
+        val accountsForA = proxyA.startFlow(::GetAccountsFlow, true).returnValue.getOrThrow()
+        val accountsForB = proxyB.startFlow(::GetAccountsFlow, false).returnValue.getOrThrow()
+        val accountsForC = proxyC.startFlow(::GetAccountsFlow, false).returnValue.getOrThrow()
+
+        require(accountsForB.containsAll(accountsForA))
+        require(accountsForC.containsAll(accountsForA))
 
         // Issue team states
+        val mapPlayerToTeam = accountsForB.zip(teams).toMap().toMutableMap()
+        val iterableMap = mapPlayerToTeam.iterator()
+        while (iterableMap.hasNext()) {
+            val entry = iterableMap.next()
+            if (!entry.value.isAssigned) {
+                proxyB.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
+                mapPlayerToTeam.replace(entry.key, entry.value.copy(isAssigned = true))
+            }
+        }
+        verifyAllTeamsHaveBeenAssignedToPlayers(mapPlayerToTeam)
 
         // Assign accounts to groups
 
@@ -67,10 +103,25 @@ class SimulateWorldCup {
 
     }
 
+    private fun verifyAllPlayersHaveBeenAssignedAccount(players: MutableList<Participant>) {
+        players.forEach { p ->
+            require(p.hasAccount) { "Player ${p.playerName} has not been assigned an account." }
+        }
+    }
+
+    private fun verifyAllTeamsHaveBeenAssignedToPlayers(map: MutableMap<StateAndRef<AccountInfo>, WorldCupTeam>) {
+        map.forEach { e ->
+            require(e.value.isAssigned) { "The team ${e.value.teamName} has not been assigned to an account." }
+        }
+    }
+
 
     // Runs a test inside the Driver DSL, which provides useful functions for starting nodes, etc.
     private fun withDriver(test: DriverDSL.() -> Unit) = driver(
-            DriverParameters(isDebug = true, startNodesInProcess = true)
+            DriverParameters(
+                    isDebug = true,
+                    startNodesInProcess = true,
+                    extraCordappPackagesToScan = REQUIRED_CORDAPP_PACKAGES)
     ) { test() }
 
     // Makes an RPC call to retrieve another node's name from the network map.
@@ -79,12 +130,7 @@ class SimulateWorldCup {
     // Resolves a list of futures to a list of the promised values.
     private fun <T> List<Future<T>>.waitForAll(): List<T> = map { it.getOrThrow() }
 
-    // Starts multiple nodes simultaneously, then waits for them all to be ready.
-    private fun DriverDSL.startNodes(vararg identities: TestIdentity) = identities
-            .map { startNode(providedName = it.name, rpcUsers = listOf()) }
-            .waitForAll()
-
-    private fun createClientProxy(node: NodeHandle, user: User) : CordaRPCOps {
+    private fun createClientProxy(node: NodeHandle, user: User): CordaRPCOps {
         val client = CordaRPCClient(node.rpcAddress)
         return client.start(user.username, user.password).proxy
     }
@@ -98,5 +144,28 @@ class SimulateWorldCup {
 
         assertEquals(ALICE_NAME, nodeC.resolveName(ALICE_NAME))
         assertEquals(BOB_NAME, nodeC.resolveName(BOB_NAME))
+    }
+}
+
+@StartableByRPC
+@InitiatingFlow
+internal class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateAndRef<AccountInfo>>() {
+    @Suspendable
+    override fun call(): StateAndRef<AccountInfo> {
+        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        return accountService.createAccount(player.playerName).getOrThrow()
+    }
+}
+
+@StartableByRPC
+@InitiatingFlow
+internal class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        val accounts = accountService.allAccounts()
+        accounts.forEach { account ->
+            accountService.shareAccountInfoWithParty(account.state.data.accountId, otherParty).getOrThrow()
+        }
     }
 }

@@ -1,14 +1,16 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
-import net.corda.core.crypto.random63BitValue
-import org.junit.Test
-import java.util.concurrent.ThreadLocalRandom
-import kotlin.streams.toList
-
 class Utils {
 
 companion object {
     val JAPAN: String = "Japan"
     val BELGIUM: String = "Belgium"
+    val REQUIRED_CORDAPP_PACKAGES = listOf(
+            "net.corda.accounts.cordapp.sweepstake.states",
+            "net.corda.accounts.cordapp.sweepstake.contracts",
+            "net.corda.accounts.cordapp.sweepstake.flows",
+            "net.corda.accounts.service",
+            "net.corda.accounts.contracts",
+            "net.corda.accounts.flows")
     }
 }

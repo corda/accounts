@@ -115,7 +115,7 @@ class MatchDayFlowTests {
         val charlieAccountService = charlieNode.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         val  accountOfWinner = charlieNode.database.transaction {
-             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
+            charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
         Assert.assertThat(accountOfWinner!!.state.data.accountId, `is`(testAccountB.state.data.accountId))
 

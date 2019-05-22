@@ -6,7 +6,6 @@ import net.corda.accounts.states.AccountInfo
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.PartyAndCertificate
-import net.corda.core.internal.hash
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
@@ -26,9 +25,6 @@ class RequestKeyForAccountFlow(private val accountInfo: AccountInfo) : FlowLogic
         }
 
         val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
-        println("---------------")
-        println("new key registered on ${serviceHub.myInfo.legalIdentities.first()}, key: ${newKeyAndCert.owningKey.hash}")
-        println("---------------")
         serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
         serviceHub.withEntityManager {
             serviceHub.withEntityManager {
