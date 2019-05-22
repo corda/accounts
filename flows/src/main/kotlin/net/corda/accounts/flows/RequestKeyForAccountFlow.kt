@@ -25,9 +25,6 @@ class RequestKeyForAccountFlow(private val accountInfo: AccountInfo) : FlowLogic
         }
 
         val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
-        println("---------------")
-        println("new key registered on ${serviceHub.myInfo.legalIdentities.first()}, key: ${newKeyAndCert.owningKey.hash}")
-        println("---------------")
         serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
         return AnonymousParty(newKeyAndCert.owningKey)
     }

@@ -1,11 +1,8 @@
 package net.corda.accounts.cordapp.sweepstake
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.accounts.cordapp.sweepstake.flows.IssueTeamWrapper
-import net.corda.accounts.cordapp.sweepstake.flows.Participant
+import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.REQUIRED_CORDAPP_PACKAGES
-import net.corda.accounts.cordapp.sweepstake.flows.generateParticipantsFromFile
-import net.corda.accounts.cordapp.sweepstake.flows.generateTeamsFromFile
 import net.corda.accounts.flows.GetAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
@@ -34,12 +31,10 @@ import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
-
+/**
+ * Integration test to
+ */
 class SimulateWorldCup {
-
-    private val partyA = TestIdentity(ALICE_NAME)
-    private val partyB = TestIdentity(BOB_NAME)
-    private val partyC = TestIdentity(CHARLIE_NAME)
 
     @Test
     fun `world cup simulation of a 32 team knockout stage`() = withDriver {
@@ -89,21 +84,17 @@ class SimulateWorldCup {
         require(accountsForB.containsAll(accountsForA))
         require(accountsForC.containsAll(accountsForA))
 
-        val playersAndTeams = accountsForB.zip(teams).toMap().toMutableMap()
-
-        val iterableMap = playersAndTeams.iterator()
+        // Issue team states
+        val mapPlayerToTeam = accountsForB.zip(teams).toMap().toMutableMap()
+        val iterableMap = mapPlayerToTeam.iterator()
         while(iterableMap.hasNext()) {
             val entry = iterableMap.next()
             if (!entry.value.isAssigned) {
                 proxyB.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
-                playersAndTeams.remove(entry.key)
-                playersAndTeams.putIfAbsent(entry.key, entry.value.copy(isAssigned = true))
+                mapPlayerToTeam.replace(entry.key, entry.value.copy(isAssigned = true))
             }
         }
-        playersAndTeams.forEach {
-          e -> println(e.value.isAssigned)
-        }
-        // Issue team states
+        verifyAllTeamsHaveBeenAssignedToPlayers(mapPlayerToTeam)
 
         // Assign accounts to groups
 
@@ -116,6 +107,12 @@ class SimulateWorldCup {
     private fun verifyAllPlayersHaveBeenAssignedAccount(players: MutableList<Participant>) {
         players.forEach { p ->
             require(p.hasAccount) { "Player ${p.playerName} has not been assigned an account." }
+        }
+    }
+
+    private fun verifyAllTeamsHaveBeenAssignedToPlayers(map: MutableMap<StateAndRef<AccountInfo>, WorldCupTeam>){
+        map.forEach { e ->
+            require(e.value.isAssigned) { "The team ${e.value.teamName} has not been assigned to an account." }
         }
     }
 
