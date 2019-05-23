@@ -62,8 +62,6 @@ class MatchDayFlow(
         val locallySignedTx = serviceHub.signInitialTransaction(
                 transactionBuilder,
                 listOfNotNull(
-                        //Somewhere is this god forsaken mess it's not happy.
-                        //Could it be to do with the keys for the states being registered on other nodes in RequestKeysForAccountsFlow?
                         ourIdentity.owningKey
                 )
         )

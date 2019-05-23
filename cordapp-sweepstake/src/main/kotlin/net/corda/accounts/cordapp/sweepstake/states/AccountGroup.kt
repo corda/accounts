@@ -3,12 +3,22 @@ package net.corda.accounts.cordapp.sweepstake.states
 import net.corda.accounts.cordapp.sweepstake.contracts.AccountGroupContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.ContractState
+import net.corda.core.contracts.LinearState
+import net.corda.core.contracts.UniqueIdentifier
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import java.security.PublicKey
 import java.util.*
 
 @BelongsToContract(AccountGroupContract::class)
-data class AccountGroup(val name: String,
-                        val party: Party,
-                        val accounts: List<UUID>) : ContractState {
-    override val participants get() = listOf(party)
+data class AccountGroup(val groupName: String,
+                        val accounts: List<UUID>,
+                        val owningKey: PublicKey? = null,
+                        val stateId: String? = null,
+                        override val linearId: UniqueIdentifier = UniqueIdentifier(stateId)) : LinearState {
+    //Empty state constructor
+    constructor(): this("", emptyList(), null, null, UniqueIdentifier(null))
+    override val participants: List<AbstractParty>
+        get() = listOfNotNull(owningKey).map { AnonymousParty(it) }
 }

@@ -2,7 +2,7 @@ package net.corda.accounts.cordapp.sweepstake
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.cordapp.sweepstake.flows.*
-import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.REQUIRED_CORDAPP_PACKAGES
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.flows.GetAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo

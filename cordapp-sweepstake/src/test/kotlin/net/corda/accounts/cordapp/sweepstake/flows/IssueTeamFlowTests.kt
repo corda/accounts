@@ -1,17 +1,17 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
-import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.JAPAN
-import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.REQUIRED_CORDAPP_PACKAGES
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.flows.GetAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
+import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.singleIdentity
-import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.startFlow
@@ -24,7 +24,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
-class IssueTeamTests {
+class IssueTeamFlowTests {
 
     private lateinit var mockNet: InternalMockNetwork
     private lateinit var aliceNode: TestStartedNode
@@ -39,8 +39,7 @@ class IssueTeamTests {
     fun before() {
         mockNet = InternalMockNetwork(
                 cordappPackages = REQUIRED_CORDAPP_PACKAGES,
-                cordappsForAllNodes = FINANCE_CORDAPPS,
-                networkSendManuallyPumped = false,
+                initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4),
                 threadPerNode = true)
 
         aliceNode = mockNet.createPartyNode(ALICE_NAME)

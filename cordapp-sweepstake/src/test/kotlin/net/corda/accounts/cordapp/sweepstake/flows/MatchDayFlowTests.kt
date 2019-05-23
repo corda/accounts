@@ -1,7 +1,8 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
-import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.BELGIUM
-import net.corda.accounts.cordapp.sweepstake.flows.Utils.Companion.JAPAN
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.BELGIUM
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.flows.ReceiveStateAndSyncAccountsFlow
 import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
@@ -35,15 +36,7 @@ class MatchDayFlowTests {
     @Before
     fun before() {
         mockNet = InternalMockNetwork(
-                cordappPackages = listOf(
-                        "net.corda.accounts.cordapp.sweepstake.states",
-                        "net.corda.accounts.cordapp.sweepstake.contracts",
-                        "net.corda.accounts.cordapp.sweepstake.flows",
-                        "net.corda.accounts.service",
-                        "net.corda.accounts.contracts",
-                        "net.corda.accounts.flows"),
-
-
+                cordappPackages = REQUIRED_CORDAPP_PACKAGES,
                 initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4))
 
         aliceNode = mockNet.createPartyNode(ALICE_NAME)

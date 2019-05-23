@@ -221,5 +221,4 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             this.services.startFlow(flowLogic).returnValue
         }
     }
-
 }
