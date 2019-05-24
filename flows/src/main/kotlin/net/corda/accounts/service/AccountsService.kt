@@ -6,16 +6,15 @@ import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ShareAccountInfoWithNodes
 import net.corda.accounts.flows.ShareStateWithAccountFlow
 import net.corda.accounts.states.AccountInfo
+import net.corda.accounts.states.PersistentAccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
-import net.corda.core.internal.hash
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
@@ -105,8 +104,16 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun myAccounts(): List<StateAndRef<AccountInfo>> {
-        return services.vaultService.queryBy(AccountInfo::class.java)
-                .states.filter { it.state.data.accountHost == services.myInfo.legalIdentities.first() }
+        val baseCriteria = QueryCriteria.VaultQueryCriteria(
+                contractStateTypes = setOf(AccountInfo::class.java),
+                status = Vault.StateStatus.UNCONSUMED
+        )
+        val partyCriteria = builder {
+            val partySelector = PersistentAccountInfo::accountHost.equal(services.myInfo.legalIdentities.first())
+            val partyCriteria = QueryCriteria.VaultCustomQueryCriteria(partySelector)
+            partyCriteria
+        }
+        return services.vaultService.queryBy<AccountInfo>(baseCriteria.and(partyCriteria)).states
     }
 
     @Suspendable
@@ -132,16 +139,30 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountInfo(accountId: UUID): StateAndRef<AccountInfo>? {
-        return services.vaultService.queryBy(AccountInfo::class.java).states
-                .filter { it.state.data.accountId == accountId }
-                .map { it }.singleOrNull()
+        val baseCriteria = QueryCriteria.VaultQueryCriteria(
+                contractStateTypes = setOf(AccountInfo::class.java),
+                status = Vault.StateStatus.UNCONSUMED
+        )
+        val uuidCriteria = builder {
+            val partySelector = PersistentAccountInfo::accountId.equal(accountId)
+            val partyCriteria = QueryCriteria.VaultCustomQueryCriteria(partySelector)
+            partyCriteria
+        }
+        return services.vaultService.queryBy<AccountInfo>(baseCriteria.and(uuidCriteria)).states.singleOrNull()
     }
 
     @Suspendable
     override fun accountInfo(accountName: String): StateAndRef<AccountInfo>? {
-        return services.vaultService.queryBy(AccountInfo::class.java).states
-                .filter { it.state.data.accountName == accountName }
-                .map { it }.singleOrNull()
+        val baseCriteria = QueryCriteria.VaultQueryCriteria(
+                contractStateTypes = setOf(AccountInfo::class.java),
+                status = Vault.StateStatus.UNCONSUMED
+        )
+        val nameCriteria = builder {
+            val partySelector = PersistentAccountInfo::accountName.equal(accountName)
+            val partyCriteria = QueryCriteria.VaultCustomQueryCriteria(partySelector)
+            partyCriteria
+        }
+        return services.vaultService.queryBy<AccountInfo>(baseCriteria.and(nameCriteria)).states.singleOrNull()
     }
 
     @Suspendable

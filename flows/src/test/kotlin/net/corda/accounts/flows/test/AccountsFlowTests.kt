@@ -29,16 +29,17 @@ class AccountsFlowTests {
     @Before
     fun setup() {
         network = MockNetwork(
-            listOf(
-                "net.corda.accounts.model",
-                "net.corda.accounts.service",
-                "net.corda.accounts.contracts",
-                "net.corda.accounts.flows"
-            ), MockNetworkParameters(
+                listOf(
+                        "net.corda.accounts.model",
+                        "net.corda.accounts.service",
+                        "net.corda.accounts.contracts",
+                        "net.corda.accounts.flows",
+                        "net.corda.accounts.states"
+                ), MockNetworkParameters(
                 networkParameters = testNetworkParameters(
-                    minimumPlatformVersion = 4
+                        minimumPlatformVersion = 4
                 )
-            )
+        )
         )
         a = network.createPartyNode()
         b = network.createPartyNode()
@@ -62,6 +63,26 @@ class AccountsFlowTests {
         val result = future.getOrThrow()
         val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
         Assert.assertTrue(storedAccountInfo == result)
+    }
+
+    @Test
+    fun `should be able to lookup account by UUID from service`() {
+        val future = a.startFlow(OpenNewAccountFlow("Stefano_Account"))
+        network.runNetwork()
+        val result = future.getOrThrow()
+        val storedAccount = a.transaction {
+            val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
+            Assert.assertTrue(storedAccountInfo == result)
+            storedAccountInfo
+        }
+
+        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        a.transaction {
+            val foundAccount = accountService.accountInfo(result.state.data.accountId)
+            Assert.assertThat(foundAccount, `is`(storedAccount))
+        }
+
+
     }
 
 
@@ -99,22 +120,22 @@ class AccountsFlowTests {
 
         val permissionedStatesForAccountB1 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB1.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB1.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
         val permissionedStatesForAccountB2 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB2.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB2.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
         val permissionedStatesForAccountB3 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB3.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB3.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
@@ -132,8 +153,8 @@ class AccountsFlowTests {
 
         val permissionedStatesForAccountB3AfterA1Shared = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB3.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB3.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
