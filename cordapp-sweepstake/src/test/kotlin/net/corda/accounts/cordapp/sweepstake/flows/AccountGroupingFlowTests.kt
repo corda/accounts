@@ -1,9 +1,10 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
+import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
-import net.corda.core.utilities.getOrThrow
+import net.corda.core.node.services.queryBy
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
@@ -11,7 +12,10 @@ import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
+import org.hamcrest.CoreMatchers
+import org.hamcrest.core.IsEqual
 import org.junit.After
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -45,9 +49,6 @@ class AccountGroupingFlowTests {
         mockNet.startNodes()
 
         bobNode.registerInitiatedFlow(IssueTeamResponse::class.java)
-        bobNode.registerInitiatedFlow(IssueGroupResponse::class.java)
-        bobNode.registerInitiatedFlow(UpdateGroupResponse::class.java)
-
     }
 
     @After
@@ -58,25 +59,25 @@ class AccountGroupingFlowTests {
     @Test
     fun `assign accounts to groups`() {
         val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+
         createAccountsForNode(aliceService)
 
         val accounts = aliceService.myAccounts()
 
+        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
 
-        val tournamentService = aliceService.services.cordaService(TournamentService::class.java)
-        tournamentService.assignAccountstoGroups(accounts, 8, bob)
+        val aliceGroupStates = aliceNode.services.vaultService.queryBy<AccountGroup>().states
 
+        Assert.assertThat(aliceGroupStates.size, CoreMatchers.`is`(IsEqual.equalTo(accounts.size / 4)))
 
-    }
+        aliceGroupStates.forEach {
+            Assert.assertThat(it.state.data.accounts.size, CoreMatchers.`is`(IsEqual.equalTo(4)))
+        }
 
-    private fun createAccountsForNode(aliceService: KeyManagementBackedAccountService) {
-        aliceService.createAccount("TEST_ACCOUNT_1").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_2").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_3").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_4").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_5").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_6").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_7").getOrThrow()
-        aliceService.createAccount("TEST_ACCOUNT_8").getOrThrow()
+        val group1 = aliceGroupStates[0].state.data
+        val group2 = aliceGroupStates[1].state.data
+
+        // Verify no account is assigned to both groups
+        Assert.assertThat(group1.accounts.toMutableList().retainAll(group2.accounts.toMutableList()), CoreMatchers.`is`(IsEqual.equalTo(true)))
     }
 }

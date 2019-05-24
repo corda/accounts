@@ -78,12 +78,11 @@ class MatchDayFlowTests {
             it.resultFuture.getOrThrow()
         }
 
-        //Share alice's account with charlie
         aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.accountId, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
-        //Share bob's accounts with charlie
+
         bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.accountId, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()

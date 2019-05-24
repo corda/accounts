@@ -24,7 +24,7 @@ class TournamentService(val services: AppServiceHub) : SingletonSerializeAsToken
     //I'm sorry
     //Bah
     @Suspendable
-    fun assignAccountstoGroups(accounts: List<StateAndRef<AccountInfo>>, numOfTeams: Int, otherParty: Party) {
+    fun assignAccountsToGroups(accounts: List<StateAndRef<AccountInfo>>, numOfTeams: Int, otherParty: Party) {
         val accountGroups = splitAccountsIntoGroupsOfFour(accounts)
         val groupIds = generateGroupIdsForAccounts(accounts.size, numOfTeams)
         //TODO require same size
