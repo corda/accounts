@@ -5,7 +5,9 @@ import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
+import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.flows.GetAccountsFlow
+import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
 import net.corda.client.rpc.CordaRPCClient
@@ -13,6 +15,7 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.InitiatingFlow
 import net.corda.core.flows.StartableByRPC
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
@@ -88,16 +91,25 @@ class SimulateWorldCup {
         require(accountsForC.containsAll(accountsForA))
 
         // Issue team states
+        val listOfIssuedTeamStates = mutableListOf<StateAndRef<TeamState>>().listIterator()
         val mapPlayerToTeam = accountsForB.zip(teams).toMap().toMutableMap()
         val iterableMap = mapPlayerToTeam.iterator()
         while (iterableMap.hasNext()) {
             val entry = iterableMap.next()
             if (!entry.value.isAssigned) {
-                proxyB.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
+                val team = proxyB.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
+                listOfIssuedTeamStates.add(team)
                 mapPlayerToTeam.replace(entry.key, entry.value.copy(isAssigned = true))
             }
         }
+
         verifyAllTeamsHaveBeenAssignedToPlayers(mapPlayerToTeam)
+
+        // Share the team states and sync the accounts
+        while(listOfIssuedTeamStates.hasNext()) {
+            val team = listOfIssuedTeamStates.next()
+            proxyC.startFlow(::ShareStateAndSyncAccountsFlow, team, AnonymousParty(nodeC.nodeInfo.singleIdentity().owningKey))
+        }
 
         // Assign accounts to groups
         proxyC.startFlow(::AssignAccountsToGroups, accountsForA, teams.size, proxyA.nodeInfo().singleIdentity()).returnValue.getOrThrow()
@@ -108,6 +120,7 @@ class SimulateWorldCup {
             println(it.state.data.groupName)
             it.state.data.accounts.forEach { println(it) }
         }
+
         // Run the match simulations
 
         // Run distribute winnings flow
@@ -155,48 +168,5 @@ class SimulateWorldCup {
 
         assertEquals(ALICE_NAME, nodeC.resolveName(ALICE_NAME))
         assertEquals(BOB_NAME, nodeC.resolveName(BOB_NAME))
-    }
-}
-
-@StartableByRPC
-@InitiatingFlow
-internal class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateAndRef<AccountInfo>>() {
-    @Suspendable
-    override fun call(): StateAndRef<AccountInfo> {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-        return accountService.createAccount(player.playerName).getOrThrow()
-    }
-}
-
-@StartableByRPC
-@InitiatingFlow
-internal class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-        val accounts = accountService.allAccounts()
-        accounts.forEach { account ->
-            accountService.shareAccountInfoWithParty(account.state.data.accountId, otherParty).getOrThrow()
-        }
-    }
-}
-
-@StartableByRPC
-@InitiatingFlow
-internal class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>>,
-                                      private val numOfTeams: Int,
-                                      private val otherParty: Party) : FlowLogic<Unit>() {
-    @Suspendable
-    override fun call() {
-        serviceHub.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, numOfTeams, otherParty)
-    }
-}
-
-@StartableByRPC
-@InitiatingFlow
-internal class VerifyGroups : FlowLogic<List<StateAndRef<AccountGroup>>>() {
-    @Suspendable
-    override fun call(): List<StateAndRef<AccountGroup>> {
-        return serviceHub.vaultService.queryBy<AccountGroup>().states
     }
 }

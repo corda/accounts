@@ -70,6 +70,7 @@ class AccountGroupingFlowTests {
 
         Assert.assertThat(aliceGroupStates.size, CoreMatchers.`is`(IsEqual.equalTo(accounts.size / 4)))
 
+        // There should be 4 accounts in each group
         aliceGroupStates.forEach {
             Assert.assertThat(it.state.data.accounts.size, CoreMatchers.`is`(IsEqual.equalTo(4)))
         }

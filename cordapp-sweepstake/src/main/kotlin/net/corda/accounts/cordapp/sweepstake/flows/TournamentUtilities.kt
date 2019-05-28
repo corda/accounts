@@ -2,14 +2,19 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
+import net.corda.accounts.cordapp.sweepstake.service.TournamentService
+import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
+import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.CordaInternal
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.Party
+import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.CordaSerializable
+import net.corda.core.utilities.getOrThrow
 import java.io.File
-import java.util.*
 
 /**
  * Helper functions.
@@ -51,10 +56,6 @@ fun splitAccountsIntoGroupsOfFour(accounts: List<StateAndRef<AccountInfo>>): Lis
  * Tournament objects.
  */
 @CordaSerializable
-class BeginMatch(val results: Map<StateAndRef<TeamState>, Int>)
-
-
-@CordaSerializable
 data class WorldCupTeam(val teamName: String, val isAssigned: Boolean)
 
 @CordaSerializable
@@ -80,4 +81,47 @@ class IssueTeamResponse(val otherSession: FlowSession) : FlowLogic<Unit>() {
         subFlow(IssueTeamHandler(otherSession))
     }
 
+}
+
+@StartableByRPC
+@InitiatingFlow
+class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateAndRef<AccountInfo>>() {
+    @Suspendable
+    override fun call(): StateAndRef<AccountInfo> {
+        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        return accountService.createAccount(player.playerName).getOrThrow()
+    }
+}
+
+@StartableByRPC
+@InitiatingFlow
+class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        val accounts = accountService.allAccounts()
+        accounts.forEach { account ->
+            accountService.shareAccountInfoWithParty(account.state.data.accountId, otherParty).getOrThrow()
+        }
+    }
+}
+
+@StartableByRPC
+@InitiatingFlow
+class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>>,
+                                      private val numOfTeams: Int,
+                                      private val otherParty: Party) : FlowLogic<Unit>() {
+    @Suspendable
+    override fun call() {
+        serviceHub.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, numOfTeams, otherParty)
+    }
+}
+
+@StartableByRPC
+@InitiatingFlow
+class VerifyGroups : FlowLogic<List<StateAndRef<AccountGroup>>>() {
+    @Suspendable
+    override fun call(): List<StateAndRef<AccountGroup>> {
+        return serviceHub.vaultService.queryBy<AccountGroup>().states
+    }
 }

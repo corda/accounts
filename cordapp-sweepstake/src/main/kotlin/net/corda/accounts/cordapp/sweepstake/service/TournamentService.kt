@@ -20,9 +20,6 @@ import net.corda.core.utilities.getOrThrow
 @CordaService
 class TournamentService(val services: AppServiceHub) : SingletonSerializeAsToken() {
 
-    //This is atrocious
-    //I'm sorry
-    //Bah
     @Suspendable
     fun assignAccountsToGroups(accounts: List<StateAndRef<AccountInfo>>, numOfTeams: Int, otherParty: Party) {
         val accountGroups = splitAccountsIntoGroupsOfFour(accounts)
@@ -35,14 +32,16 @@ class TournamentService(val services: AppServiceHub) : SingletonSerializeAsToken
         }
     }
 
+    @Suspendable
     private fun assignAccountsToGroup(groupId: Int, accounts: List<StateAndRef<AccountInfo>>, otherParty: Party) {
         val initialState = flowAwareStartFlow(IssueAccountToGroupFlow(otherParty, accounts.first(), groupId)).toCompletableFuture().getOrThrow()
         updateStates(accounts.drop(1), initialState, otherParty)
     }
 
-    private fun updateStates(accounts: List<StateAndRef<AccountInfo>>, state: StateAndRef<AccountGroup>, otherParty: Party) {
+    @Suspendable
+    private fun updateStates(accounts: List<StateAndRef<AccountInfo>>, initialState: StateAndRef<AccountGroup>, otherParty: Party) {
         while (accounts.isNotEmpty()) {
-            val newState = flowAwareStartFlow(UpdateAccountGroupFlow(otherParty, accounts.first(), state.state.data.linearId)).toCompletableFuture().getOrThrow()
+            val newState = flowAwareStartFlow(UpdateAccountGroupFlow(otherParty, accounts.first(), initialState.state.data.linearId)).toCompletableFuture().getOrThrow()
             return if (accounts.size == 1) {
             } else {
                 updateStates(accounts.drop(1), newState, otherParty)
