@@ -11,10 +11,7 @@ import net.corda.core.schemas.PersistentState
 import net.corda.core.schemas.QueryableState
 import net.corda.core.serialization.CordaSerializable
 import java.util.*
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.Table
-import javax.persistence.UniqueConstraint
+import javax.persistence.*
 
 object AccountSchema : MappedSchema(PersistentAccountInfo::class.java, version = 1, mappedTypes = listOf(PersistentAccountInfo::class.java))
 
@@ -49,7 +46,8 @@ data class AccountInfo(
 
 
 @Entity
-@Table(name = "accounts", uniqueConstraints = [UniqueConstraint(name = "id_constraint", columnNames = ["id"])])
+@Table(name = "accounts", uniqueConstraints = [UniqueConstraint(name = "id_constraint", columnNames = ["id"])],
+        indexes = [Index(name = "accountId_idx", columnList = "id"), Index(name = "accountHost_idx", columnList = "host"), Index(name = "name_idx", columnList = "name")])
 data class PersistentAccountInfo(
         @Column(name = "name", unique = false, nullable = false)
         val accountName: String,

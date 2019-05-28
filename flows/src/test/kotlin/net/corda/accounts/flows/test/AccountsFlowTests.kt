@@ -12,7 +12,7 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.collection.IsIterableContainingInAnyOrder
+import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.hamcrest.core.IsEqual
 import org.junit.After
 import org.junit.Assert
@@ -57,15 +57,6 @@ class AccountsFlowTests {
 
 
     @Test
-    fun `should create new account`() {
-        val future = a.startFlow(OpenNewAccountFlow("Stefano_Account"))
-        network.runNetwork()
-        val result = future.getOrThrow()
-        val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
-        Assert.assertTrue(storedAccountInfo == result)
-    }
-
-    @Test
     fun `should be able to lookup account by UUID from service`() {
         val future = a.startFlow(OpenNewAccountFlow("Stefano_Account"))
         network.runNetwork()
@@ -81,10 +72,7 @@ class AccountsFlowTests {
             val foundAccount = accountService.accountInfo(result.state.data.accountId)
             Assert.assertThat(foundAccount, `is`(storedAccount))
         }
-
-
     }
-
 
     @Test
     fun `should share state with only specified account`() {
@@ -158,7 +146,9 @@ class AccountsFlowTests {
             )
         }.map { it.ref }
 
-        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (IsIterableContainingInAnyOrder.containsInAnyOrder(futureA3.getOrThrow().ref, futureA1.getOrThrow().ref)))
+        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (containsInAnyOrder(futureA3.getOrThrow().ref, futureA1.getOrThrow().ref)))
 
     }
+
+
 }

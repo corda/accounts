@@ -10,6 +10,7 @@ import net.corda.accounts.states.PersistentAccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
@@ -23,6 +24,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SerializeAsToken
 import net.corda.core.serialization.SingletonSerializeAsToken
+import net.corda.node.services.keys.BasicHSMKeyManagementService
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 import net.corda.node.services.vault.VaultSchemaV1
 import java.security.PublicKey
@@ -83,16 +85,6 @@ interface AccountService : SerializeAsToken {
             queryCriteria: QueryCriteria
     ): List<StateAndRef<*>>
 
-    // Updates the account info with new account details. This may involve creating a
-    // new account on another node with the new details. Once the new account has
-    // been created, all the states can be moved to the new account.
-//    fun moveAccount(currentInfo: StateAndRef<AccountInfo>, newInfo: AccountInfo)
-
-    // De-activates the account.
-//    fun deactivateAccount(accountId: UUID)
-
-    // Sends AccountInfo specified by the account ID, to the specified Party. The
-    // receiving Party will be able to access the AccountInfo from their AccountService.
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
     fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
@@ -134,7 +126,18 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(accountId: UUID): List<PublicKey> {
-        TODO("not implemented")
+        return services.withEntityManager {
+            val query = createQuery(
+                    "select a.${BasicHSMKeyManagementService.PersistentKey::publicKey.name} from \n" +
+                            "${BasicHSMKeyManagementService.PersistentKey::class.java.name} a, ${PublicKeyHashToExternalId::class.java.name} b \n" +
+                            "where \n" +
+                            "   b.${PublicKeyHashToExternalId::externalId.name} = :uuid \n" +
+                            " and \n" +
+                            "   b.${PublicKeyHashToExternalId::publicKeyHash.name} = a.${BasicHSMKeyManagementService.PersistentKey::publicKeyHash.name}", ByteArray::class.java)
+
+            query.setParameter("uuid", accountId)
+            query.resultList.map { Crypto.decodePublicKey(it) }
+        }
     }
 
     @Suspendable
