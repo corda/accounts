@@ -78,7 +78,8 @@ class UpdateGroupResponse(private val otherSession: FlowSession) : FlowLogic<Uni
 }
 
 fun getStateForLinearIdea(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<AccountGroup> {
-    val blah = serviceHub.vaultService.queryBy<AccountGroup>(QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId)))
+    val blah = serviceHub.vaultService.queryBy<AccountGroup>(
+            QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId)))
     val blahblah = blah.states
 
     val firstBlah = blahblah.first()

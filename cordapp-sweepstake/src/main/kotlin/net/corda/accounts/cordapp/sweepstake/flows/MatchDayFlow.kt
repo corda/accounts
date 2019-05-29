@@ -10,6 +10,7 @@ import net.corda.core.contracts.ReferencedStateAndRef
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
+import net.corda.core.node.services.queryBy
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.contextLogger
@@ -82,10 +83,9 @@ class MatchDayFlow(
                         listOf(sessionForWinner, sessionForTeamA, sessionForTeamB).filter { sessionForWinner.counterparty != serviceHub.myInfo.legalIdentities.first() })
         )
 
-        val movedState = signedTx.coreTransaction.outRefsOfType(
+        return signedTx.coreTransaction.outRefsOfType(
                 TeamState::class.java
         ).single()
-        return movedState
     }
 
 }
@@ -111,16 +111,37 @@ class MatchDayHandler(private val otherSession: FlowSession) : FlowLogic<Unit>()
             )
         }
     }
+}
 
-    /**
-     * Thread safe method for generating random scores between 0 and 10.
-     */
-    private fun generateScores(teamAndScore: Map<StateAndRef<TeamState>, Int>): Map<StateAndRef<TeamState>, Int> {
-        val newScores = teamAndScore.mapValues { it.value.plus(ThreadLocalRandom.current().nextInt(0, 10)) }
-        return if (newScores.values.first() == newScores.values.last()) {
-            generateScores(newScores)
+@StartableByRPC
+class KnockoutFlow : FlowLogic<List<StateAndRef<TeamState>>>() {
+
+    @Suspendable
+    override fun call(): List<StateAndRef<TeamState>> {
+        val teams = serviceHub.vaultService.queryBy<TeamState>().states
+        val numGames = teams.size / 2
+        if (numGames > 1) {
+            for (i in 1..numGames) {
+                val teamA = teams[i - 1]
+                val teamB = teams[i]
+                val winningTeam = generateQuickWinner(teamA, teamB)
+
+                subFlow(MatchDayFlow(winningTeam, teamA, teamB))
+            }
+            subFlow(KnockoutFlow())
         } else {
-            newScores
+
         }
+        return teams.shuffled()
     }
+}
+
+@InitiatingFlow
+class KnockoutWrapper: FlowLogic<List<StateAndRef<TeamState>>>() {
+
+    @Suspendable
+    override fun call(): List<StateAndRef<TeamState>> {
+        return subFlow(KnockoutFlow())
+    }
+
 }

@@ -3,6 +3,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.BELGIUM
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.teams
 import net.corda.accounts.flows.ReceiveStateAndSyncAccountsFlow
 import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
@@ -110,6 +111,23 @@ class MatchDayFlowTests {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
         Assert.assertThat(accountOfWinner!!.state.data.accountId, `is`(testAccountB.state.data.accountId))
+    }
+
+
+    @Test
+    fun `run tournament flow`() {
+        val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        createAccountsForNode(aliceAccountService)
+
+        val accounts = aliceAccountService.allAccounts()
+        accounts.zip(teams).forEach {
+            aliceNode.services.startFlow(IssueTeamWrapper(it.first, it.second)).also {
+                mockNet.runNetwork()
+                it.resultFuture.getOrThrow()
+            }
+        }
+
+        val results = aliceNode.services.startFlow(KnockoutWrapper()).resultFuture.getOrThrow()
 
     }
 }

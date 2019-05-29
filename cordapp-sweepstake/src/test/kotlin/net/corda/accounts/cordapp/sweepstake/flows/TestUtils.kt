@@ -1,5 +1,6 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
+import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.teams
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 
@@ -8,6 +9,24 @@ class TestUtils {
 companion object {
     val JAPAN: String = "Japan"
     val BELGIUM: String = "Belgium"
+    val FRANCE: String = "France"
+    val GERMANY: String = "Germany"
+    val TURKEY: String = "Turkey"
+    val IRAN: String = "Iran"
+    val RUSSIA: String = "Russia"
+    val NIGERIA: String = "Nigeria"
+
+    val teams = listOf(
+            WorldCupTeam(JAPAN, true),
+            WorldCupTeam(BELGIUM, true),
+            WorldCupTeam(FRANCE, true),
+            WorldCupTeam(GERMANY, true),
+            WorldCupTeam(TURKEY, true),
+            WorldCupTeam(IRAN, true),
+            WorldCupTeam(RUSSIA, true),
+            WorldCupTeam(NIGERIA, true)
+    )
+
     val REQUIRED_CORDAPP_PACKAGES = listOf(
             "net.corda.accounts.cordapp.sweepstake.states",
             "net.corda.accounts.cordapp.sweepstake.contracts",
@@ -29,3 +48,4 @@ internal fun createAccountsForNode(accountService: KeyManagementBackedAccountSer
     accountService.createAccount("TEST_ACCOUNT_7").getOrThrow()
     accountService.createAccount("TEST_ACCOUNT_8").getOrThrow()
 }
+

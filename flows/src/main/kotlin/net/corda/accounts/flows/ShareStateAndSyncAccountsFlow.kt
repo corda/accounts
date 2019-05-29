@@ -13,6 +13,7 @@ import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 
 @InitiatingFlow
+@StartableByRPC
 class ShareStateAndSyncAccountsFlow(private val state: StateAndRef<ContractState>, private val partyToShareWith: AbstractParty) : FlowLogic<Unit>() {
 
     @Suspendable

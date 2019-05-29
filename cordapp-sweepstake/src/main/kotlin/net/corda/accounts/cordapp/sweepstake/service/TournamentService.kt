@@ -24,7 +24,6 @@ class TournamentService(val services: AppServiceHub) : SingletonSerializeAsToken
     fun assignAccountsToGroups(accounts: List<StateAndRef<AccountInfo>>, numOfTeams: Int, otherParty: Party) {
         val accountGroups = splitAccountsIntoGroupsOfFour(accounts)
         val groupIds = generateGroupIdsForAccounts(accounts.size, numOfTeams)
-        //TODO require same size
         val map = groupIds.zip(accountGroups)
 
         map.forEach {

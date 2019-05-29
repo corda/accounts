@@ -91,13 +91,13 @@ class SimulateWorldCup {
         require(accountsForC.containsAll(accountsForA))
 
         // Issue team states
-        val listOfIssuedTeamStates = mutableListOf<StateAndRef<TeamState>>().listIterator()
-        val mapPlayerToTeam = accountsForB.zip(teams).toMap().toMutableMap()
+        val listOfIssuedTeamStates = mutableListOf<StateAndRef<TeamState>>()
+        val mapPlayerToTeam = accountsForA.zip(teams).toMap().toMutableMap()
         val iterableMap = mapPlayerToTeam.iterator()
         while (iterableMap.hasNext()) {
             val entry = iterableMap.next()
             if (!entry.value.isAssigned) {
-                val team = proxyB.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
+                val team = proxyA.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
                 listOfIssuedTeamStates.add(team)
                 mapPlayerToTeam.replace(entry.key, entry.value.copy(isAssigned = true))
             }
@@ -106,15 +106,15 @@ class SimulateWorldCup {
         verifyAllTeamsHaveBeenAssignedToPlayers(mapPlayerToTeam)
 
         // Share the team states and sync the accounts
-        while(listOfIssuedTeamStates.hasNext()) {
-            val team = listOfIssuedTeamStates.next()
-            proxyC.startFlow(::ShareStateAndSyncAccountsFlow, team, AnonymousParty(nodeC.nodeInfo.singleIdentity().owningKey))
+        for (team in listOfIssuedTeamStates) {
+            proxyA.startFlow(::ShareStateAndSyncAccountsFlow, team, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow()
+            proxyA.startFlow(::ShareStateAndSyncAccountsFlow, team, nodeB.nodeInfo.singleIdentity()).returnValue.getOrThrow()
         }
 
         // Assign accounts to groups
-        proxyC.startFlow(::AssignAccountsToGroups, accountsForA, teams.size, proxyA.nodeInfo().singleIdentity()).returnValue.getOrThrow()
+        proxyA.startFlow(::AssignAccountsToGroups, accountsForA, teams.size, proxyC.nodeInfo().singleIdentity()).returnValue.getOrThrow()
 
-        val groups = proxyC.startFlow(::VerifyGroups).returnValue.getOrThrow()
+        val groups = proxyA.startFlow(::VerifyGroups).returnValue.getOrThrow()
 
         groups.forEach {
             println(it.state.data.groupName)
@@ -122,6 +122,7 @@ class SimulateWorldCup {
         }
 
         // Run the match simulations
+
 
         // Run distribute winnings flow
 

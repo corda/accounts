@@ -15,6 +15,7 @@ import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.getOrThrow
 import java.io.File
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * Helper functions.
@@ -37,7 +38,7 @@ fun generateParticipantsFromFile(filePath: String): MutableList<Participant> {
 
 @CordaInternal
 @VisibleForTesting
-fun generateGroupIdsForAccounts(numOfAccounts: Int, numOfTeams: Int): List<Int>{
+fun generateGroupIdsForAccounts(numOfAccounts: Int, numOfTeams: Int): List<Int> {
     require(numOfAccounts == numOfTeams)
     require(numOfAccounts % 4 == 0)
 
@@ -48,8 +49,31 @@ fun generateGroupIdsForAccounts(numOfAccounts: Int, numOfTeams: Int): List<Int>{
 
 @CordaInternal
 @VisibleForTesting
-fun splitAccountsIntoGroupsOfFour(accounts: List<StateAndRef<AccountInfo>>): List<List<StateAndRef<AccountInfo>>>{
-    return accounts.withIndex().groupBy { it.index / 4 }.map{ it.value.map { it.value }}
+fun splitAccountsIntoGroupsOfFour(accounts: List<StateAndRef<AccountInfo>>): List<List<StateAndRef<AccountInfo>>> {
+    return accounts.withIndex().groupBy { it.index / 4 }.map { it.value.map { it.value } }
+}
+
+@CordaInternal
+@VisibleForTesting
+fun generateScores(teamAndScore: Map<StateAndRef<TeamState>, Int>): Map<StateAndRef<TeamState>, Int> {
+    val newScores = teamAndScore.mapValues { it.value.plus(ThreadLocalRandom.current().nextInt(0, 10)) }
+    return if (newScores.values.first() == newScores.values.last()) {
+        generateScores(newScores)
+    } else {
+        newScores
+    }
+}
+
+@CordaInternal
+@VisibleForTesting
+fun generateQuickWinner(teamA: StateAndRef<TeamState>, teamB: StateAndRef<TeamState>): StateAndRef<TeamState> {
+    val result = Math.random()
+    return if (result <= 0.5) {
+        teamA
+    } else {
+        teamB
+    }
+
 }
 
 /**
@@ -109,8 +133,8 @@ class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
 @StartableByRPC
 @InitiatingFlow
 class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>>,
-                                      private val numOfTeams: Int,
-                                      private val otherParty: Party) : FlowLogic<Unit>() {
+                             private val numOfTeams: Int,
+                             private val otherParty: Party) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         serviceHub.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, numOfTeams, otherParty)
