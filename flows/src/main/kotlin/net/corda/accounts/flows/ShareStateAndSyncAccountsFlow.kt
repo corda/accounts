@@ -13,17 +13,21 @@ import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 
 @InitiatingFlow
+@StartableByRPC
+@StartableByService
 class ShareStateAndSyncAccountsFlow(private val state: StateAndRef<ContractState>, private val partyToShareWith: AbstractParty) : FlowLogic<Unit>() {
 
     @Suspendable
     override fun call() {
         val wellKnownPartyFromAnonymous = serviceHub.identityService.wellKnownPartyFromAnonymous(partyToShareWith)
+                ?: throw IllegalStateException("Party: $partyToShareWith is not a well known identity on this node")
 
-        wellKnownPartyFromAnonymous?.let {
+        wellKnownPartyFromAnonymous.let {
             val txToSend = serviceHub.validatedTransactions.getTransaction(state.ref.txhash)
+                    ?: throw IllegalStateException("Transaction: ${state.ref.txhash} was not found on this node")
             val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
-            txToSend?.let { txToSend ->
+            txToSend.let { txToSend ->
                 val accountsInvolvedWithState = state.state.data.participants.map { participant ->
                     accountService.accountInfo(participant.owningKey) to serviceHub.identityService.certificateFromKey(participant.owningKey)
                 }.filter { it.first != null && it.second != null }

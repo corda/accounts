@@ -1,10 +1,7 @@
 package net.corda.accounts.service
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.accounts.flows.AllowedToSeeStateMapping
-import net.corda.accounts.flows.OpenNewAccountFlow
-import net.corda.accounts.flows.ShareAccountInfoWithNodes
-import net.corda.accounts.flows.ShareStateWithAccountFlow
+import net.corda.accounts.flows.*
 import net.corda.accounts.states.AccountInfo
 import net.corda.accounts.states.PersistentAccountInfo
 import net.corda.core.concurrent.CordaFuture
@@ -13,6 +10,7 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
+import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
@@ -88,10 +86,16 @@ interface AccountService : SerializeAsToken {
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
     fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
+
+    fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: AbstractParty): CordaFuture<Unit>
 }
 
 @CordaService
 class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
+
+    override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: AbstractParty): CordaFuture<Unit> {
+        return flowAwareStartFlow(ShareStateAndSyncAccountsFlow(state, party))
+    }
 
 
     @Suspendable
@@ -173,9 +177,13 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         val uuid = services.withEntityManager {
             val query = createQuery("select ${PublicKeyHashToExternalId::externalId.name} from ${PublicKeyHashToExternalId::class.java.name} where ${PublicKeyHashToExternalId::publicKeyHash.name} = :hash", UUID::class.java)
             query.setParameter("hash", owningKey.toStringShort())
-            query.singleResult
+            query.resultList
         }
-        return accountInfo(uuid)
+        return if (uuid.isNotEmpty() && uuid.singleOrNull() != null) {
+            accountInfo(uuid.single())
+        } else {
+            null
+        }
     }
 
     @Suspendable
