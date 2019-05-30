@@ -24,6 +24,9 @@ import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
 import net.corda.testing.node.User
 import org.assertj.core.api.Assertions
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.core.IsEqual
+import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
@@ -59,6 +62,7 @@ class SimulateWorldCup {
         val players = generateParticipantsFromFile("src/test/resources/participants.txt")
         Assertions.assertThat(players).hasSize(32)
 
+        // Create all the accounts for the players on node A
         val iterablePlayers = players.listIterator()
         while (iterablePlayers.hasNext()) {
             val player = iterablePlayers.next()
@@ -81,7 +85,7 @@ class SimulateWorldCup {
         require(accountsForB.containsAll(accountsForA))
         require(accountsForC.containsAll(accountsForA))
 
-        // Issue team states
+        // Issue teams to each of the accounts
         val listOfIssuedTeamStates = mutableListOf<StateAndRef<TeamState>>()
         val mapPlayerToTeam = accountsForA.zip(teams).toMap().toMutableMap()
         val iterableMap = mapPlayerToTeam.iterator()
@@ -105,13 +109,17 @@ class SimulateWorldCup {
         // Assign accounts to groups and share with charlie
         proxyA.startFlow(::AssignAccountsToGroups, accountsForA, teams.size, proxyC.nodeInfo().singleIdentity()).returnValue.getOrThrow()
         val groups = proxyA.startFlow(::GetAccountGroupInfo).returnValue.getOrThrow()
+
+        // Check that each group contains only 4 accounts
+        groups.forEach {
+            Assert.assertThat(it.state.data.accounts.size, `is`(IsEqual.equalTo(4)))
+        }
+
         groups.forEach {
             proxyA.startFlow(::ShareStateAndSyncAccountsFlow, it, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow()
         }
 
-        //TODO Make assertions on groups
-
-        // Run the match simulations
+        // Run the match flows until there are four teams remaining
         var matchResults = runMatchDayFlows(proxyC, listOfIssuedTeamStates.shuffled())
         while (matchResults.size > 4) {
             matchResults = runMatchDayFlows(proxyC, matchResults)
@@ -120,10 +128,13 @@ class SimulateWorldCup {
         // Shuffle the final 4 teams to determine 1st, 2nd, 3rd and 4th place
         val finalResult = matchResults.shuffled()
 
-        //TODO Make assertions on results
+        // Work out which accounts have won a split of the sweepstake prize
+        val winners = proxyA.startFlow(::DistributeWinningsFlow, finalResult, 200L).returnValue.getOrThrow()
 
-        // Run distribute winnings flow
-        proxyA.startFlow(::DistributeWinningsFlow, finalResult, 200.0).returnValue.getOrThrow()
+        val prizeWinners = proxyA.startFlow(::GetPrizeWinners).returnValue.getOrThrow()
+
+        // Confirm winners from the vault
+        require(prizeWinners.containsAll(winners)) {"The parties that were issued prizes were not returned from the vault."}
     }
 
     private fun runMatchDayFlows(proxy: CordaRPCOps, teams: List<StateAndRef<TeamState>>): List<StateAndRef<TeamState>> {
@@ -136,15 +147,6 @@ class SimulateWorldCup {
         }
         return winners
     }
-
-//    private fun playRemainingMatches(proxy: CordaRPCOps, teams: List<StateAndRef<TeamState>>): List<StateAndRef<TeamState>> {
-//            for (i in 1..teams.size step 2) {
-//                val teamA = teams[i - 1]
-//                val teamB = teams[i]
-//
-//            }
-//        }
-//    }
 
     private fun verifyAllPlayersHaveBeenAssignedAccount(players: MutableList<Participant>) {
         players.forEach { p ->

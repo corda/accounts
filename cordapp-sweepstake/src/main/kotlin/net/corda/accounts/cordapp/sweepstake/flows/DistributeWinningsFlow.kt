@@ -1,6 +1,11 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.sdk.token.contracts.utilities.heldBy
+import com.r3.corda.sdk.token.contracts.utilities.issuedBy
+import com.r3.corda.sdk.token.contracts.utilities.of
+import com.r3.corda.sdk.token.money.GBP
+import com.r3.corda.sdk.token.workflow.flows.shell.IssueTokens
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.flows.RequestKeyForAccountFlow
@@ -12,10 +17,10 @@ import net.corda.core.identity.AnonymousParty
 
 @StartableByRPC
 class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamState>>,
-                             private val prizeWinnings: Double): FlowLogic<Unit>() {
+                             private val prizeWinnings: Long): FlowLogic<List<AnonymousParty>>() {
 
     @Suspendable
-    override fun call() {
+    override fun call(): List<AnonymousParty> {
         val winningKeys = winningTeams.map {
             it.state.data.owningKey
         }.toList()
@@ -32,16 +37,18 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
             serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it)
         }
 
-        val parties = winningAccounts.map {
-            it?.state?.data.let {
-                subFlow(RequestKeyForAccountFlow(accountInfo = it!!))
+        val parties = winningAccounts.map { account ->
+            account?.state?.data.let { acc ->
+                subFlow(RequestKeyForAccountFlow(accountInfo = acc!!))
             }
         }
 
-        // Issue the prize money to the account
-
         // TODO make division of winnings more realistic
         val prize = prizeWinnings / winningAccounts.size
+        parties.forEach {
+            subFlow(IssueTokens(prize of GBP issuedBy serviceHub.myInfo.legalIdentities.first() heldBy it))
+        }
 
+        return parties
     }
 }

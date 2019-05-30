@@ -46,9 +46,6 @@ class DistributeWinningsTest {
 
         mockNet.startNodes()
 
-//        aliceNode.registerInitiatedFlow(ReceiveStateAndSyncAccountsFlow::class.java)
-//        bobNode.registerInitiatedFlow(ReceiveStateAndSyncAccountsFlow::class.java)
-//        charlieNode.registerInitiatedFlow(ReceiveStateAndSyncAccountsFlow::class.java)
         bobNode.registerInitiatedFlow(IssueTeamResponse::class.java)
     }
 
@@ -99,11 +96,9 @@ class DistributeWinningsTest {
         // Mock up two winning teams
         val winners = tournamentService.getTeamStates().take(2)
 
-        charlieNode.services.startFlow(DistributeWinningsFlow(winners, 100.0)).also {
+        charlieNode.services.startFlow(DistributeWinningsFlow(winners, 200L)).also {
             mockNet.runNetwork()
             it.resultFuture.getOrThrow()
         }
-
-
     }
 }

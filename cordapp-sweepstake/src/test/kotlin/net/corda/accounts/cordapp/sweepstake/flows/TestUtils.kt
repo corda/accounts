@@ -34,7 +34,9 @@ companion object {
             "net.corda.accounts.cordapp.sweepstake.service",
             "net.corda.accounts.service",
             "net.corda.accounts.contracts",
-            "net.corda.accounts.flows")
+            "net.corda.accounts.flows",
+            "com.r3.corda.sdk.token.contracts",
+            "com.r3.corda.sdk.token.workflow")
     }
 
 }

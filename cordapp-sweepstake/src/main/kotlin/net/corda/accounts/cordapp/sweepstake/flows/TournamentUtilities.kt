@@ -2,6 +2,11 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
+import com.r3.corda.sdk.token.contracts.states.FungibleToken
+import com.r3.corda.sdk.token.contracts.utilities.heldBy
+import com.r3.corda.sdk.token.money.GBP
+import com.r3.corda.sdk.token.workflow.utilities.ownedTokensByToken
+import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
@@ -10,10 +15,13 @@ import net.corda.accounts.states.AccountInfo
 import net.corda.core.CordaInternal
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.getOrThrow
+import org.intellij.lang.annotations.Flow
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
 
@@ -151,17 +159,14 @@ class GetAccountGroupInfo : FlowLogic<List<StateAndRef<AccountGroup>>>() {
 
 @StartableByRPC
 @InitiatingFlow
-class RunFirstRoundFlow: FlowLogic<List<StateAndRef<TeamState>>>() {
-    @Suspendable
-    override fun call(): List<StateAndRef<TeamState>> {
-        val tournamentService = serviceHub.cordaService(TournamentService::class.java)
-        val teams = tournamentService.getTeamStates()
-        for (i in 1..teams.size step 2) {
-            val teamA = teams[i - 1]
-            val teamB = teams[i]
+class GetPrizeWinners(): FlowLogic<List<AbstractParty>>() {
 
-            subFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB))
+    @Suspendable
+    override fun call(): List<AbstractParty> {
+        val issuerCriteria = tokenAmountWithIssuerCriteria(GBP, serviceHub.myInfo.legalIdentities.first())
+        val tokens = serviceHub.vaultService.queryBy<FungibleToken<*>>(issuerCriteria).states
+        return tokens.map {
+            it.state.data.holder
         }
-        return tournamentService.getWinningTeamStates()
     }
 }
