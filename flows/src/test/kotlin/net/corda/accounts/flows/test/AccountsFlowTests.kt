@@ -55,9 +55,6 @@ class AccountsFlowTests {
         network.stopNodes()
     }
 
-
-
-
     @Test
     fun `should share state with only specified account`() {
         val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)

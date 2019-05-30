@@ -12,6 +12,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import javax.persistence.PersistenceException
 
 class CreateAccountTests {
 
@@ -56,6 +57,12 @@ class CreateAccountTests {
         val result = future.getOrThrow()
         val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
         Assert.assertTrue(storedAccountInfo == result)
+    }
+
+    @Test(expected = PersistenceException::class)
+    fun `should not be possible to create an account which has same name on a single host`() {
+        val accountOne = a.startFlow(OpenNewAccountFlow("Stefano_Account")).runAndGet(network)
+        val accountTwo = a.startFlow(OpenNewAccountFlow("Stefano_Account")).runAndGet(network)
     }
 
 }
