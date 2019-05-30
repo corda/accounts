@@ -2,7 +2,7 @@ package net.corda.accounts.flows.test
 
 import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ReceiveStateForAccountFlow
-import net.corda.accounts.flows.ShareAccountInfoWithNodes
+import net.corda.accounts.flows.ShareAccountWithParties
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.node.services.vault.QueryCriteria
@@ -56,23 +56,7 @@ class AccountsFlowTests {
     }
 
 
-    @Test
-    fun `should be able to lookup account by UUID from service`() {
-        val future = a.startFlow(OpenNewAccountFlow("Stefano_Account"))
-        network.runNetwork()
-        val result = future.getOrThrow()
-        val storedAccount = a.transaction {
-            val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
-            Assert.assertTrue(storedAccountInfo == result)
-            storedAccountInfo
-        }
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        a.transaction {
-            val foundAccount = accountService.accountInfo(result.state.data.accountId)
-            Assert.assertThat(foundAccount, `is`(storedAccount))
-        }
-    }
 
     @Test
     fun `should share state with only specified account`() {
@@ -89,9 +73,9 @@ class AccountsFlowTests {
 
         network.runNetwork()
 
-        val shareB1ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
-        val shareB2ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
-        val shareB3ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB1ToAFuture = b.startFlow(ShareAccountWithParties(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB2ToAFuture = b.startFlow(ShareAccountWithParties(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB3ToAFuture = b.startFlow(ShareAccountWithParties(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
         network.runNetwork()
 
         CompletableFuture.allOf(shareB1ToAFuture, shareB2ToAFuture, shareB3ToAFuture).getOrThrow()

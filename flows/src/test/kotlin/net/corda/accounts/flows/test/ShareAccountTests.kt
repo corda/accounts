@@ -11,7 +11,6 @@ import net.corda.core.contracts.*
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.Party
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
@@ -127,9 +126,6 @@ private fun StartedMockNode.accountService(): AccountService {
     return this.services.cordaService(KeyManagementBackedAccountService::class.java)
 }
 
-private fun StartedMockNode.identity(): Party {
-    return this.info.legalIdentities.single()
-}
 
 @BelongsToContract(TestContract::class)
 data class TestState(val owner: AbstractParty, val issuer: AbstractParty) : ContractState {
@@ -144,7 +140,7 @@ class TestContract : Contract {
 
 object ISSUE : CommandData
 
-class IssueFlow(val owningAccount: UUID) : FlowLogic<StateAndRef<TestState>>() {
+class IssueFlow(private val owningAccount: UUID) : FlowLogic<StateAndRef<TestState>>() {
     @Suspendable
     override fun call(): StateAndRef<TestState> {
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)

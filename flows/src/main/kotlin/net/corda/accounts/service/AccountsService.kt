@@ -223,7 +223,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit> {
         val foundAccount = accountInfo(accountId)
         return if (foundAccount != null) {
-            flowAwareStartFlow(ShareAccountInfoWithNodes(foundAccount, listOf(party)))
+            flowAwareStartFlow(ShareAccountWithParties(foundAccount, listOf(party)))
         } else {
             CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
         }
