@@ -1,28 +1,19 @@
 package net.corda.accounts.cordapp.sweepstake
 
-import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
-import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.flows.GetAccountsFlow
 import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
-import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.flows.FlowLogic
-import net.corda.core.flows.InitiatingFlow
-import net.corda.core.flows.StartableByRPC
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.CordaX500Name
-import net.corda.core.identity.Party
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
-import net.corda.core.node.services.queryBy
 import net.corda.core.utilities.getOrThrow
 import net.corda.node.services.Permissions
+import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
@@ -38,7 +29,7 @@ import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
 /**
- * Integration test to
+ * Integration test to test the grouping of accounts.
  */
 class SimulateWorldCup {
 
@@ -111,22 +102,49 @@ class SimulateWorldCup {
             proxyA.startFlow(::ShareStateAndSyncAccountsFlow, team, nodeB.nodeInfo.singleIdentity()).returnValue.getOrThrow()
         }
 
-        // Assign accounts to groups
+        // Assign accounts to groups and share with charlie
         proxyA.startFlow(::AssignAccountsToGroups, accountsForA, teams.size, proxyC.nodeInfo().singleIdentity()).returnValue.getOrThrow()
-
-        val groups = proxyA.startFlow(::VerifyGroups).returnValue.getOrThrow()
-
+        val groups = proxyA.startFlow(::GetAccountGroupInfo).returnValue.getOrThrow()
         groups.forEach {
-            println(it.state.data.groupName)
-            it.state.data.accounts.forEach { println(it) }
+            proxyA.startFlow(::ShareStateAndSyncAccountsFlow, it, nodeC.nodeInfo.singleIdentity()).returnValue.getOrThrow()
         }
 
-        // Run the match simulations
+        //TODO Make assertions on groups
 
+        // Run the match simulations
+        var matchResults = runMatchDayFlows(proxyC, listOfIssuedTeamStates.shuffled())
+        while (matchResults.size > 4) {
+            matchResults = runMatchDayFlows(proxyC, matchResults)
+        }
+
+        // Shuffle the final 4 teams to determine 1st, 2nd, 3rd and 4th place
+        val finalResult = matchResults.shuffled()
+
+        //TODO Make assertions on results
 
         // Run distribute winnings flow
-
+        proxyA.startFlow(::DistributeWinningsFlow, finalResult, 200.0).returnValue.getOrThrow()
     }
+
+    private fun runMatchDayFlows(proxy: CordaRPCOps, teams: List<StateAndRef<TeamState>>): List<StateAndRef<TeamState>> {
+        val winners = mutableListOf<StateAndRef<TeamState>>()
+        for (i in 1..teams.size step 2) {
+            val teamA = teams[i - 1]
+            val teamB = teams[i]
+
+            winners.add(proxy.startFlow(::MatchDayFlow, generateQuickWinner(teamA, teamB), teamA, teamB).returnValue.toCompletableFuture().getOrThrow())
+        }
+        return winners
+    }
+
+//    private fun playRemainingMatches(proxy: CordaRPCOps, teams: List<StateAndRef<TeamState>>): List<StateAndRef<TeamState>> {
+//            for (i in 1..teams.size step 2) {
+//                val teamA = teams[i - 1]
+//                val teamB = teams[i]
+//
+//            }
+//        }
+//    }
 
     private fun verifyAllPlayersHaveBeenAssignedAccount(players: MutableList<Participant>) {
         players.forEach { p ->
@@ -146,7 +164,8 @@ class SimulateWorldCup {
             DriverParameters(
                     isDebug = true,
                     startNodesInProcess = true,
-                    extraCordappPackagesToScan = REQUIRED_CORDAPP_PACKAGES)
+                    extraCordappPackagesToScan = REQUIRED_CORDAPP_PACKAGES,
+                    networkParameters = testNetworkParameters(minimumPlatformVersion = 4))
     ) { test() }
 
     // Makes an RPC call to retrieve another node's name from the network map.

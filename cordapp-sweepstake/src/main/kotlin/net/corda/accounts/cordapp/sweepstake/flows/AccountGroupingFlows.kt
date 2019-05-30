@@ -54,7 +54,7 @@ class UpdateAccountGroupFlow(private val otherParty: Party,
         val sessions = listOf(initiateFlow(otherParty))
         val newKey = subFlow(RequestKeyForAccountFlow(account.state.data)).owningKey
 
-        val inputState = getStateForLinearIdea(serviceHub, linearId)
+        val inputState = getStateForLinearId(serviceHub, linearId)
         val groupAccountIds = inputState.state.data.accounts
         val outputState = inputState.state.data.copy(accounts = groupAccountIds.plus(account.state.data.accountId), owningKey = newKey)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
@@ -77,11 +77,6 @@ class UpdateGroupResponse(private val otherSession: FlowSession) : FlowLogic<Uni
     }
 }
 
-fun getStateForLinearIdea(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<AccountGroup> {
-    val blah = serviceHub.vaultService.queryBy<AccountGroup>(
-            QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId)))
-    val blahblah = blah.states
-
-    val firstBlah = blahblah.first()
-    return firstBlah
+fun getStateForLinearId(serviceHub: ServiceHub, linearId: UniqueIdentifier): StateAndRef<AccountGroup> {
+    return serviceHub.vaultService.queryBy<AccountGroup>(QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId))).states.first()
 }

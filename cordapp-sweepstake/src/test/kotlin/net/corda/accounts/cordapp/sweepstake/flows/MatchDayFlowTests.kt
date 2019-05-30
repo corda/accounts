@@ -4,6 +4,7 @@ import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.BELGIUM
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.teams
+import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.flows.ReceiveStateAndSyncAccountsFlow
 import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
@@ -64,7 +65,7 @@ class MatchDayFlowTests {
     }
 
     @Test
-    fun `match day outcome`(){
+    fun `match day outcome`() {
         val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val testAccountA = aliceAccountService.createAccount("TEST_ACCOUNT_A").getOrThrow()
         val teamA = aliceNode.services.startFlow(IssueTeamWrapper(testAccountA, WorldCupTeam(JAPAN, true))).let {
@@ -100,14 +101,14 @@ class MatchDayFlowTests {
         }
 
 
-        val matchResult = charlieNode.services.startFlow(MatchDayFlow(teamB, teamA, teamB)).resultFuture.run {
+        val matchResult = charlieNode.services.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).resultFuture.run {
             mockNet.runNetwork()
             getOrThrow()
         }
 
         val charlieAccountService = charlieNode.services.cordaService(KeyManagementBackedAccountService::class.java)
 
-        val  accountOfWinner = charlieNode.database.transaction {
+        val accountOfWinner = charlieNode.database.transaction {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
         Assert.assertThat(accountOfWinner!!.state.data.accountId, `is`(testAccountB.state.data.accountId))
@@ -115,19 +116,62 @@ class MatchDayFlowTests {
 
 
     @Test
-    fun `run tournament flow`() {
-        val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
-        createAccountsForNode(aliceAccountService)
+    fun `run multiple match day flows`() {
+        val accountOwningService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        createAccountsForNode(accountOwningService)
+        val accounts = accountOwningService.allAccounts()
 
-        val accounts = aliceAccountService.allAccounts()
+        // Alice creates accounts and shares them with charlie
+        accounts.forEach {
+            accountOwningService.shareAccountInfoWithParty(it.state.data.accountId, charlieNode.info.legalIdentities.first()).also {
+                mockNet.runNetwork()
+                it.getOrThrow()
+            }
+        }
+
+        // Bob issues the teams
         accounts.zip(teams).forEach {
-            aliceNode.services.startFlow(IssueTeamWrapper(it.first, it.second)).also {
+            bobNode.services.startFlow(IssueTeamWrapper(it.first, it.second)).also {
                 mockNet.runNetwork()
                 it.resultFuture.getOrThrow()
             }
         }
 
-        val results = aliceNode.services.startFlow(KnockoutWrapper()).resultFuture.getOrThrow()
+        val tournamentService = aliceNode.services.cordaService(TournamentService::class.java)
+        val teams = tournamentService.getTeamStates()
 
+        // Share the team states with charlie so he can run the match day flows
+        teams.forEach {
+            aliceNode.services.startFlow(ShareStateAndSyncAccountsFlow(it, charlie)).also {
+                mockNet.runNetwork()
+                it.resultFuture.getOrThrow()
+            }
+        }
+
+        for (i in 1..teams.size step 2) {
+            val teamA = teams[i - 1]
+            val teamB = teams[i]
+
+            charlieNode.services.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).resultFuture.run {
+                mockNet.runNetwork()
+                getOrThrow()
+            }
+        }
+
+        val winningTeams = tournamentService.getWinningTeamStates()
+        Assert.assertThat(winningTeams.size, `is`(4))
+
+        for (i in 1..winningTeams.size step 2) {
+            val teamA = winningTeams[i - 1]
+            val teamB = winningTeams[i]
+
+            charlieNode.services.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).resultFuture.run {
+                mockNet.runNetwork()
+                getOrThrow()
+            }
+        }
+
+        val result = tournamentService.getWinningTeamStates()
+        Assert.assertThat(result.size, `is`(2))
     }
 }

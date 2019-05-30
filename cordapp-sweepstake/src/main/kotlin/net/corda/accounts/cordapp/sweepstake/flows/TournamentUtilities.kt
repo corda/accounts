@@ -73,7 +73,6 @@ fun generateQuickWinner(teamA: StateAndRef<TeamState>, teamB: StateAndRef<TeamSt
     } else {
         teamB
     }
-
 }
 
 /**
@@ -99,7 +98,7 @@ class IssueTeamWrapper(private val accountInfo: StateAndRef<AccountInfo>,
 }
 
 @InitiatedBy(IssueTeamWrapper::class)
-class IssueTeamResponse(val otherSession: FlowSession) : FlowLogic<Unit>() {
+class IssueTeamResponse(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         subFlow(IssueTeamHandler(otherSession))
@@ -143,9 +142,26 @@ class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>
 
 @StartableByRPC
 @InitiatingFlow
-class VerifyGroups : FlowLogic<List<StateAndRef<AccountGroup>>>() {
+class GetAccountGroupInfo : FlowLogic<List<StateAndRef<AccountGroup>>>() {
     @Suspendable
     override fun call(): List<StateAndRef<AccountGroup>> {
         return serviceHub.vaultService.queryBy<AccountGroup>().states
+    }
+}
+
+@StartableByRPC
+@InitiatingFlow
+class RunFirstRoundFlow: FlowLogic<List<StateAndRef<TeamState>>>() {
+    @Suspendable
+    override fun call(): List<StateAndRef<TeamState>> {
+        val tournamentService = serviceHub.cordaService(TournamentService::class.java)
+        val teams = tournamentService.getTeamStates()
+        for (i in 1..teams.size step 2) {
+            val teamA = teams[i - 1]
+            val teamB = teams[i]
+
+            subFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB))
+        }
+        return tournamentService.getWinningTeamStates()
     }
 }

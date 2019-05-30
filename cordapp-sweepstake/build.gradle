@@ -14,16 +14,6 @@ cordapp {
 }
 
 sourceSets {
-//    main {
-//        resources {
-//            srcDir rootProject.file("config/dev")
-//        }
-//    }
-//    test {
-//        resources {
-//            srcDir rootProject.file("config/test")
-//        }
-//    }
     integrationTest {
         kotlin {
             compileClasspath += main.output + test.output
@@ -43,6 +33,7 @@ dependencies {
     cordapp project(":flows")
     cordapp project(":states-and-contracts")
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
+//    cordapp "$tokens_sdk:contract:$tokens_sdk_version"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 

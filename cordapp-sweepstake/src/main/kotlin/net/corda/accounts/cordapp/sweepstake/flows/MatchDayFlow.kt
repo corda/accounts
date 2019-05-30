@@ -18,6 +18,8 @@ import net.corda.core.utilities.unwrap
 import java.util.concurrent.ThreadLocalRandom
 
 @InitiatingFlow
+@StartableByService
+@StartableByRPC
 class MatchDayFlow(
         private val winningTeam: StateAndRef<TeamState>,
         private val teamA: StateAndRef<TeamState>,
@@ -55,7 +57,7 @@ class MatchDayFlow(
         val transactionBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
                 .addInputState(teamA)
                 .addInputState(teamB)
-                .addOutputState(winningTeam.state.data.copy(owningKey = newOwner.owningKey))
+                .addOutputState(winningTeam.state.data.copy(owningKey = newOwner.owningKey, isStillPlaying = true))
                 .addCommand(TournamentContract.MATCH_WON, requiredSigners)
                 .addReferenceState(accountForTeamA!!.referenced())
                 .addReferenceState(accountForTeamB!!.referenced())
@@ -111,37 +113,4 @@ class MatchDayHandler(private val otherSession: FlowSession) : FlowLogic<Unit>()
             )
         }
     }
-}
-
-@StartableByRPC
-class KnockoutFlow : FlowLogic<List<StateAndRef<TeamState>>>() {
-
-    @Suspendable
-    override fun call(): List<StateAndRef<TeamState>> {
-        val teams = serviceHub.vaultService.queryBy<TeamState>().states
-        val numGames = teams.size / 2
-        if (numGames > 1) {
-            for (i in 1..numGames) {
-                val teamA = teams[i - 1]
-                val teamB = teams[i]
-                val winningTeam = generateQuickWinner(teamA, teamB)
-
-                subFlow(MatchDayFlow(winningTeam, teamA, teamB))
-            }
-            subFlow(KnockoutFlow())
-        } else {
-
-        }
-        return teams.shuffled()
-    }
-}
-
-@InitiatingFlow
-class KnockoutWrapper: FlowLogic<List<StateAndRef<TeamState>>>() {
-
-    @Suspendable
-    override fun call(): List<StateAndRef<TeamState>> {
-        return subFlow(KnockoutFlow())
-    }
-
 }
