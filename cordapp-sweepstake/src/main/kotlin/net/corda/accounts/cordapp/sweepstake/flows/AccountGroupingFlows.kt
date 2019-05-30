@@ -28,7 +28,7 @@ class IssueAccountToGroupFlow(private val otherParty: Party,
         val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.accountId), keyToUse)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addOutputState(outputState)
-        txBuilder.addCommand(TournamentContract.ASSIGN_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
+        txBuilder.addCommand(TournamentContract.ISSUE_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, sessions.filterNot { it.counterparty.name == ourIdentity.name }))
         return finalizedTx.coreTransaction.outRefsOfType(AccountGroup::class.java).single()
@@ -61,7 +61,7 @@ class UpdateAccountGroupFlow(private val otherParty: Party,
         txBuilder.addInputState(inputState)
         txBuilder.addOutputState(outputState)
         //TODO fix sigs
-        txBuilder.addCommand(TournamentContract.ASSIGN_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
+        txBuilder.addCommand(TournamentContract.UPDATE_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, sessions.filterNot { it.counterparty.name == ourIdentity.name }))
         return finalizedTx.coreTransaction.outRefsOfType(AccountGroup::class.java).single()

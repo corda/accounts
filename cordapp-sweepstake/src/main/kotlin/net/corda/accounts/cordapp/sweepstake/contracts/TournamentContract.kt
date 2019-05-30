@@ -10,7 +10,8 @@ class TournamentContract : Contract {
     companion object {
         val ISSUE_TEAM: TournamentCommands = TournamentCommands("ISSUE_TEAM")
         val MATCH_WON: TournamentCommands = TournamentCommands("MATCH_WON")
-        val ASSIGN_GROUP: TournamentCommands = TournamentCommands("ASSIGN_GROUP")
+        val ISSUE_GROUP: TournamentCommands = TournamentCommands("ISSUE_GROUP")
+        val UPDATE_GROUP: TournamentCommands = TournamentCommands("UPDATE_GROUP")
     }
 
     override fun verify(tx: LedgerTransaction) {
@@ -26,8 +27,13 @@ class TournamentContract : Contract {
                 require(tx.inputStates.size == 2) { "There must be two teams in the input state on a match day" }
                 require(tx.outputStates.size == 1) { "There can only be one winner in the output state on a match day" }
             }
-            command.value == ASSIGN_GROUP -> {
-                //TODO
+            command.value == ISSUE_GROUP -> {
+                require(tx.inputStates.isEmpty())
+                require(tx.outputStates.size == 1)
+            }
+            command.value == UPDATE_GROUP -> {
+                require(tx.inputStates.size == 1)
+                require(tx.outputStates.size == 1)
             }
         }
     }

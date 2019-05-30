@@ -3,9 +3,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
 import com.r3.corda.sdk.token.contracts.states.FungibleToken
-import com.r3.corda.sdk.token.contracts.utilities.heldBy
 import com.r3.corda.sdk.token.money.GBP
-import com.r3.corda.sdk.token.workflow.utilities.ownedTokensByToken
 import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
@@ -16,12 +14,10 @@ import net.corda.core.CordaInternal
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.getOrThrow
-import org.intellij.lang.annotations.Flow
 import java.io.File
 import java.util.concurrent.ThreadLocalRandom
 
@@ -115,7 +111,6 @@ class IssueTeamResponse(private val otherSession: FlowSession) : FlowLogic<Unit>
 }
 
 @StartableByRPC
-@InitiatingFlow
 class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateAndRef<AccountInfo>>() {
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
@@ -125,7 +120,6 @@ class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateA
 }
 
 @StartableByRPC
-@InitiatingFlow
 class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
@@ -138,7 +132,6 @@ class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
 }
 
 @StartableByRPC
-@InitiatingFlow
 class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>>,
                              private val numOfTeams: Int,
                              private val otherParty: Party) : FlowLogic<Unit>() {
@@ -149,8 +142,7 @@ class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>
 }
 
 @StartableByRPC
-@InitiatingFlow
-class GetAccountGroupInfo : FlowLogic<List<StateAndRef<AccountGroup>>>() {
+class GetAccountGroupInfo: FlowLogic<List<StateAndRef<AccountGroup>>>() {
     @Suspendable
     override fun call(): List<StateAndRef<AccountGroup>> {
         return serviceHub.vaultService.queryBy<AccountGroup>().states
@@ -158,8 +150,7 @@ class GetAccountGroupInfo : FlowLogic<List<StateAndRef<AccountGroup>>>() {
 }
 
 @StartableByRPC
-@InitiatingFlow
-class GetPrizeWinners(): FlowLogic<List<AbstractParty>>() {
+class GetPrizeWinners: FlowLogic<List<AbstractParty>>() {
 
     @Suspendable
     override fun call(): List<AbstractParty> {

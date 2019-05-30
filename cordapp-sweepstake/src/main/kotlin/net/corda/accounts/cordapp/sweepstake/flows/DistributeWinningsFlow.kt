@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.sdk.token.contracts.utilities.heldBy
 import com.r3.corda.sdk.token.contracts.utilities.issuedBy
 import com.r3.corda.sdk.token.contracts.utilities.of
+import com.r3.corda.sdk.token.money.FiatCurrency
 import com.r3.corda.sdk.token.money.GBP
 import com.r3.corda.sdk.token.workflow.flows.shell.IssueTokens
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
@@ -17,7 +18,8 @@ import net.corda.core.identity.AnonymousParty
 
 @StartableByRPC
 class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamState>>,
-                             private val prizeWinnings: Long): FlowLogic<List<AnonymousParty>>() {
+                             private val prizeAmount: Long,
+                             private val prizeCurrency: FiatCurrency): FlowLogic<List<AnonymousParty>>() {
 
     @Suspendable
     override fun call(): List<AnonymousParty> {
@@ -44,9 +46,9 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
         }
 
         // TODO make division of winnings more realistic
-        val prize = prizeWinnings / winningAccounts.size
+        val prize = prizeAmount / winningAccounts.size
         parties.forEach {
-            subFlow(IssueTokens(prize of GBP issuedBy serviceHub.myInfo.legalIdentities.first() heldBy it))
+            subFlow(IssueTokens(prize of prizeCurrency issuedBy serviceHub.myInfo.legalIdentities.first() heldBy it))
         }
 
         return parties

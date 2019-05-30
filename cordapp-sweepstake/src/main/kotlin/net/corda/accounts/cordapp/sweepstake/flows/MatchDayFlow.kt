@@ -18,7 +18,6 @@ import net.corda.core.utilities.unwrap
 import java.util.concurrent.ThreadLocalRandom
 
 @InitiatingFlow
-@StartableByService
 @StartableByRPC
 class MatchDayFlow(
         private val winningTeam: StateAndRef<TeamState>,

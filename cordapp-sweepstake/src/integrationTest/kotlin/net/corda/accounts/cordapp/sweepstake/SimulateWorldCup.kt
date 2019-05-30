@@ -1,5 +1,6 @@
 package net.corda.accounts.cordapp.sweepstake
 
+import com.r3.corda.sdk.token.money.GBP
 import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
@@ -32,7 +33,15 @@ import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
 /**
- * Integration test to test the grouping of accounts.
+ * Integration test to test the grouping of accounts. The [AccountGroup] state contains a list of accountIds that
+ * can be used to group accounts. In this cordapp, we aim to simulate a world cup sweepstake where by a list of
+ * participants are each assigned an [AccountInfo]. The accounts are then assigned to an [AccountGroup] that contains
+ * four accounts. They are also assigned a team that from the world cup - modelled as a [TeamState]. We then run a series
+ * of [MatchDayFlow] whereby two teams are used as input states and one of the teams 'wins' and is used as the output
+ * state. This is repeated until there are 4 teams remaining. These final four are shuffled to determine the top 4 spots.
+ *
+ * The [DistributeWinningsFlow] is then run to determine which accounts are to be issued a proportion of the prize money.
+ * For an account that placed in the top four, they will share the prize money with every account in their [AccountGroup].
  */
 class SimulateWorldCup {
 
@@ -129,11 +138,12 @@ class SimulateWorldCup {
         val finalResult = matchResults.shuffled()
 
         // Work out which accounts have won a split of the sweepstake prize
-        val winners = proxyA.startFlow(::DistributeWinningsFlow, finalResult, 200L).returnValue.getOrThrow()
+        val winners = proxyA.startFlow(::DistributeWinningsFlow, finalResult, 200L, GBP).returnValue.getOrThrow()
 
+        // Retrieve the parties that have been issued part of the prize from the vault
         val prizeWinners = proxyA.startFlow(::GetPrizeWinners).returnValue.getOrThrow()
 
-        // Confirm winners from the vault
+        // Confirm winners
         require(prizeWinners.containsAll(winners)) {"The parties that were issued prizes were not returned from the vault."}
     }
 

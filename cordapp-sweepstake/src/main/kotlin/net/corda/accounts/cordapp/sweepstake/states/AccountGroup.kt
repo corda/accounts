@@ -1,13 +1,10 @@
 package net.corda.accounts.cordapp.sweepstake.states
 
-import net.corda.accounts.cordapp.sweepstake.contracts.AccountGroupContract
 import net.corda.core.contracts.BelongsToContract
-import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.identity.Party
 import java.security.PublicKey
 import java.util.*
 
