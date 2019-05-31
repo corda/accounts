@@ -35,9 +35,9 @@ dependencies {
     
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
     
-    cordapp "$tokens_sdk:contract:$tokens_sdk_version"
-    cordapp "$tokens_sdk:workflow:$tokens_sdk_version"
-    cordapp "$tokens_sdk:money:$tokens_sdk_version"
+    cordapp "com.r3.tokens-sdk:contract:$tokens_sdk_version"
+    cordapp "com.r3.tokens-sdk:workflow:$tokens_sdk_version"
+    cordapp "com.r3.tokens-sdk:money:$tokens_sdk_version"
 
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 

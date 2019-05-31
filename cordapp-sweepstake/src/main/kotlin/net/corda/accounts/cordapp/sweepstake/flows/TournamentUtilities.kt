@@ -2,6 +2,9 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
+import com.r3.corda.sdk.token.contracts.states.FungibleToken
+import com.r3.corda.sdk.token.money.GBP
+import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
