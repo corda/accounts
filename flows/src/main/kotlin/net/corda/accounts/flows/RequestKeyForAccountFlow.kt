@@ -8,6 +8,7 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.unwrap
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 @InitiatingFlow
@@ -25,6 +26,11 @@ class RequestKeyForAccountFlow(private val accountInfo: AccountInfo) : FlowLogic
 
         val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
         serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
+        serviceHub.withEntityManager {
+            serviceHub.withEntityManager {
+                persist(PublicKeyHashToExternalId(accountInfo.accountId, newKeyAndCert.owningKey))
+            }
+        }
         return AnonymousParty(newKeyAndCert.owningKey)
     }
 }

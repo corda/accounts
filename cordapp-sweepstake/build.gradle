@@ -1,0 +1,122 @@
+apply plugin: 'kotlin'
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'net.corda.plugins.quasar-utils'
+
+
+cordapp {
+    info {
+        name "World Cup Sweepstake App"
+        vendor "Corda Open Source"
+        targetPlatformVersion 4
+        minimumPlatformVersion 4
+    }
+}
+
+sourceSets {
+    integrationTest {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integrationTest/kotlin')
+        }
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+
+dependencies {
+    cordapp project(":flows")
+    cordapp project(":states-and-contracts")
+    
+    cordaCompile "$corda_release_group:corda-core:$corda_release_version"
+    
+    cordapp "$tokens_sdk:contract:$tokens_sdk_version"
+    cordapp "$tokens_sdk:workflow:$tokens_sdk_version"
+    cordapp "$tokens_sdk:money:$tokens_sdk_version"
+
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "junit:junit: 4.12"
+    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+}
+
+
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        languageVersion = "1.2"
+        apiVersion = "1.2"
+        jvmTarget = "1.8"
+        javaParameters = true   // Useful for reflection.
+    }
+}
+
+task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+
+    nodeDefaults {
+        cordapp project(":flows")
+        cordapp project(":states-and-contracts")
+    }
+
+    directory "./build/nodes"
+    node {
+        name "O=Notary,L=London,C=GB"
+        notary = [validating: false]
+        p2pPort 10000
+        sshdPort 2222
+        rpcSettings {
+            address("localhost:10001")
+            adminAddress("localhost:10002")
+        }
+    }
+    node {
+        name "O=Agent,L=London,C=GB"
+        p2pPort 10004
+        sshdPort 2223
+        rpcSettings {
+            address("localhost:10005")
+            adminAddress("localhost:10006")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=FundManager1,L=New York,C=US"
+        p2pPort 10008
+        sshdPort 2224
+        rpcSettings {
+            address("localhost:10009")
+            adminAddress("localhost:10010")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=FundManager2,L=Paris,C=FR"
+        p2pPort 10012
+        sshdPort 2224
+        rpcSettings {
+            address("localhost:10013")
+            adminAddress("localhost:10014")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=Administrator1,L=Paris,C=FR"
+        p2pPort 10020
+        sshdPort 2225
+        rpcSettings {
+            address("localhost:10021")
+            adminAddress("localhost:10022")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+}
+
+task integrationTest(type: Test, dependsOn: []) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}

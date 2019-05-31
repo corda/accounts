@@ -16,6 +16,7 @@ import javax.persistence.*
 object AccountSchema : MappedSchema(PersistentAccountInfo::class.java, version = 1, mappedTypes = listOf(PersistentAccountInfo::class.java))
 
 @BelongsToContract(AccountInfoContract::class)
+@CordaSerializable
 data class AccountInfo(
         val accountName: String,
         val accountHost: Party,

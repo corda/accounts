@@ -179,8 +179,8 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             query.setParameter("hash", owningKey.toStringShort())
             query.resultList
         }
-        return if (uuid.isNotEmpty() && uuid.singleOrNull() != null) {
-            accountInfo(uuid.single())
+        return if (uuid.isNotEmpty() && uuid.toSet().singleOrNull() != null) {
+            accountInfo(uuid.toSet().single())
         } else {
             null
         }
