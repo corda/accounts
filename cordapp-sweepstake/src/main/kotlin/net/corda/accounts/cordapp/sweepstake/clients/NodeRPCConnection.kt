@@ -1,4 +1,4 @@
-package net.corda.accounts.cordapp.client.webserver
+package net.corda.accounts.cordapp.sweepstake.clientsh
 
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.client.rpc.CordaRPCConnection
@@ -15,9 +15,9 @@ private const val CORDA_NODE_HOST = "config.rpc.host"
 private const val CORDA_RPC_PORT = "config.rpc.port"
 
 /**
- * Wraps an RPC connection to a Corda node.
+ * Wraps a node RPC proxy.
  *
- * The RPC connection is configured using command line arguments.
+ * The RPC proxy is configured based on the properties in `application.properties`.
  *
  * @param host The host of the node we are connecting to.
  * @param rpcPort The RPC port of the node we are connecting to.
@@ -30,7 +30,8 @@ open class NodeRPCConnection(
         @Value("\${$CORDA_NODE_HOST}") private val host: String,
         @Value("\${$CORDA_USER_NAME}") private val username: String,
         @Value("\${$CORDA_USER_PASSWORD}") private val password: String,
-        @Value("\${$CORDA_RPC_PORT}") private val rpcPort: Int): AutoCloseable {
+        @Value("\${$CORDA_RPC_PORT}") private val rpcPort: Int
+) : AutoCloseable {
 
     lateinit var rpcConnection: CordaRPCConnection
         private set
@@ -39,10 +40,10 @@ open class NodeRPCConnection(
 
     @PostConstruct
     fun initialiseNodeRPCConnection() {
-            val rpcAddress = NetworkHostAndPort(host, rpcPort)
-            val rpcClient = CordaRPCClient(rpcAddress)
-            val rpcConnection = rpcClient.start(username, password)
-            proxy = rpcConnection.proxy
+        val rpcAddress = NetworkHostAndPort(host, rpcPort)
+        val rpcClient = CordaRPCClient(rpcAddress)
+        val rpcConnection = rpcClient.start(username, password)
+        proxy = rpcConnection.proxy
     }
 
     @PreDestroy

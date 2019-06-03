@@ -1,4 +1,3 @@
 include 'states-and-contracts'
 include 'flows'
 include 'cordapp-sweepstake'
-include 'cordapp-client'
