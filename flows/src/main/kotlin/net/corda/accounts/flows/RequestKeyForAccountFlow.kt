@@ -8,23 +8,33 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.unwrap
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 @InitiatingFlow
 class RequestKeyForAccountFlow(private val accountInfo: AccountInfo) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
-        val session = initiateFlow(accountInfo.accountHost)
-        session.send(accountInfo.accountId)
 
-        val accountSearchStatus = session.receive(AccountSearchStatus::class.java).unwrap { it }
+        val newKeyAndCert = if (accountInfo.accountHost == ourIdentity){
+            serviceHub.keyManagementService.freshKeyAndCert(ourIdentityAndCert, false, accountInfo.accountId)
+        }else{
+            val session = initiateFlow(accountInfo.accountHost)
+            session.send(accountInfo.accountId)
+            val accountSearchStatus = session.receive(AccountSearchStatus::class.java).unwrap { it }
 
-        if (accountSearchStatus == AccountSearchStatus.NOT_FOUND) {
-            throw IllegalStateException("Account Host: ${accountInfo.accountHost} for ${accountInfo.accountId} (${accountInfo.accountName}) responded with a not found status - contact them for assistance")
+            if (accountSearchStatus == AccountSearchStatus.NOT_FOUND) {
+                throw IllegalStateException("Account Host: ${accountInfo.accountHost} for ${accountInfo.accountId} (${accountInfo.accountName}) responded with a not found status - contact them for assistance")
+            }
+            val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
+            serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
+            serviceHub.withEntityManager {
+                serviceHub.withEntityManager {
+                    persist(PublicKeyHashToExternalId(accountInfo.accountId, newKeyAndCert.owningKey))
+                }
+            }
+            newKeyAndCert
         }
-
-        val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
-        serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
         return AnonymousParty(newKeyAndCert.owningKey)
     }
 }

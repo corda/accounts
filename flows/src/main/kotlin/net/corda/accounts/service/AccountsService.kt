@@ -179,11 +179,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             query.setParameter("hash", owningKey.toStringShort())
             query.resultList
         }
-        return if (uuid.isNotEmpty() && uuid.singleOrNull() != null) {
-            accountInfo(uuid.single())
-        } else {
-            null
-        }
+        return uuid.singleOrNull()?.let { accountInfo(it) }
     }
 
     @Suspendable

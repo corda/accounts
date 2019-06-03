@@ -9,6 +9,7 @@ buildscript {
         junit_version = '4.12'
         quasar_version = '0.7.10'
         log4j_version = '2.9.1'
+        tokens_sdk_version='1.0-SNAPSHOT'
     }
 
     repositories {
@@ -61,7 +62,7 @@ subprojects {
         maven { url 'https://jitpack.io' }
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
-        maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
+        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-tokens-dev" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

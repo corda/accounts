@@ -28,18 +28,24 @@ class ShareStateAndSyncAccountsFlow(private val state: StateAndRef<ContractState
             val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
             txToSend.let { txToSend ->
+
                 val accountsInvolvedWithState = state.state.data.participants.map { participant ->
                     accountService.accountInfo(participant.owningKey) to serviceHub.identityService.certificateFromKey(participant.owningKey)
+
                 }.filter { it.first != null && it.second != null }
+
                 accountsInvolvedWithState.forEach { accountToShare ->
                     subFlow(ShareAccountWithParties(accountToShare.first!!, listOf(wellKnownPartyFromAnonymous)))
                 }
+
                 val sessionToSendTo = initiateFlow(wellKnownPartyFromAnonymous)
                 if (accountsInvolvedWithState.isNotEmpty()) {
                     sessionToSendTo.send(accountsInvolvedWithState.size)
                     accountsInvolvedWithState.forEach { pair ->
                         sessionToSendTo.send(pair)
                     }
+                } else {
+                    sessionToSendTo.send(0)
                 }
                 subFlow(SendTransactionFlow(sessionToSendTo, txToSend))
             }

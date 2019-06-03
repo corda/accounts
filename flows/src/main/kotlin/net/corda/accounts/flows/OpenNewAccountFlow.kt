@@ -25,7 +25,6 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
         transactionBuilder.addOutputState(newAccount)
         transactionBuilder.addCommand(AccountInfoContract.OPEN, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
-
         return subFlow(FinalityFlow(signedTx, emptyList())).coreTransaction.outRefsOfType<AccountInfo>()
                 .single()
     }
