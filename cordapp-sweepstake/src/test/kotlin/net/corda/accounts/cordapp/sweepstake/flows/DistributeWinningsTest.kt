@@ -18,6 +18,7 @@ import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.startFlow
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.core.IsEqual
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -50,6 +51,12 @@ class DistributeWinningsTest {
 
         bobNode.registerInitiatedFlow(IssueTeamResponse::class.java)
     }
+
+    @After
+    fun cleanUp() {
+        mockNet.stopNodes()
+    }
+
 
     @Test
     fun `distribute winnings between groups`() {
