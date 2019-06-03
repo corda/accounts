@@ -1,5 +1,6 @@
 package net.corda.accounts.cordapp.sweepstake.states
 
+import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier
@@ -8,7 +9,7 @@ import net.corda.core.identity.AnonymousParty
 import java.security.PublicKey
 import java.util.*
 
-@BelongsToContract(AccountGroupContract::class)
+@BelongsToContract(TournamentContract::class)
 data class AccountGroup(val groupName: String,
                         val accounts: List<UUID>,
                         val owningKey: PublicKey? = null,

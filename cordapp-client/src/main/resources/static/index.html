@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Trustee</title>
+</head>
+<script src="https://cdn.jsdelivr.net/npm/lodash@4.17.11/lodash.min.js"></script>
+<style>
+    .styled-select {
+        background: url(http://i62.tinypic.com/15xvbd5.png) no-repeat 96% 0;
+        height: 29px;
+    }
+</style>
+
+<script type="application/javascript">
+
+    async function makeRequest(method, url) {
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method, url);
+            xhr.onload = function () {
+                if (this.status >= 200 && this.status < 300) {
+                    resolve(xhr.response);
+                } else {
+                    reject({
+                        status: this.status,
+                        statusText: xhr.statusText
+                    });
+                }
+            };
+            xhr.onerror = function () {
+                reject({
+                    status: this.status,
+                    statusText: xhr.statusText
+                });
+            };
+            xhr.send();
+        });
+    }
+
+    let playersPromise = makeRequest("GET", `/load-players/`).then(text => JSON.parse(test));
+
+    Promise.all([playersPromise]).then(results => {
+        let playersTable = document.createTable("table");
+
+        let players = results[0];
+
+        players.forEach(player => {
+            let row = document.createElement("tr");
+            let playerName = document.createElement("td");
+
+            playerName.innerText = player.playerName
+
+            playersTable.appendChild(row);
+        }
+
+        document.getElementById("playersHolder").appendChild(playersTable)
+    }
+
+    function createAccounts() {
+
+    }
+
+    function importTeams() {
+
+    }
+
+
+</script>
+
+<body>
+
+
+<h1>World Cup Sweepstake</h1>
+
+<div style=" border: 5px solid black; margin-bottom: 5px">
+    <h3>Players</h3>
+
+    <table id="players">
+        <tr>
+<!--            <th>Players</th>-->
+<!--            <th>Teams</th>-->
+<!--            <th>Groups</th>-->
+        </tr>
+        <tr>
+<!--            <th></th>-->
+<!--            <th></th>-->
+<!--            <th></th>-->
+        </tr>
+    </table>
+
+    <table>
+        <tr>
+            <td>
+            </td>
+            <td>
+                <button onclick="importPlayers()">Import players</button>
+                <button onclick="createAccounts()">Create accounts</button>
+                <button onclick="importTeams()">Issue teams</button>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<div id = "playersHolder">
+    <h3>Players</h3>
+
+</div>
+
+</body>
+</html>
