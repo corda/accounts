@@ -1,5 +1,8 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
+import com.r3.corda.sdk.token.money.GBP
+import net.corda.accounts.cordapp.sweepstake.service.TournamentService
+import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
@@ -93,7 +96,7 @@ class DistributeWinningsTest {
         // Mock up two winning teams
         val winners = tournamentService.getTeamStates().take(2)
 
-        charlieNode.services.startFlow(DistributeWinningsFlow(winners, 200L)).also {
+        charlieNode.services.startFlow(DistributeWinningsFlow(winners, 200L, GBP)).also {
             mockNet.runNetwork()
             it.resultFuture.getOrThrow()
         }

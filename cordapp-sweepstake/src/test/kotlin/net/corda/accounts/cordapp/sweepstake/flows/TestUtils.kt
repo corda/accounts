@@ -34,6 +34,7 @@ class TestUtils {
                 "net.corda.accounts.service",
                 "net.corda.accounts.contracts",
                 "net.corda.accounts.flows",
+                "net.corda.accounts.states",
                 "com.r3.corda.sdk.token.contracts",
                 "com.r3.corda.sdk.token.workflow")
     }

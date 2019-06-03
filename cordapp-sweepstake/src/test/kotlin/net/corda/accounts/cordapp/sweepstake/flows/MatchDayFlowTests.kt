@@ -4,6 +4,7 @@ import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.BELGIUM
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.teams
+import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.flows.ReceiveStateAndSyncAccountsFlow
 import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService

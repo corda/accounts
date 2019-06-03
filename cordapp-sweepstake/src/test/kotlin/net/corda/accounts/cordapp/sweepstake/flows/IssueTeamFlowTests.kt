@@ -2,6 +2,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
+import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.flows.GetAccountsFlow
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
