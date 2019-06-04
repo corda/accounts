@@ -69,7 +69,7 @@
     }
 
     function createAccounts() {
-        let accountsPromise = makeRequest("GET", `/create-accounts-issue-teams`).then(text => JSON.parse(text));
+        let accountsPromise = makeRequest("GET", `/create-accounts-issue-teams/`).then(text => JSON.parse(text));
 
         Promise.all([accountsPromise]).then(results => {
             let accountsAndTeams = results[0];
