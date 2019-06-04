@@ -144,7 +144,7 @@ class SimulateWorldCup {
         val prizeWinners = proxyA.startFlow(::GetPrizeWinners).returnValue.getOrThrow()
 
         // Confirm winners
-        require(prizeWinners.containsAll(winners)) {"The parties that were issued prizes were not returned from the vault."}
+        require(prizeWinners.containsAll(winners)) { "The parties that were issued prizes were not returned from the vault." }
     }
 
     private fun runMatchDayFlows(proxy: CordaRPCOps, teams: List<StateAndRef<TeamState>>): List<StateAndRef<TeamState>> {

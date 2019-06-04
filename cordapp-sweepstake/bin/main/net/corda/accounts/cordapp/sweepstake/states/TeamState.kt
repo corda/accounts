@@ -1,4 +1,5 @@
 package net.corda.accounts.cordapp.sweepstake.states
+
 import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.accounts.cordapp.sweepstake.flows.WorldCupTeam
 import net.corda.core.contracts.BelongsToContract
@@ -13,7 +14,7 @@ data class TeamState(val team: WorldCupTeam,
                      val assignedToPlayer: Boolean? = false,
                      val owningKey: PublicKey? = null,
                      val isStillPlaying: Boolean? = false,
-                     override val linearId: UniqueIdentifier = UniqueIdentifier()): LinearState {
+                     override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
     override val participants: List<AbstractParty>
         get() = listOfNotNull(owningKey).map { AnonymousParty(it) }
 }

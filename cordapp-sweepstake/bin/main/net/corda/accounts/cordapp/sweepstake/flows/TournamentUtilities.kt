@@ -216,7 +216,7 @@ class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>
 }
 
 @StartableByRPC
-class GetAccountGroupInfo: FlowLogic<List<StateAndRef<AccountGroup>>>() {
+class GetAccountGroupInfo : FlowLogic<List<StateAndRef<AccountGroup>>>() {
     @Suspendable
     override fun call(): List<StateAndRef<AccountGroup>> {
         return serviceHub.vaultService.queryBy<AccountGroup>().states
@@ -224,7 +224,7 @@ class GetAccountGroupInfo: FlowLogic<List<StateAndRef<AccountGroup>>>() {
 }
 
 @StartableByRPC
-class GetPrizeWinners: FlowLogic<List<AbstractParty>>() {
+class GetPrizeWinners : FlowLogic<List<AbstractParty>>() {
 
     @Suspendable
     override fun call(): List<AbstractParty> {

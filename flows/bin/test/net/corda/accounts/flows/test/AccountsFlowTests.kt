@@ -2,7 +2,7 @@ package net.corda.accounts.flows.test
 
 import net.corda.accounts.flows.OpenNewAccountFlow
 import net.corda.accounts.flows.ReceiveStateForAccountFlow
-import net.corda.accounts.flows.ShareAccountInfoWithNodes
+import net.corda.accounts.flows.ShareAccountWithParties
 import net.corda.accounts.service.KeyManagementBackedAccountService
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.node.services.vault.QueryCriteria
@@ -12,7 +12,7 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.collection.IsIterableContainingInAnyOrder
+import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.hamcrest.core.IsEqual
 import org.junit.After
 import org.junit.Assert
@@ -29,16 +29,17 @@ class AccountsFlowTests {
     @Before
     fun setup() {
         network = MockNetwork(
-            listOf(
-                "net.corda.accounts.model",
-                "net.corda.accounts.service",
-                "net.corda.accounts.contracts",
-                "net.corda.accounts.flows"
-            ), MockNetworkParameters(
+                listOf(
+                        "net.corda.accounts.model",
+                        "net.corda.accounts.service",
+                        "net.corda.accounts.contracts",
+                        "net.corda.accounts.flows",
+                        "net.corda.accounts.states"
+                ), MockNetworkParameters(
                 networkParameters = testNetworkParameters(
-                    minimumPlatformVersion = 4
+                        minimumPlatformVersion = 4
                 )
-            )
+        )
         )
         a = network.createPartyNode()
         b = network.createPartyNode()
@@ -53,17 +54,6 @@ class AccountsFlowTests {
     fun tearDown() {
         network.stopNodes()
     }
-
-
-    @Test
-    fun `should create new account`() {
-        val future = a.startFlow(OpenNewAccountFlow("Stefano_Account"))
-        network.runNetwork()
-        val result = future.getOrThrow()
-        val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
-        Assert.assertTrue(storedAccountInfo == result)
-    }
-
 
     @Test
     fun `should share state with only specified account`() {
@@ -80,9 +70,9 @@ class AccountsFlowTests {
 
         network.runNetwork()
 
-        val shareB1ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
-        val shareB2ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
-        val shareB3ToAFuture = b.startFlow(ShareAccountInfoWithNodes(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB1ToAFuture = b.startFlow(ShareAccountWithParties(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB2ToAFuture = b.startFlow(ShareAccountWithParties(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB3ToAFuture = b.startFlow(ShareAccountWithParties(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
         network.runNetwork()
 
         CompletableFuture.allOf(shareB1ToAFuture, shareB2ToAFuture, shareB3ToAFuture).getOrThrow()
@@ -99,22 +89,22 @@ class AccountsFlowTests {
 
         val permissionedStatesForAccountB1 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB1.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB1.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
         val permissionedStatesForAccountB2 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB2.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB2.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
         val permissionedStatesForAccountB3 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB3.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB3.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
@@ -132,12 +122,14 @@ class AccountsFlowTests {
 
         val permissionedStatesForAccountB3AfterA1Shared = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                futureB3.getOrThrow().state.data.accountId,
-                QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
+                    futureB3.getOrThrow().state.data.accountId,
+                    QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
-        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (IsIterableContainingInAnyOrder.containsInAnyOrder(futureA3.getOrThrow().ref, futureA1.getOrThrow().ref)))
+        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (containsInAnyOrder(futureA3.getOrThrow().ref, futureA1.getOrThrow().ref)))
 
     }
+
+
 }

@@ -47,7 +47,7 @@ configurations {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
     // Corda integration dependencies
     cordaCompile ("$corda_release_group:corda-core:$corda_release_version"){
@@ -61,9 +61,9 @@ dependencies {
     cordapp project(":states-and-contracts")
 
 
-    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
-    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile "junit:junit:$junit_version"
+    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "junit:junit:$junit_version"
 
 }
 

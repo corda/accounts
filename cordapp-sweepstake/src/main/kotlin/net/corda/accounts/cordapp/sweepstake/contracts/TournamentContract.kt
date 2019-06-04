@@ -20,7 +20,7 @@ class TournamentContract : Contract {
         when {
             command.value == ISSUE_TEAM -> {
                 require(tx.inputs.isEmpty()) { "When assigning teams there cannot be any input states" }
-                require(tx.outputStates.size == 1 ) { "When assigning teams there can only be one output state" }
+                require(tx.outputStates.size == 1) { "When assigning teams there can only be one output state" }
             }
 
             command.value == MATCH_WON -> {

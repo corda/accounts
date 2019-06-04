@@ -5,16 +5,12 @@ import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
-import net.corda.core.utilities.unwrap
-import net.corda.node.services.api.IdentityServiceInternal
-import net.corda.node.services.keys.PublicKeyHashToExternalId
 
 @StartableByRPC
 @StartableByService
 @InitiatingFlow
-class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val others: List<Party>) : FlowLogic<Unit>() {
+class ShareAccountWithParties(val account: StateAndRef<AccountInfo>, val others: List<Party>) : FlowLogic<Unit>() {
 
     @Suspendable
     override fun call() {
@@ -29,7 +25,7 @@ class ShareAccountInfoWithNodes(val account: StateAndRef<AccountInfo>, val other
 
 }
 
-@InitiatedBy(ShareAccountInfoWithNodes::class)
+@InitiatedBy(ShareAccountWithParties::class)
 class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {

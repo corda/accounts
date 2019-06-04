@@ -43,39 +43,62 @@
         let playersPromise = makeRequest("GET", `/load-players/`).then(text => JSON.parse(text));
 
         Promise.all([playersPromise]).then(results => {
-        let players = results[0];
-        let playersTable = document.createElement("table");
+            let players = results[0];
+            let playersTable = document.createElement("table");
 
-        let playerHeader = document.createElement("th");
-        playerHeader.style.display = "inline";
-        playerHeader.innerText = "Player name";
-        playersTable.appendChild(playerHeader);
+            let playerHeader = document.createElement("th");
+            playerHeader.style.display = "inline";
+            playerHeader.innerText = "Player name";
+            playersTable.appendChild(playerHeader);
 
-        players.forEach(player => {
-            let row = document.createElement("tr");
-            let playerNameCell = document.createElement("td");
-            // let playerHeader = document.createElement("h5");
-            playerNameCell.style.display = "inline";
-            playerNameCell.innerText = player.playerName;
-            // playerNameCell.appendChild(playerHeader);
+            players.forEach(player => {
+                let row = document.createElement("tr");
+                let playerNameCell = document.createElement("td");
+                // let playerHeader = document.createElement("h5");
+                playerNameCell.style.display = "inline";
+                playerNameCell.innerText = player.playerName;
+                // playerNameCell.appendChild(playerHeader);
 
-            row.appendChild(playerNameCell);
+                row.appendChild(playerNameCell);
 
-            playersTable.appendChild(row);
-        });
+                playersTable.appendChild(row);
+            });
 
-        document.getElementById('playersHolder').appendChild(playersTable);
+            document.getElementById('playersHolder').appendChild(playersTable);
         })
     }
 
     function createAccounts() {
+        let accountsPromise = makeRequest("GET", `/create-accounts-issue-teams`).then(text => JSON.parse(text));
 
+        Promise.all([accountsPromise]).then(results => {
+            let accountsAndTeams = results[0];
+
+            // let playerTable = document.getElementById('playersHolder');
+            let playersTable = document.getElementById('table');
+            addColumn(playersTable, "Account ID");
+        });
     }
 
     function importTeams() {
 
     }
 
+    function addColumn(tblId, columnHeader){
+        var tblHeadObj = document.getElementById(tblId).tHead;
+        for (var h=0; h<tblHeadObj.rows.length; h++) {
+            var newTH = document.createElement('th');
+            newTh.innerText = columnHeader;
+            tblHeadObj.rows[h].appendChild(newTH);
+            newTH.innerHTML = '[th] row:' + h + ', cell: ' + (tblHeadObj.rows[h].cells.length - 1)
+        }
+
+        var tblBodyObj = document.getElementById(tblId).tBodies[0];
+        for (var i=0; i<tblBodyObj.rows.length; i++) {
+            var newCell = tblBodyObj.rows[i].insertCell(-1);
+            newCell.innerHTML = '[td] row:' + i + ', cell: ' + (tblBodyObj.rows[i].cells.length - 1)
+        }
+    }
 
 </script>
 
@@ -90,8 +113,7 @@
         <tr>
             <td>
                 <button onclick="importPlayers()">Import players</button>
-                <button onclick="createAccounts()">Create accounts</button>
-                <button onclick="importTeams()">Issue teams</button>
+                <button onclick="createAccounts()">Create accounts and issue teams</button>
             </td>
         </tr>
     </table>

@@ -21,12 +21,12 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
         val transactionBuilder = TransactionBuilder()
         transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
         val newAccount =
-            AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId)
+                AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId)
         transactionBuilder.addOutputState(newAccount)
         transactionBuilder.addCommand(AccountInfoContract.OPEN, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
         return subFlow(FinalityFlow(signedTx, emptyList())).coreTransaction.outRefsOfType<AccountInfo>()
-            .single()
+                .single()
     }
 
 }

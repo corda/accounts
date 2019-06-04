@@ -16,7 +16,8 @@ data class AccountGroup(val groupName: String,
                         val stateId: String? = null,
                         override val linearId: UniqueIdentifier = UniqueIdentifier(stateId)) : LinearState {
     //Empty state constructor
-    constructor(): this("", emptyList(), null, null, UniqueIdentifier(null))
+    constructor() : this("", emptyList(), null, null, UniqueIdentifier(null))
+
     override val participants: List<AbstractParty>
         get() = listOfNotNull(owningKey).map { AnonymousParty(it) }
 }

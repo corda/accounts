@@ -101,7 +101,7 @@ class MatchDayFlowTests {
         }
 
 
-        val matchResult = charlieNode.services.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).resultFuture.run {
+        val matchResult = charlieNode.services.startFlow(MatchDayFlow(teamB, teamA, teamB)).resultFuture.run {
             mockNet.runNetwork()
             getOrThrow()
         }
@@ -111,6 +111,7 @@ class MatchDayFlowTests {
         val accountOfWinner = charlieNode.database.transaction {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
+
         Assert.assertThat(accountOfWinner!!.state.data.accountId, `is`(testAccountB.state.data.accountId))
     }
 

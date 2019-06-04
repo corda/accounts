@@ -15,6 +15,7 @@ buildscript {
         spring_boot_gradle_plugin_version = '2.0.2.RELEASE'
         slf4j_version = '1.7.25'
         log4j_version = '2.11.2'
+        tokens_sdk_version='1.0-SNAPSHOT-WILLH'
     }
 
     repositories {
@@ -38,7 +39,7 @@ plugins {
 }
 
 allprojects {
-    version "1.0-SNAPSHOT"
+    version "1.0-PV4-SNAPSHOT"
     group "com.r3.accounts-sdk"
 
     configurations.all {
@@ -68,7 +69,7 @@ subprojects {
         maven { url 'https://jitpack.io' }
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
-        maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
+        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-tokens-dev" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

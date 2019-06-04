@@ -5,7 +5,6 @@ import com.r3.corda.sdk.token.contracts.utilities.heldBy
 import com.r3.corda.sdk.token.contracts.utilities.issuedBy
 import com.r3.corda.sdk.token.contracts.utilities.of
 import com.r3.corda.sdk.token.money.FiatCurrency
-import com.r3.corda.sdk.token.money.GBP
 import com.r3.corda.sdk.token.workflow.flows.shell.IssueTokens
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
@@ -19,7 +18,7 @@ import net.corda.core.identity.AnonymousParty
 @StartableByRPC
 class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamState>>,
                              private val prizeAmount: Long,
-                             private val prizeCurrency: FiatCurrency): FlowLogic<List<AnonymousParty>>() {
+                             private val prizeCurrency: FiatCurrency) : FlowLogic<List<AnonymousParty>>() {
 
     @Suspendable
     override fun call(): List<AnonymousParty> {
