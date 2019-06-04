@@ -3,6 +3,11 @@ apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
 sourceSets {
+//    main {
+//        resources {
+//            srcDir rootProject.file("config/dev")
+//        }
+//    }
     integrationTest {
         kotlin {
             compileClasspath += main.output + test.output
@@ -62,4 +67,10 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
 task integrationTest(type: Test, dependsOn: []) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+task runTournamentServer(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'net.corda.accounts.cordapp.sweepstake.clients.WorldCupApplication'
+    args '--server.port=8080', '--config.rpc.host=localhost', '--config.rpc.port=10005', '--config.rpc.username=user1', '--config.rpc.password=test'
 }
