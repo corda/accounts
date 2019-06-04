@@ -39,7 +39,6 @@ dependencies {
     cordaRuntime "$corda_release_group:corda:$corda_release_version"
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
 
-
     cordapp "$tokens_sdk:contract:$tokens_sdk_version"
     cordapp "$tokens_sdk:workflow:$tokens_sdk_version"
     cordapp "$tokens_sdk:money:$tokens_sdk_version"
@@ -106,36 +105,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         }
         rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
-//    node {
-//        name "O=PrizeManager,L=New York,C=US"
-//        p2pPort 10008
-//        sshdPort 2224
-//        rpcSettings {
-//            address("localhost:10009")
-//            adminAddress("localhost:10010")
-//        }
-//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
-//    }
-//    node {
-//        name "O=FundManager2,L=Paris,C=FR"
-//        p2pPort 10012
-//        sshdPort 2224
-//        rpcSettings {
-//            address("localhost:10013")
-//            adminAddress("localhost:10014")
-//        }
-//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
-//    }
-//    node {
-//        name "O=Administrator1,L=Paris,C=FR"
-//        p2pPort 10020
-//        sshdPort 2225
-//        rpcSettings {
-//            address("localhost:10021")
-//            adminAddress("localhost:10022")
-//        }
-//        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
-//    }
 }
 
 task integrationTest(type: Test, dependsOn: []) {

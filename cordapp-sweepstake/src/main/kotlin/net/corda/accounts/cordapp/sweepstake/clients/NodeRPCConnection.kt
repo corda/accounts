@@ -1,4 +1,4 @@
-package net.corda.accounts.cordapp.sweepstake.clientsh
+package net.corda.accounts.cordapp.sweepstake.clients
 
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.client.rpc.CordaRPCConnection

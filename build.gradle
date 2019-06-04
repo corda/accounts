@@ -38,7 +38,7 @@ plugins {
 }
 
 allprojects {
-    version "1.0-PV4-SNAPSHOT"
+    version "1.0-SNAPSHOT"
     group "com.r3.accounts-sdk"
 
     configurations.all {

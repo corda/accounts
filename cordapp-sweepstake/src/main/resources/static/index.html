@@ -38,7 +38,24 @@
         });
     }
 
-    let playersPromise = makeRequest("GET", `/load-players/`).then(text => JSON.parse(test));
+    function player(name){
+      this.name = name;
+    }
+    var playersPromise = [];
+
+    players.push(player("will1"))
+    players.push(player("will2"))
+    players.push(player("will3"))
+    players.push(player("will4"))
+    players.push(player("will5"))
+    players.push(player("will6"))
+    players.push(player("will7"))
+    players.push(player("will8"))
+    players.push(player("will9"))
+    players.push(player("will0"))
+
+    // let playersPromise = makeRequest("GET", `/load-players/`).then(text => JSON.parse(test));
+
 
     Promise.all([playersPromise]).then(results => {
         let playersTable = document.createTable("table");
@@ -52,10 +69,10 @@
             playerName.innerText = player.playerName
 
             playersTable.appendChild(row);
-        }
+        });
 
         document.getElementById("playersHolder").appendChild(playersTable)
-    }
+    });
 
     function createAccounts() {
 
@@ -73,22 +90,8 @@
 
 <h1>World Cup Sweepstake</h1>
 
-<div style=" border: 5px solid black; margin-bottom: 5px">
+<div id = "playersHolder">
     <h3>Players</h3>
-
-    <table id="players">
-        <tr>
-<!--            <th>Players</th>-->
-<!--            <th>Teams</th>-->
-<!--            <th>Groups</th>-->
-        </tr>
-        <tr>
-<!--            <th></th>-->
-<!--            <th></th>-->
-<!--            <th></th>-->
-        </tr>
-    </table>
-
     <table>
         <tr>
             <td>
@@ -101,11 +104,5 @@
         </tr>
     </table>
 </div>
-
-<div id = "playersHolder">
-    <h3>Players</h3>
-
-</div>
-
 </body>
 </html>

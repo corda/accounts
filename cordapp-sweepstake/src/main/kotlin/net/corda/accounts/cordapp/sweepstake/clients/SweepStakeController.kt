@@ -1,6 +1,5 @@
 package net.corda.accounts.cordapp.sweepstake.clients
 
-import net.corda.accounts.cordapp.sweepstake.clientsh.NodeRPCConnection
 import net.corda.accounts.cordapp.sweepstake.flows.Participant
 import net.corda.accounts.cordapp.sweepstake.flows.generateParticipantsFromFile
 import net.corda.accounts.cordapp.sweepstake.flows.generateTeamsFromFile
