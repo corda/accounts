@@ -10,6 +10,7 @@ import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.transactions.TransactionBuilder
 import java.util.*
+import javax.persistence.PersistenceException
 
 @StartableByService
 @StartableByRPC
@@ -19,14 +20,20 @@ class OpenNewAccountFlow(private val id: String, private val accountId: UUID) : 
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
         val transactionBuilder = TransactionBuilder()
-        transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
+        transactionBuilder.notary = selectNotaryForIssuance()
         val newAccount =
                 AccountInfo(id, serviceHub.myInfo.legalIdentities.first(), accountId)
         transactionBuilder.addOutputState(newAccount)
         transactionBuilder.addCommand(AccountInfoContract.OPEN, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder)
-        return subFlow(FinalityFlow(signedTx, emptyList())).coreTransaction.outRefsOfType<AccountInfo>()
-                .single()
+        try {
+            return subFlow(FinalityFlow(signedTx, emptyList())).coreTransaction.outRefsOfType<AccountInfo>()
+                    .single()
+        }catch (e: PersistenceException){
+            throw IllegalStateException("duplicate account name + host combination requested")
+        }
     }
+
+    private fun selectNotaryForIssuance() = serviceHub.networkMapCache.notaryIdentities.first()
 
 }
