@@ -1,4 +1,4 @@
-package net.corda.accounts.flows.test
+package net.corda.accounts.workflows.test
 
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.identity.Party

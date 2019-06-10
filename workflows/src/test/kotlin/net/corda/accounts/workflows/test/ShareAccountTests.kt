@@ -1,9 +1,8 @@
-package net.corda.accounts.flows.test
+package net.corda.accounts.workflows.test
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.ReceiveStateForAccountFlow
 import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
 import net.corda.accounts.workflows.services.AccountService
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
@@ -34,20 +33,11 @@ class ShareAccountTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                listOf(
-                        "net.corda.accounts.contracts",
-                        "net.corda.accounts.workflows"
-                ), MockNetworkParameters(
-                networkParameters = testNetworkParameters(
-                        minimumPlatformVersion = 4
-                )
-        )
+                cordappPackages = listOf("net.corda.accounts.contracts", "net.corda.accounts.workflows"),
+                defaultParameters = MockNetworkParameters(networkParameters = testNetworkParameters(minimumPlatformVersion = 4))
         )
         a = network.createPartyNode()
         b = network.createPartyNode()
-
-        a.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
-        b.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
 
         network.runNetwork()
     }
@@ -123,7 +113,6 @@ private fun StartedMockNode.accountService(): AccountService {
     return this.services.cordaService(KeyManagementBackedAccountService::class.java)
 }
 
-
 @BelongsToContract(TestContract::class)
 data class TestState(val owner: AbstractParty, val issuer: AbstractParty) : ContractState {
     override val participants: List<AbstractParty>
@@ -131,8 +120,7 @@ data class TestState(val owner: AbstractParty, val issuer: AbstractParty) : Cont
 }
 
 class TestContract : Contract {
-    override fun verify(tx: LedgerTransaction) {
-    }
+    override fun verify(tx: LedgerTransaction) = Unit
 }
 
 object ISSUE : CommandData

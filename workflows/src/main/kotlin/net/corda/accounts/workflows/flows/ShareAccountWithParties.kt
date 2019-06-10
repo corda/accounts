@@ -30,7 +30,10 @@ class GetAccountInfo(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val receivedAccount =
-                subFlow(ReceiveTransactionFlow(otherSession, statesToRecord = StatesToRecord.ALL_VISIBLE)).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
+                subFlow(ReceiveTransactionFlow(
+                        otherSession,
+                        statesToRecord = StatesToRecord.ALL_VISIBLE
+                )).coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
     }
 
 }
