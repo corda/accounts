@@ -1,10 +1,10 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
-import net.corda.accounts.flows.RequestKeyForAccountFlow
-import net.corda.accounts.states.AccountInfo
+import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
@@ -26,7 +26,7 @@ class IssueAccountToGroupFlow(
 //        val sessions = listOf(initiateFlow(otherParty))
         val keyToUse = subFlow(RequestKeyForAccountFlow(account.state.data)).owningKey
 
-        val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.accountId), keyToUse)
+        val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.id), keyToUse)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addOutputState(outputState)
         txBuilder.addCommand(TournamentContract.ISSUE_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
@@ -58,7 +58,7 @@ class UpdateAccountGroupFlow(
 
         val inputState = getStateForLinearId(serviceHub, linearId)
         val groupAccountIds = inputState.state.data.accounts
-        val outputState = inputState.state.data.copy(accounts = groupAccountIds.plus(account.state.data.accountId), owningKey = newKey)
+        val outputState = inputState.state.data.copy(accounts = groupAccountIds.plus(account.state.data.id), owningKey = newKey)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addInputState(inputState)
         txBuilder.addOutputState(outputState)

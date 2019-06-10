@@ -3,7 +3,6 @@ apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
-jar.baseName = "accounts-sdk-cordapp-sweepstake"
 
 cordapp {
     info {
@@ -11,9 +10,6 @@ cordapp {
         vendor "Corda Open Source"
         targetPlatformVersion 4
         minimumPlatformVersion 4
-    }
-    signing {
-        enabled false
     }
 }
 
@@ -31,6 +27,7 @@ configurations {
     integrationTestCompile.extendsFrom testCompile
     integrationTestRuntime.extendsFrom testRuntime
 }
+
 
 dependencies {
     cordapp project(":flows")

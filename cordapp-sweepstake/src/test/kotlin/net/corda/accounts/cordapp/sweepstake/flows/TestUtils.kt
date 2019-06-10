@@ -1,6 +1,6 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 
 class TestUtils {
@@ -31,10 +31,10 @@ class TestUtils {
                 "net.corda.accounts.cordapp.sweepstake.contracts",
                 "net.corda.accounts.cordapp.sweepstake.flows",
                 "net.corda.accounts.cordapp.sweepstake.service",
-                "net.corda.accounts.service",
+                "net.corda.accounts.workflows.flows",
+                "net.corda.accounts.workflows.schemas",
+                "net.corda.accounts.workflows.services",
                 "net.corda.accounts.contracts",
-                "net.corda.accounts.flows",
-                "net.corda.accounts.states",
                 "com.r3.corda.sdk.token.contracts",
                 "com.r3.corda.sdk.token.workflow")
     }

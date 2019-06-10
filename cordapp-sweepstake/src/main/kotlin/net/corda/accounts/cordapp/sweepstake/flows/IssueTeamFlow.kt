@@ -1,10 +1,10 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.flows.RequestKeyForAccountFlow
-import net.corda.accounts.states.AccountInfo
+import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic

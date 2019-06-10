@@ -5,11 +5,11 @@ import com.google.common.annotations.VisibleForTesting
 import com.r3.corda.sdk.token.contracts.states.FungibleToken
 import com.r3.corda.sdk.token.money.GBP
 import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
+import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.service.KeyManagementBackedAccountService
-import net.corda.accounts.states.AccountInfo
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.CordaInternal
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
@@ -171,7 +171,7 @@ class IssueTeamWrapper(private val accountInfo: StateAndRef<AccountInfo>,
                        private val team: WorldCupTeam) : FlowLogic<StateAndRef<TeamState>>() {
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
-        return (subFlow(IssueTeamFlow(setOf(initiateFlow(accountInfo.state.data.accountHost)), accountInfo, team)))
+        return (subFlow(IssueTeamFlow(setOf(initiateFlow(accountInfo.state.data.host)), accountInfo, team)))
     }
 }
 
@@ -200,7 +200,7 @@ class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val accounts = accountService.allAccounts()
         accounts.forEach { account ->
-            accountService.shareAccountInfoWithParty(account.state.data.accountId, otherParty).getOrThrow()
+            accountService.shareAccountInfoWithParty(account.state.data.id, otherParty).getOrThrow()
         }
     }
 }
