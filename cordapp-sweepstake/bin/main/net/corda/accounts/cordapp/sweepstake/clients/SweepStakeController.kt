@@ -3,6 +3,8 @@ package net.corda.accounts.cordapp.sweepstake.clients
 import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.states.AccountInfo
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.messaging.startFlow
+import net.corda.core.messaging.startTrackedFlow
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.getOrThrow
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,7 +31,7 @@ class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
         val participants = createParticipantsForTournament()
         var accounts = mutableListOf< StateAndRef<AccountInfo>>()
         participants.forEach {
-           val newAccount =  proxy.startFlowDynamic(CreateAccountForPlayer::class.java, it).returnValue.getOrThrow()
+           val newAccount =  proxy.startFlow(::CreateAccountForPlayer, it).returnValue.getOrThrow()
             accounts.add(newAccount)
         }
 

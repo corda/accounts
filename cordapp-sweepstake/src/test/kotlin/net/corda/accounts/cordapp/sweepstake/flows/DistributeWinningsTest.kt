@@ -75,7 +75,7 @@ class DistributeWinningsTest {
             }
         }
 
-        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
+        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8)
 
         val tournamentService = aliceNode.services.cordaService(TournamentService::class.java)
 

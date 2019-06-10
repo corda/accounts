@@ -26,29 +26,29 @@ import java.util.*
 class TournamentService(val services: AppServiceHub) : SingletonSerializeAsToken() {
 
     @Suspendable
-    fun assignAccountsToGroups(accounts: List<StateAndRef<AccountInfo>>, numOfTeams: Int, otherParty: Party) {
+    fun assignAccountsToGroups(accounts: List<StateAndRef<AccountInfo>>, numOfTeams: Int) {
         val accountGroups = splitAccountsIntoGroupsOfFour(accounts)
         val groupIds = generateGroupIdsForAccounts(accounts.size, numOfTeams)
         val map = groupIds.zip(accountGroups)
 
         map.forEach {
-            assignAccountsToGroup(it.first, it.second, otherParty)
+            assignAccountsToGroup(it.first, it.second)
         }
     }
 
     @Suspendable
-    private fun assignAccountsToGroup(groupId: Int, accounts: List<StateAndRef<AccountInfo>>, otherParty: Party) {
-        val initialState = flowAwareStartFlow(IssueAccountToGroupFlow(otherParty, accounts.first(), groupId)).toCompletableFuture().getOrThrow()
-        updateStates(accounts.drop(1), initialState, otherParty)
+    private fun assignAccountsToGroup(groupId: Int, accounts: List<StateAndRef<AccountInfo>>) {
+        val initialState = flowAwareStartFlow(IssueAccountToGroupFlow(accounts.first(), groupId)).toCompletableFuture().getOrThrow()
+        updateStates(accounts.drop(1), initialState)
     }
 
     @Suspendable
-    private fun updateStates(accounts: List<StateAndRef<AccountInfo>>, initialState: StateAndRef<AccountGroup>, otherParty: Party) {
+    private fun updateStates(accounts: List<StateAndRef<AccountInfo>>, initialState: StateAndRef<AccountGroup>) {
         while (accounts.isNotEmpty()) {
-            val newState = flowAwareStartFlow(UpdateAccountGroupFlow(otherParty, accounts.first(), initialState.state.data.linearId)).toCompletableFuture().getOrThrow()
+            val newState = flowAwareStartFlow(UpdateAccountGroupFlow(accounts.first(), initialState.state.data.linearId)).toCompletableFuture().getOrThrow()
             return if (accounts.size == 1) {
             } else {
-                updateStates(accounts.drop(1), newState, otherParty)
+                updateStates(accounts.drop(1), newState)
             }
         }
     }

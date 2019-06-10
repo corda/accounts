@@ -1,0 +1,53 @@
+table {
+    border-collapse: collapse;
+    width: 75%;
+}
+
+th, td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+body {
+    font: normal 16px Verdana, Arial, sans-serif;
+}
+
+.firstCol {
+    width: 100px;
+    text-align: left;
+}
+.secondCol {
+    width: 250px;
+    text-align: left;
+}
+
+.thirdCol {
+    width: 500px;
+    text-align: left;
+}
+
+.grouping tr:nth-child(n){
+    background: #c5d5c5;
+}
+.grouping tr:nth-child(n+5){
+    background: #9fa9a3;
+}
+.grouping tr:nth-child(n+9){
+    background: #c0ded9;
+}
+.grouping tr:nth-child(n+13){
+    background: #b0aac0;
+}
+.grouping tr:nth-child(n+17){
+    background: #77a8a8;
+}
+.grouping tr:nth-child(n+21){
+    background: #e4d1d1;
+}
+.grouping tr:nth-child(n+25){
+    background: #b9b0b0;
+}
+.grouping tr:nth-child(n+29){
+    background: #d9ecd0;
+}

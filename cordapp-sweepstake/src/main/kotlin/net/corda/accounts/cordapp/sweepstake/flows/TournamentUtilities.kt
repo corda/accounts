@@ -207,11 +207,10 @@ class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
 
 @StartableByRPC
 class AssignAccountsToGroups(private val accounts: List<StateAndRef<AccountInfo>>,
-                             private val numOfTeams: Int,
-                             private val otherParty: Party) : FlowLogic<Unit>() {
+                             private val numOfTeams: Int) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        serviceHub.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, numOfTeams, otherParty)
+        serviceHub.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, numOfTeams)
     }
 }
 
@@ -234,4 +233,12 @@ class GetPrizeWinners : FlowLogic<List<AbstractParty>>() {
             it.state.data.holder
         }
     }
+}
+
+@StartableByRPC
+class GetTeamStates : FlowLogic<List<StateAndRef<TeamState>>>() {
+    override fun call(): List<StateAndRef<TeamState>> {
+        return serviceHub.vaultService.queryBy<TeamState>().states
+    }
+
 }

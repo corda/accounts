@@ -25,10 +25,10 @@ import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
 import net.corda.testing.node.User
 import org.assertj.core.api.Assertions
+import org.junit.Test
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.core.IsEqual
 import org.junit.Assert
-import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
@@ -115,8 +115,8 @@ class SimulateWorldCup {
             proxyA.startFlow(::ShareStateAndSyncAccountsFlow, team, nodeB.nodeInfo.singleIdentity()).returnValue.getOrThrow()
         }
 
-        // Assign accounts to groups and share with charlie
-        proxyA.startFlow(::AssignAccountsToGroups, accountsForA, teams.size, proxyC.nodeInfo().singleIdentity()).returnValue.getOrThrow()
+        // Assign accounts to groups
+        proxyA.startFlow(::AssignAccountsToGroups, accountsForA, teams.size).returnValue.getOrThrow()
         val groups = proxyA.startFlow(::GetAccountGroupInfo).returnValue.getOrThrow()
 
         // Check that each group contains only 4 accounts

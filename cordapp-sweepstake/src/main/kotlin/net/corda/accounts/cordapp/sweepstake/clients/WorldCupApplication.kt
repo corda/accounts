@@ -19,6 +19,8 @@ open class WorldCupApplication {
             for (beanName in beanNames) {
                 println(beanName)
             }
+            println("*******************************")
+            println("THE SERVER IS READY FOR ACTION")
         }
     }
 

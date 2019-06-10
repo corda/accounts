@@ -64,7 +64,7 @@ class AccountGroupingFlowTests {
 
         val accounts = aliceService.myAccounts()
 
-        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
+        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8)
 
         val aliceGroupStates = aliceNode.services.vaultService.queryBy<AccountGroup>().states
 
