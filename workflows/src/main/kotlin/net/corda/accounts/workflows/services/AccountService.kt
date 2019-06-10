@@ -25,16 +25,23 @@ interface AccountService : SerializeAsToken {
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     /**
-     * Creates a new account by calling the [OpenAccount] flow. This flow returns a future which completes to return
-     * a [StateAndRef] when the [OpenAccount] flow finishes. Note that account names must be unique at the host level,
-     * therefore if a duplicate name is specified then the [OpenAccount] flow will throw an exception.
+     * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
+     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
+     * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
      *
      * @param name the proposed name for this account.
      */
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
 
-    // Overload for creating an account with a specific account ID.
-    fun createAccount(name: String, accountId: UUID): CordaFuture<StateAndRef<AccountInfo>>
+    /**
+     * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
+     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
+     * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
+     *
+     * @param name the proposed name for this account.
+     * @param id the proposed account ID for this account.
+     */
+    fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>>
 
     // Returns all the keys used by the account specified by the account ID.
     fun accountKeys(accountId: UUID): List<PublicKey>

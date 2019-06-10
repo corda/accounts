@@ -20,6 +20,4 @@ data class AllowedToSeeStateMapping(
         var externalId: UUID?,
 
         override var stateRef: PersistentStateRef?
-) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
-    constructor() : this(null, null, null)
-}
+) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java))

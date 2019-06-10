@@ -1,7 +1,6 @@
-package net.corda.accounts.flows.test
+package net.corda.accounts.workflows.test
 
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.ReceiveStateForAccountFlow
 import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
@@ -9,6 +8,7 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.junit.After
@@ -25,20 +25,16 @@ class AccountKeysTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                listOf(
-                        "net.corda.accounts.contracts",
-                        "net.corda.accounts.workflows"
-                ), MockNetworkParameters(
-                networkParameters = testNetworkParameters(
-                        minimumPlatformVersion = 4
+                MockNetworkParameters(
+                        networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
+                        cordappsForAllNodes = listOf(
+                                TestCordapp.findCordapp("net.corda.accounts.contracts"),
+                                TestCordapp.findCordapp("net.corda.accounts.workflows")
+                        )
                 )
-        )
         )
         a = network.createPartyNode()
         b = network.createPartyNode()
-
-        a.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
-        b.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
 
         network.runNetwork()
     }
