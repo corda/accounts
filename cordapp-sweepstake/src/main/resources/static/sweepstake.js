@@ -31,26 +31,6 @@ function importPlayers() {
         let playersTable = document.createElement("table");
         playersTable.setAttribute("id", "tournamentData")
 
-        // let headerRow = document.createElement("tr");
-        //
-        // let playerHeader = document.createElement("th");
-        // playerHeader.innerText = "Player name";
-        //
-        // let teamHeader = document.createElement("th");
-        // teamHeader.innerText = "Team";
-        //
-        // let accountHeader = document.createElement("th");
-        // accountHeader.innerText = "Account ID";
-        //
-        // let groupHeader = document.createElement("th");
-        // groupHeader.innerText = "Group";
-        //
-        // headerRow.appendChild(playerHeader);
-        // headerRow.appendChild(teamHeader);
-        // headerRow.appendChild(accountHeader);
-        // headerRow.appendChild(groupHeader);
-        // playersTable.appendChild(headerRow);
-
         players.forEach(player => {
             let row = document.createElement("tr");
             let playerNameCell = document.createElement("td");
@@ -97,17 +77,13 @@ function assignGroups(){
     let groupsPromise = makeRequest("GET", `/issue-groups/`).then(text => JSON.parse(text));
     let playersTable = document.getElementById('tournamentData');
     playersTable.classList.add("grouping");
-    // Promise.all([groupsPromise]).then(results => {
-    //     let groups = results[0];
-    //
-    //     let count=0;
-    //     groups.forEach(function(element, i) {
-    //         createCell(playersTable.rows[i].insertCell(playersTable.rows[i].cells.length), element.groupName, 'col');
-    //         count++;
-    //     });
 
-        document.getElementById("groupBtn").disabled = 'true';
-    // })
+    document.getElementById("groupBtn").disabled = 'true';
+}
+
+function createBracket() {
+    let w = window.open();
+    let html = '<html><head> <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"\>    </script> <script>var xml = \'<Report>......</Report>\'</script> <script src="./js/printScript.js"></script> <script src="./js/printHTML.js"></script> <link rel="stylesheet" type="text/css" href="./css/printScriptStyle.css"></head>    <body></body></html>';
 
 }
 

@@ -1,0 +1,116 @@
+html, body, .brackets {
+    width: 100%;
+    min-height: 100%;
+    font-family: "Arial", sans-serif;
+}
+.metroBtn {
+    background-color: #2E7BCC;
+    color: #fff;
+    font-size: 1.1em;
+    padding: 10px;
+    display: inline-block;
+    margin-bottom: 30px;
+    cursor: pointer;
+}
+.brackets > div {
+    vertical-align: top;
+    clear: both;
+}
+.brackets > div > div {
+    float: left;
+    height: 100%;
+}
+.brackets > div > div > div {
+    margin: 50px 0;
+}
+.brackets div.bracketbox {
+    position: relative;
+    width: 100%; height: 100%;
+    border-top: 1px solid #555;
+    border-right: 1px solid #555;
+    border-bottom: 1px solid #555;
+}
+.brackets div.bracketbox > span.info {
+    position: absolute;
+    top: 25%;
+    left: 25%;
+    font-size: 0.8em;
+    color: #BBB;
+}
+.brackets div.bracketbox > span {
+    position: absolute;
+    left: 5px;
+    font-size: 0.85em;
+}
+.brackets div.bracketbox > span.teama {
+    top: -20px;
+}
+.brackets div.bracketbox > span.teamb {
+    bottom: -20px;
+}
+.brackets div.bracketbox > span.teamc {
+    bottom: 1px;
+}
+.brackets > .group2 {
+    height: 260px;
+}
+.brackets > .group2 > div {
+    width: 49%;
+}
+.brackets > .group3 {
+    height: 320px;
+}
+.brackets > .group3 > div {
+    width: 32.7%;
+}
+.brackets > .group4 > div {
+    width: 24.5%;
+}
+.brackets > .group5 > div {
+    width: 19.6%;
+}
+.brackets > .group6 {
+    height: 2000px;
+}
+.brackets > .group6 > div {
+    width: 16.3%;
+}
+.brackets > div > .r1 > div {
+    height: 60px;
+}
+.brackets > div > .r2 > div {
+    margin: 80px 0 110px 0;
+    height: 110px;
+}
+.brackets > div > .r3 > div {
+    margin: 135px 0 220px 0;
+    height: 220px;
+}
+.brackets > div > .r4 > div {
+    margin: 250px 0 445px 0;
+    height: 445px;
+}
+.brackets > div > .r5 > div {
+    margin: 460px 0 0 0;
+    height: 900px;
+}
+.brackets > div > .r6 > div {
+    margin: 900px 0 0 0;
+}
+.brackets div.final > div.bracketbox {
+    border-top: 0px;
+    border-right: 0px;
+    height: 0px;
+}
+.brackets > div > .r4 > div.drop {
+    height: 180px;
+    margin-bottom: 0px;
+}
+.brackets > div > .r5 > div.final.drop {
+    margin-top: 345px;
+    margin-bottom: 0px;
+    height: 1px;
+}
+.brackets > div > div > div:last-of-type {
+    margin-bottom: 0px;
+}

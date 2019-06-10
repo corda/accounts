@@ -1,10 +1,10 @@
 table {
     border-collapse: collapse;
-    width: 75%;
+    width: 60%;
 }
 
 th, td {
-    padding: 8px;
+    padding: 5px;
     text-align: left;
     border-bottom: 1px solid #ddd;
 }
@@ -14,7 +14,7 @@ body {
 }
 
 .firstCol {
-    width: 100px;
+    width: 120px;
     text-align: left;
 }
 .secondCol {
