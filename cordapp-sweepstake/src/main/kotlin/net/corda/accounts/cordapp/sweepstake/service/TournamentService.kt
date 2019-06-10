@@ -1,13 +1,13 @@
 package net.corda.accounts.cordapp.sweepstake.service
 
 import co.paralleluniverse.fibers.Suspendable
+import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.flows.IssueAccountToGroupFlow
 import net.corda.accounts.cordapp.sweepstake.flows.UpdateAccountGroupFlow
 import net.corda.accounts.cordapp.sweepstake.flows.generateGroupIdsForAccounts
 import net.corda.accounts.cordapp.sweepstake.flows.splitAccountsIntoGroupsOfFour
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.states.AccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic

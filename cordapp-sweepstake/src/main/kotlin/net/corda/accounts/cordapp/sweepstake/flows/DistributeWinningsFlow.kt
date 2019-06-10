@@ -8,8 +8,8 @@ import com.r3.corda.sdk.token.money.FiatCurrency
 import com.r3.corda.sdk.token.workflow.flows.shell.IssueTokens
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.flows.RequestKeyForAccountFlow
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
@@ -27,7 +27,7 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
         }.toList()
 
         val winningAccountIds = winningKeys.map {
-            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.accountId
+            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.id
         }.toList()
 
         val tournamentService = serviceHub.cordaService(TournamentService::class.java)

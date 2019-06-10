@@ -3,8 +3,8 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.flows.RequestKeyForAccountFlow
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
@@ -37,7 +37,7 @@ class MatchDayFlow(
 
         val newOwner = subFlow(RequestKeyForAccountFlow(winningAccount!!.state.data))
         val requiredSigners =
-                signingAccounts.map { it.state.data.accountHost.owningKey } + listOfNotNull(
+                signingAccounts.map { it.state.data.host.owningKey } + listOfNotNull(
                         teamA.state.data.owningKey, teamB.state.data.owningKey, newOwner.owningKey, ourIdentity.owningKey
                 )
 
@@ -63,9 +63,9 @@ class MatchDayFlow(
                 )
         )
 
-        val sessionForWinner = initiateFlow(winningAccount.state.data.accountHost)
-        val sessionForTeamB = initiateFlow(accountForTeamB.state.data.accountHost)
-        val sessionForTeamA = initiateFlow(accountForTeamA.state.data.accountHost)
+        val sessionForWinner = initiateFlow(winningAccount.state.data.host)
+        val sessionForTeamB = initiateFlow(accountForTeamB.state.data.host)
+        val sessionForTeamA = initiateFlow(accountForTeamA.state.data.host)
 
         val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, listOf(
                 sessionForTeamA,

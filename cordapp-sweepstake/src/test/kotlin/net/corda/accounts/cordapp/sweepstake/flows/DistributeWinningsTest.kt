@@ -3,14 +3,13 @@ import com.r3.corda.sdk.token.contracts.states.FungibleToken
 import com.r3.corda.sdk.token.money.GBP
 import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
-import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.singleIdentity
 import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
@@ -65,7 +64,7 @@ class DistributeWinningsTest {
 
         createAccountsForNode(aliceService)
 
-        val accounts = aliceService.myAccounts()
+        val accounts = aliceService.ourAccounts()
 
         // Issue the teams
         accounts.zip(TestUtils.teams).forEach {

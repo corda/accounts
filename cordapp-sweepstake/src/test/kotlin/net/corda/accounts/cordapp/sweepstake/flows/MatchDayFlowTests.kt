@@ -5,9 +5,9 @@ import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.teams
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.flows.ReceiveStateAndSyncAccountsFlow
-import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.flows.ReceiveStateAndSyncAccountsFlow
+import net.corda.accounts.workflows.flows.ShareStateAndSyncAccountsFlow
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -80,12 +80,12 @@ class MatchDayFlowTests {
             it.resultFuture.getOrThrow()
         }
 
-        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.accountId, charlieNode.info.legalIdentities.first()).also {
+        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.id, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
 
-        bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.accountId, charlieNode.info.legalIdentities.first()).also {
+        bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.id, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
@@ -112,7 +112,7 @@ class MatchDayFlowTests {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
 
-        Assert.assertThat(accountOfWinner!!.state.data.accountId, `is`(testAccountB.state.data.accountId))
+        Assert.assertThat(accountOfWinner!!.state.data.id, `is`(testAccountB.state.data.id))
     }
 
 
@@ -124,7 +124,7 @@ class MatchDayFlowTests {
 
         // Alice creates accounts and shares them with charlie
         accounts.forEach {
-            accountOwningService.shareAccountInfoWithParty(it.state.data.accountId, charlieNode.info.legalIdentities.first()).also {
+            accountOwningService.shareAccountInfoWithParty(it.state.data.id, charlieNode.info.legalIdentities.first()).also {
                 mockNet.runNetwork()
                 it.getOrThrow()
             }
