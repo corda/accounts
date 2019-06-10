@@ -3,8 +3,9 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.flows.GetAccountsFlow
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.flows.AllAccounts
+import net.corda.accounts.workflows.flows.OurAccounts
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -90,11 +91,11 @@ class IssueTeamFlowTests {
         val aliceAccount = aliceService.createAccount("TEST_ACCOUNT").getOrThrow()
 
         //Share alice's account with bob
-        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.accountId, bobNode.info.singleIdentity())
+        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.id, bobNode.info.singleIdentity())
         val future = bobNode.services.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).resultFuture.getOrThrow()
 
-        val aliceAccounts = aliceNode.services.startFlow(GetAccountsFlow(true)).resultFuture.getOrThrow()
-        val bobAccounts = bobNode.services.startFlow(GetAccountsFlow(false)).resultFuture.getOrThrow()
+        val aliceAccounts = aliceNode.services.startFlow(OurAccounts()).resultFuture.getOrThrow()
+        val bobAccounts = bobNode.services.startFlow(AllAccounts()).resultFuture.getOrThrow()
         Assert.assertThat(bobAccounts, `is`(IsEqual.equalTo(aliceAccounts)))
 
         Assert.assertThat(future.state.data, `is`(notNullValue(TeamState::class.java)))
@@ -102,7 +103,7 @@ class IssueTeamFlowTests {
 
         aliceNode.database.transaction {
             val owningAccount = aliceService.accountInfo(future.state.data.owningKey!!)
-            Assert.assertThat(owningAccount!!.state.data.accountId, `is`(IsEqual.equalTo(aliceAccount.state.data.accountId)))
+            Assert.assertThat(owningAccount!!.state.data.id, `is`(IsEqual.equalTo(aliceAccount.state.data.id)))
         }
     }
 }

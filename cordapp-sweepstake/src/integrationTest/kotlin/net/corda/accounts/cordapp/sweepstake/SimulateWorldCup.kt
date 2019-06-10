@@ -1,12 +1,13 @@
 package net.corda.accounts.cordapp.sweepstake
 
 import com.r3.corda.sdk.token.money.GBP
+import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.flows.GetAccountsFlow
-import net.corda.accounts.flows.ShareStateAndSyncAccountsFlow
-import net.corda.accounts.states.AccountInfo
+import net.corda.accounts.workflows.flows.AllAccounts
+import net.corda.accounts.workflows.flows.OurAccounts
+import net.corda.accounts.workflows.flows.ShareStateAndSyncAccountsFlow
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.CordaX500Name
@@ -87,9 +88,9 @@ class SimulateWorldCup {
         proxyA.startFlow(::ShareAccountInfo, proxyB.nodeInfo().legalIdentities.first()).returnValue.getOrThrow()
         proxyA.startFlow(::ShareAccountInfo, proxyC.nodeInfo().legalIdentities.first()).returnValue.getOrThrow()
 
-        val accountsForA = proxyA.startFlow(::GetAccountsFlow, true).returnValue.getOrThrow()
-        val accountsForB = proxyB.startFlow(::GetAccountsFlow, false).returnValue.getOrThrow()
-        val accountsForC = proxyC.startFlow(::GetAccountsFlow, false).returnValue.getOrThrow()
+        val accountsForA = proxyA.startFlow(::OurAccounts).returnValue.getOrThrow()
+        val accountsForB = proxyB.startFlow(::AllAccounts).returnValue.getOrThrow()
+        val accountsForC = proxyC.startFlow(::AllAccounts).returnValue.getOrThrow()
 
         require(accountsForB.containsAll(accountsForA))
         require(accountsForC.containsAll(accountsForA))

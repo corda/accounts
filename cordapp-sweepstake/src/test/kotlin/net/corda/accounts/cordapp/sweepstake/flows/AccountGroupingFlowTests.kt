@@ -2,7 +2,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
-import net.corda.accounts.service.KeyManagementBackedAccountService
+import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.testing.core.ALICE_NAME
@@ -62,7 +62,7 @@ class AccountGroupingFlowTests {
 
         createAccountsForNode(aliceService)
 
-        val accounts = aliceService.myAccounts()
+        val accounts = aliceService.ourAccounts()
 
         aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
 
