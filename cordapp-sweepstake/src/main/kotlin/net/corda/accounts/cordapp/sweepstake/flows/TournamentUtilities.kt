@@ -12,10 +12,12 @@ import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.CordaInternal
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.CordaSerializable
 import net.corda.core.utilities.getOrThrow
 import java.io.File
@@ -240,5 +242,13 @@ class GetTeamStates : FlowLogic<List<StateAndRef<TeamState>>>() {
     override fun call(): List<StateAndRef<TeamState>> {
         return serviceHub.vaultService.queryBy<TeamState>().states
     }
-
 }
+
+
+@StartableByRPC
+class GetTeamFromId(private val linearId: UniqueIdentifier) : FlowLogic<StateAndRef<TeamState>>() {
+    override fun call(): StateAndRef<TeamState> {
+        return serviceHub.vaultService.queryBy<TeamState>(QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId))).states.first()
+    }
+}
+

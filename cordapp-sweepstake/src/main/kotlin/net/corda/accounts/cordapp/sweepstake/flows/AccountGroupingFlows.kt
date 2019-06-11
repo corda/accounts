@@ -48,12 +48,10 @@ class IssueGroupResponse(private val otherSession: FlowSession) : FlowLogic<Unit
 @StartableByRPC
 @StartableByService
 class UpdateAccountGroupFlow(
-//        private val otherParty: Party,
                              private val account: StateAndRef<AccountInfo>,
                              private val linearId: UniqueIdentifier) : FlowLogic<StateAndRef<AccountGroup>>() {
     @Suspendable
     override fun call(): StateAndRef<AccountGroup> {
-//        val sessions = listOf(initiateFlow(otherParty))
         val newKey = subFlow(RequestKeyForAccountFlow(account.state.data)).owningKey
 
         val inputState = getStateForLinearId(serviceHub, linearId)

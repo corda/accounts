@@ -13,6 +13,10 @@ body {
     font: normal 16px Verdana, Arial, sans-serif;
 }
 
+div.b {
+    line-height: 1.6;
+}
+
 .firstCol {
     width: 120px;
     text-align: left;

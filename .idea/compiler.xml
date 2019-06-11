@@ -6,6 +6,11 @@
       <module name="accounts.cordapp-client.integrationTest" target="1.8" />
       <module name="accounts.cordapp-client.main" target="1.8" />
       <module name="accounts.cordapp-client.test" target="1.8" />
+      <module name="accounts.flows.integrationTest" target="1.8" />
+      <module name="accounts.flows.main" target="1.8" />
+      <module name="accounts.flows.test" target="1.8" />
+      <module name="accounts.states-and-contracts.main" target="1.8" />
+      <module name="accounts.states-and-contracts.test" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

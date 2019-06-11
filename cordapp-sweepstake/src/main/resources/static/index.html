@@ -14,8 +14,8 @@
     <button id="playerBtn" onclick="importPlayers()">Import players</button>
     <button id="accountBtn" onclick="createAccounts()">Create accounts and issue teams</button>
     <button id="groupBtn" onclick="assignGroups()">Create groups</button>
-    <button id="createBracket" onlick="createBracket()">Create bracket</button>
 </div>
+<div class="b"></div>
 <div>
     <table>
         <th class ="firstCol">Player name</th>
@@ -23,7 +23,13 @@
         <th class ="thirdCol">Account ID</th>
     </table>
 </div>
-<div id = "playersHolder">
+<div id="playersHolder">
+</div>
+<div>
+    <h1>Matches</h1>
+    <button id="playMatches" onclick="playMatches()">Play matches</button>
+    <div class="b"></div>
+    <div id="matches" class="b"></div>
 </div>
 </body>
 </html>

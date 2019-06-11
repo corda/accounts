@@ -73,25 +73,89 @@ function createAccounts() {
 
 }
 
+function createCell(cell, text, style) {
+    let div = document.createElement('div'),
+        txt = document.createTextNode(text);
+    div.appendChild(txt);
+    div.setAttribute('class', style);
+    div.setAttribute('className', style);    // set DIV class attribute for IE
+    cell.appendChild(div);
+}
+
 function assignGroups(){
-    let groupsPromise = makeRequest("GET", `/issue-groups/`).then(text => JSON.parse(text));
+    makeRequest("GET", `/issue-groups/`).then(text => console.log(text));
+
     let playersTable = document.getElementById('tournamentData');
+
     playersTable.classList.add("grouping");
 
     document.getElementById("groupBtn").disabled = 'true';
 }
 
-function createBracket() {
-    let w = window.open();
-    let html = '<html><head> <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"\>    </script> <script>var xml = \'<Report>......</Report>\'</script> <script src="./js/printScript.js"></script> <script src="./js/printHTML.js"></script> <link rel="stylesheet" type="text/css" href="./css/printScriptStyle.css"></head>    <body></body></html>';
+function playMatches() {
+    let teamsPromise = makeRequest("GET", `/load-teams/`).then(text => JSON.parse(text));
+    Promise.all([teamsPromise]).then(results => {
+        let teamStates = results[0];
+        let matchResults = runMatches(teamStates);
+        while (matchResults.length > 4) {
+            matchResults = runMatches(matchResults)
+        }
 
+        let finalResult = shuffle(matchResults);
+
+        let matches = document.getElementById("matches");
+        matches.appendChild(document.createTextNode("--------------------------------"));
+        matches.appendChild(document.createElement("br"));
+        matches.appendChild(document.createTextNode("1st place = " + finalResult[0].team.teamName));
+        matches.appendChild(document.createElement("br"));
+        matches.appendChild(document.createTextNode("2nd place = " + finalResult[1].team.teamName));
+        matches.appendChild(document.createElement("br"));
+        matches.appendChild(document.createTextNode("3rd place = " + finalResult[2].team.teamName));
+        matches.appendChild(document.createElement("br"));
+        matches.appendChild(document.createTextNode("4th place = " + finalResult[3].team.teamName));
+        matches.appendChild(document.createElement("br"));
+    });
 }
 
-function createCell(cell, text, style) {
-    let div = document.createElement('div'), // create DIV element
-        txt = document.createTextNode(text); // create text node
-    div.appendChild(txt);                    // append text node to the DIV
-    div.setAttribute('class', style);        // set DIV class attribute
-    div.setAttribute('className', style);    // set DIV class attribute for IE (?!)
-    cell.appendChild(div);                   // append DIV to the table cell
+function generateWinner(teamA, teamB) {
+    let result = Math.random()
+    if (result <= 0.5) {
+        return teamA
+    } else {
+        return teamB
+    }
+}
+
+function runMatches(teamStates) {
+    let winningTeams = [];
+    for (let i=1; i < teamStates.length; i +=2) {
+        let teamA = teamStates[i-1];
+        let teamB = teamStates[i];
+        let winningTeam = generateWinner(teamA, teamB);
+        winningTeams.push(winningTeam);
+
+        // let jsonBody = {
+        //     teamAID: teamA.linearId;
+        //     teamBID: teamB.linearId;
+        //     winningTeamID: winningTeam.linearId;
+        // }
+        //
+        // fetch("/play-match", {
+        //     method: "POST",
+        //     body: jsonBody
+        // }).then( response => response.text())
+        let matches = document.getElementById("matches");
+        let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
+        matches.appendChild(matchResult);
+        matches.appendChild(document.createElement("br"));
+    }
+    return winningTeams;
+}
+
+function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
 }
