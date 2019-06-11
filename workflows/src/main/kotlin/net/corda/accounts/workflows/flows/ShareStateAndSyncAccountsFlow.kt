@@ -12,6 +12,7 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 
+// TODO: Need initiating and non initiating version.
 @InitiatingFlow
 @StartableByRPC
 @StartableByService
@@ -34,7 +35,7 @@ class ShareStateAndSyncAccountsFlow(private val state: StateAndRef<ContractState
                 }.filter { it.first != null && it.second != null }
 
                 accountsInvolvedWithState.forEach { accountToShare ->
-                    subFlow(ShareAccountWithParties(accountToShare.first!!, listOf(wellKnownPartyFromAnonymous)))
+                    subFlow(ShareAccountInfo(accountToShare.first!!, listOf(wellKnownPartyFromAnonymous)))
                 }
 
                 val sessionToSendTo = initiateFlow(wellKnownPartyFromAnonymous)

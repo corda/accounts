@@ -4,7 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.ShareAccountWithParties
+import net.corda.accounts.workflows.flows.ShareAccountInfo
 import net.corda.accounts.workflows.flows.ShareStateAndSyncAccountsFlow
 import net.corda.accounts.workflows.flows.ShareStateWithAccountFlow
 import net.corda.accounts.workflows.schemas.AllowedToSeeStateMapping
@@ -25,9 +25,6 @@ import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SingletonSerializeAsToken
-import net.corda.node.services.keys.BasicHSMKeyManagementService
-import net.corda.node.services.keys.PublicKeyHashToExternalId
-import net.corda.node.services.vault.VaultSchemaV1
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -68,8 +65,8 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     @Suspendable
-    override fun createAccount(name: String, accountId: UUID): CordaFuture<StateAndRef<AccountInfo>> {
-        return flowAwareStartFlow(CreateAccount(name, accountId))
+    override fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>> {
+        return flowAwareStartFlow(CreateAccount(name, id))
     }
 
     override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: AbstractParty): CordaFuture<Unit> {
@@ -77,17 +74,18 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     @Suspendable
-    override fun accountKeys(accountId: UUID): List<PublicKey> {
+    override fun accountKeys(id: UUID): List<PublicKey> {
         return services.withEntityManager {
             val query = createQuery(
-                    "select a.${BasicHSMKeyManagementService.PersistentKey::publicKey.name} from \n" +
-                            "${BasicHSMKeyManagementService.PersistentKey::class.java.name} a, ${PublicKeyHashToExternalId::class.java.name} b \n" +
-                            "where \n" +
-                            "   b.${PublicKeyHashToExternalId::externalId.name} = :uuid \n" +
-                            " and \n" +
-                            "   b.${PublicKeyHashToExternalId::publicKeyHash.name} = a.${BasicHSMKeyManagementService.PersistentKey::publicKeyHash.name}", ByteArray::class.java)
-
-            query.setParameter("uuid", accountId)
+                    """
+                        select a.$persistentKey_publicKey
+                        from $persistentKey a, $publicKeyHashToExternalId b
+                        where b.$publicKeyHashToExternalId_externalId = :uuid
+                            and b.$publicKeyHashToExternalId_publicKeyHash = a.$persistentKey_publicKeyHash
+                    """,
+                    ByteArray::class.java
+            )
+            query.setParameter("uuid", id)
             query.resultList.map { Crypto.decodePublicKey(it) }
         }
     }
@@ -95,30 +93,18 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
         val uuid = services.withEntityManager {
-            val query = createQuery("select ${PublicKeyHashToExternalId::externalId.name} from ${PublicKeyHashToExternalId::class.java.name} where ${PublicKeyHashToExternalId::publicKeyHash.name} = :hash", UUID::class.java)
+            val query = createQuery(
+                    """
+                        select $publicKeyHashToExternalId_externalId
+                        from $publicKeyHashToExternalId
+                        where $publicKeyHashToExternalId_publicKeyHash = :hash
+                    """,
+                    UUID::class.java
+            )
             query.setParameter("hash", owningKey.toStringShort())
             query.resultList
         }
         return uuid.singleOrNull()?.let { accountInfo(it) }
-    }
-
-    @Suspendable
-    override fun hostForAccount(accountId: UUID): Party? {
-        return accountInfo(accountId)?.state?.data?.host
-    }
-
-    @Suspendable
-    override fun ownedByAccountVaultQuery(accountIds: List<UUID>, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        val externalIDQuery = builder {
-            VaultSchemaV1.StateToExternalId::externalId.`in`(accountIds)
-        }
-        val joinedQuery = queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIDQuery, Vault.StateStatus.ALL))
-        return services.vaultService.queryBy<ContractState>(joinedQuery).states
-    }
-
-    @Suspendable
-    override fun ownedByAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        return ownedByAccountVaultQuery(listOf(accountId), queryCriteria)
     }
 
     @Suspendable
@@ -139,7 +125,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit> {
         val foundAccount = accountInfo(accountId)
         return if (foundAccount != null) {
-            flowAwareStartFlow(ShareAccountWithParties(foundAccount, listOf(party)))
+            flowAwareStartFlow(ShareAccountInfo(foundAccount, listOf(party)))
         } else {
             CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
         }

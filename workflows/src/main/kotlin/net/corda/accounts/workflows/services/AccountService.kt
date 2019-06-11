@@ -25,54 +25,63 @@ interface AccountService : SerializeAsToken {
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     /**
-     * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
-     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
+     * Creates a new accountInfo by calling the [CreateAccount] flow. This flow returns a future which completes to return
+     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that accountInfo names must be unique at the host level,
      * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
      *
-     * @param name the proposed name for this account.
+     * @param name the proposed name for this accountInfo.
      */
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
-     * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
-     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
+     * Creates a new accountInfo by calling the [CreateAccount] flow. This flow returns a future which completes to return
+     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that accountInfo names must be unique at the host level,
      * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
      *
-     * @param name the proposed name for this account.
-     * @param id the proposed account ID for this account.
+     * @param name the proposed name for this accountInfo.
+     * @param id the proposed accountInfo ID for this accountInfo.
      */
     fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>>
 
-    // Returns all the keys used by the account specified by the account ID.
-    fun accountKeys(accountId: UUID): List<PublicKey>
+    /**
+     * Returns all the keys for a specified accountInfo. Note that this method only operates on accounts created by the
+     * calling node, so calling this method with the [id] of an accountInfo created on another node will return an empty
+     * list.
+     *
+     * @param id the accountInfo to return a list of keys for.
+     */
+    fun accountKeys(id: UUID): List<PublicKey>
 
-    // Returns the AccountInfo for an account name or account ID.
+    /**
+     * Returns the [AccountInfo] for an accountInfo specified by [id]. This method will return accounts created on other
+     * nodes if those [AccountInfo]s have previously been shared with the calling node.
+     *
+     * @param id the accountInfo id to return the [AccountInfo] for.
+     */
     fun accountInfo(id: UUID): StateAndRef<AccountInfo>?
 
-    // Returns the AccountInfo for a given owning key
+    /**
+     * Returns the [AccountInfo] for an accountInfo specified by [owningKey]. Note that this method only operates on
+     * accounts created by the calling node, so calling this method with the [id] of an accountInfo created on another node
+     * will return an empty list.
+     *
+     * @param owningKey the public key to return an [AccountInfo] for.
+     */
     fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
 
-    // The assumption here is that Account names are unique at the node level but are not
-    // guaranteed to be unique at the network level. The host Party can be used to
-    // de-duplicate account names at the network level.
+    /**
+     * Returns the [AccountInfo] for an accountInfo specified by [name]. The assumption here is that Account names are
+     * unique at the node level but are not guaranteed to be unique at the network level. The host [Party], stored in
+     * the [AccountInfo] can be used to de-duplicate accountInfo names at the network level. Also, the accountInfo ID is
+     * unique at the network level.
+     *
+     * @param name the accountInfo name to return an [AccountInfo] for.
+     */
     fun accountInfo(name: String): StateAndRef<AccountInfo>?
 
-    // Returns the Party which hosts the account specified by account ID.
-    fun hostForAccount(accountId: UUID): Party?
-
-    // Allows the account host to perform a vault query for the specified account ID.
-    fun ownedByAccountVaultQuery(
-            accountIds: List<UUID>,
-            queryCriteria: QueryCriteria
-    ): List<StateAndRef<*>>
 
     fun broadcastedToAccountVaultQuery(
             accountIds: List<UUID>,
-            queryCriteria: QueryCriteria
-    ): List<StateAndRef<*>>
-
-    fun ownedByAccountVaultQuery(
-            accountId: UUID,
             queryCriteria: QueryCriteria
     ): List<StateAndRef<*>>
 

@@ -17,24 +17,32 @@ import java.util.*
 class RequestKeyForAccountFlow(private val accountInfo: AccountInfo) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
+        // If the host is the node running this flow then generate a new CI locally and return it. Otherwise call out
+        // to the remote host and ask THEM to generate a new CI and send it back. We cannot use the existing CI flows
+        // here because they don't allow us to supply an external ID when the new CI is created.
+        // TODO: Replace use of the old CI API With the new API.
         val newKeyAndCert = if (accountInfo.host == ourIdentity) {
             serviceHub.keyManagementService.freshKeyAndCert(ourIdentityAndCert, false, accountInfo.id)
         } else {
             val session = initiateFlow(accountInfo.host)
-            session.send(accountInfo.id)
-            val accountSearchStatus = session.receive(AccountSearchStatus::class.java).unwrap { it }
-
-            if (accountSearchStatus == AccountSearchStatus.NOT_FOUND) {
-                throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.id} (${accountInfo.name}) responded with a not found status - contact them for assistance")
-            }
-            val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
-            serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
-            serviceHub.withEntityManager {
-                serviceHub.withEntityManager {
-                    persist(PublicKeyHashToExternalId(accountInfo.id, newKeyAndCert.owningKey))
+            val accountSearchStatus = session.sendAndReceive<AccountSearchStatus>(accountInfo.id).unwrap { it }
+            when (accountSearchStatus) {
+                AccountSearchStatus.NOT_FOUND -> throw IllegalStateException("Account Host: ${accountInfo.host} for " +
+                        "${accountInfo.id} (${accountInfo.name}) responded with a not found status - contact them " +
+                        "for assistance")
+                AccountSearchStatus.FOUND -> {
+                    val newKeyAndCert = session.receive<PartyAndCertificate>().unwrap { it }
+                    serviceHub.identityService.verifyAndRegisterIdentity(newKeyAndCert)
+                    // TODO: Should we store keys created on other nodes in this table?
+                    // I think the initial assumption was that this table was for locally created keys only. If a node
+                    // operator runs a report over this table, how do they distinguish between their accounts/keys and
+                    // accounts/keys created on another node?
+                    serviceHub.withEntityManager {
+                        persist(PublicKeyHashToExternalId(accountInfo.id, newKeyAndCert.owningKey))
+                    }
+                    newKeyAndCert
                 }
             }
-            newKeyAndCert
         }
         return AnonymousParty(newKeyAndCert.owningKey)
     }
@@ -46,9 +54,7 @@ class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val requestedAccountForKey = otherSide.receive(UUID::class.java).unwrap { it }
-
         val existingAccountInfo = accountService.accountInfo(requestedAccountForKey)
-
         if (existingAccountInfo == null) {
             otherSide.send(AccountSearchStatus.NOT_FOUND)
         } else {
