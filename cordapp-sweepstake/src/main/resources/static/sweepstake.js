@@ -1,7 +1,7 @@
-async function makeRequest(method, url) {
+async function getRequest(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
-        xhr.open(method, url);
+        xhr.open("GET", url);
         xhr.onload = function () {
             if (this.status >= 200 && this.status < 300) {
                 resolve(xhr.response);
@@ -22,9 +22,22 @@ async function makeRequest(method, url) {
     });
 }
 
+async function postRequest(data, url) {
+    xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.setRequestHeader("Content-type", "application/json");
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            var json = JSON.parse(xhr.responseText);
+            console.log(json.body)
+        }
+    }
+    xhr.send(data);
+}
+
 function importPlayers() {
 
-    let playersPromise = makeRequest("GET", `/load-players/`).then(text => JSON.parse(text));
+    let playersPromise = getRequest(`/load-players/`).then(text => JSON.parse(text));
 
     Promise.all([playersPromise]).then(results => {
         let players = results[0];
@@ -48,7 +61,7 @@ function importPlayers() {
 }
 
 function createAccounts() {
-    let accountsAndTeamsPromise = makeRequest("GET", `/create-accounts-issue-teams/`).then(text => JSON.parse(text));
+    let accountsAndTeamsPromise = getRequest(`/create-accounts-issue-teams/`).then(text => JSON.parse(text));
 
     Promise.all([accountsAndTeamsPromise]).then(results => {
         let accountsAndTeams = results[0];
@@ -83,7 +96,7 @@ function createCell(cell, text, style) {
 }
 
 function assignGroups(){
-    makeRequest("GET", `/issue-groups/`).then(text => console.log(text));
+    getRequest(`/issue-groups/`).then(text => console.log(text));
 
     let playersTable = document.getElementById('tournamentData');
 
@@ -93,7 +106,7 @@ function assignGroups(){
 }
 
 function playMatches() {
-    let teamsPromise = makeRequest("GET", `/load-teams/`).then(text => JSON.parse(text));
+    let teamsPromise = getRequest(`/load-teams/`).then(text => JSON.parse(text));
     Promise.all([teamsPromise]).then(results => {
         let teamStates = results[0];
         let matchResults = runMatches(teamStates);
@@ -134,16 +147,14 @@ function runMatches(teamStates) {
         let winningTeam = generateWinner(teamA, teamB);
         winningTeams.push(winningTeam);
 
-        // let jsonBody = {
-        //     teamAID: teamA.linearId;
-        //     teamBID: teamB.linearId;
-        //     winningTeamID: winningTeam.linearId;
-        // }
-        //
-        // fetch("/play-match", {
-        //     method: "POST",
-        //     body: jsonBody
-        // }).then( response => response.text())
+        let linearIdForTeamA = teamA.linearId.toString();
+        let linearIdForTeamB = teamB.linearId.toString();
+        let linearIdForWinner = winningTeam.linearId.toString();
+
+        let jsonObj = { teamAId: linearIdForTeamA, teamBId: linearIdForTeamB, winningTeamId: linearIdForWinner }
+        let jsonStr = JSON.stringify(jsonObj)
+        postRequest(jsonStr, "/play-match/")
+
         let matches = document.getElementById("matches");
         let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
         matches.appendChild(matchResult);
@@ -158,4 +169,8 @@ function shuffle(a) {
         [a[i], a[j]] = [a[j], a[i]];
     }
     return a;
+}
+
+function distributeWinnings(){
+
 }
