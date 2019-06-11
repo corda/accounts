@@ -20,7 +20,7 @@ val ServiceHub.ourIdentity get() = myInfo.legalIdentities.first()
 
 // Query utilities.
 
-/** Returns the base accountInfo info query criteria. */
+/** Returns the base [AccountInfo] query criteria. */
 val accountBaseCriteria = QueryCriteria.VaultQueryCriteria(
         contractStateTypes = setOf(AccountInfo::class.java),
         status = Vault.StateStatus.UNCONSUMED
