@@ -49,5 +49,5 @@ class ShareAccountInfo(val accountInfo: StateAndRef<AccountInfo>, val recipients
 @InitiatedBy(ShareAccountInfo::class)
 class ShareAccountInfoHandler(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
-    override fun call() = subFlow(ShareAccountInfoHandler(otherSession))
+    override fun call() = subFlow(ShareAccountInfoHandlerFlow(otherSession))
 }

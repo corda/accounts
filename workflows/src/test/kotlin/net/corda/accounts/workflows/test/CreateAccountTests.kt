@@ -2,7 +2,6 @@ package net.corda.accounts.workflows.test
 
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.ReceiveStateForAccountFlow
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -33,9 +32,6 @@ class CreateAccountTests {
         )
         a = network.createPartyNode()
         b = network.createPartyNode()
-
-        a.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
-        b.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
 
         network.runNetwork()
     }

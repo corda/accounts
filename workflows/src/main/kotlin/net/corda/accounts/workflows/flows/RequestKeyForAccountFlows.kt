@@ -62,7 +62,7 @@ class RequestKeyForAccountFlow(
     override fun call(): AnonymousParty {
         // TODO: Replace use of the old CI API With the new API.
         // If the host is the node running this flow then generate a new CI locally and return it. Otherwise call out
-        // to the remote host and ask THEM to generate a new CI and send it back. We cannot use the existing CI flows
+        // to the remote host and ask THEM to gener ate a new CI and send it back. We cannot use the existing CI flows
         // here because they don't allow us to supply an external ID when the new CI is created.
         val newKeyAndCert = if (accountInfo.host == ourIdentity) {
             serviceHub.keyManagementService.freshKeyAndCert(ourIdentityAndCert, false, accountInfo.id)
