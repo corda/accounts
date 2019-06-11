@@ -6,8 +6,8 @@ import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.ShareAccountInfo
 import net.corda.accounts.workflows.flows.ShareStateAndSyncAccountsFlow
-import net.corda.accounts.workflows.flows.ShareStateWithAccountFlow
-import net.corda.accounts.workflows.schemas.AllowedToSeeStateMapping
+import net.corda.accounts.workflows.flows.ShareStateWithAccount
+import net.corda.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -135,7 +135,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     override fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit> {
         val foundAccount = accountInfo(accountId)
         return if (foundAccount != null) {
-            flowAwareStartFlow(ShareStateWithAccountFlow(accountInfo = foundAccount.state.data, state = state))
+            flowAwareStartFlow(ShareStateWithAccount(accountInfo = foundAccount.state.data, state = state))
         } else {
             CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
         }

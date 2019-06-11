@@ -3,7 +3,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
+import net.corda.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
@@ -35,7 +35,7 @@ class MatchDayFlow(
         val signingAccounts = listOfNotNull(accountForTeamA, accountForTeamB)
         val winningAccount = accountService.accountInfo(winningTeam.state.data.owningKey!!)
 
-        val newOwner = subFlow(RequestKeyForAccountFlow(winningAccount!!.state.data))
+        val newOwner = subFlow(RequestKeyForAccount(winningAccount!!.state.data))
         val requiredSigners =
                 signingAccounts.map { it.state.data.host.owningKey } + listOfNotNull(
                         teamA.state.data.owningKey, teamB.state.data.owningKey, newOwner.owningKey, ourIdentity.owningKey

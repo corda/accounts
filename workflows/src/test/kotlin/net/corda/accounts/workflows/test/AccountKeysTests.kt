@@ -1,7 +1,7 @@
 package net.corda.accounts.workflows.test
 
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
+import net.corda.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -59,17 +59,17 @@ class AccountKeysTests {
         }
 
 
-        val keyToUse1 = b.startFlow(RequestKeyForAccountFlow(account1.state.data)).let {
+        val keyToUse1 = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse2 = b.startFlow(RequestKeyForAccountFlow(account1.state.data)).let {
+        val keyToUse2 = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse3 = b.startFlow(RequestKeyForAccountFlow(account2.state.data)).let {
+        val keyToUse3 = b.startFlow(RequestKeyForAccount(account2.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
@@ -102,12 +102,12 @@ class AccountKeysTests {
             it.getOrThrow()
         }
 
-        val keyToUse1 = b.startFlow(RequestKeyForAccountFlow(account1.state.data)).let {
+        val keyToUse1 = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse2 = b.startFlow(RequestKeyForAccountFlow(account2.state.data)).let {
+        val keyToUse2 = b.startFlow(RequestKeyForAccount(account2.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
