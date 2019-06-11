@@ -2,7 +2,7 @@ package net.corda.accounts.workflows.test
 
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.ShareAccountWithParties
+import net.corda.accounts.workflows.flows.ShareAccountInfo
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -53,7 +53,7 @@ class GetAccountsFlowTests {
         val account3 = a.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
         val account4 = b.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
 
-        b.startFlow(ShareAccountWithParties(account4, listOf(a.identity()))).runAndGet(network)
+        b.startFlow(ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
 
         val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
 
@@ -72,7 +72,7 @@ class GetAccountsFlowTests {
         val account3 = a.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
         val account4 = b.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
 
-        b.startFlow(ShareAccountWithParties(account4, listOf(a.identity()))).runAndGet(network)
+        b.startFlow(ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
 
         val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
 
