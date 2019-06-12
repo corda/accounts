@@ -22,14 +22,14 @@ class ShareAccountInfoFlow(
     }
 }
 
-class ShareAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<Unit>() {
+class ShareAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<AccountInfo?>() {
     @Suspendable
-    override fun call() {
+    override fun call(): AccountInfo? {
         val transaction = subFlow(ReceiveTransactionFlow(
                 otherSideSession = otherSession,
                 statesToRecord = StatesToRecord.ALL_VISIBLE
         ))
-        transaction.coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
+        return transaction.coreTransaction.outputsOfType(AccountInfo::class.java).singleOrNull()
     }
 }
 
@@ -49,5 +49,7 @@ class ShareAccountInfo(val accountInfo: StateAndRef<AccountInfo>, val recipients
 @InitiatedBy(ShareAccountInfo::class)
 class ShareAccountInfoHandler(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
-    override fun call() = subFlow(ShareAccountInfoHandlerFlow(otherSession))
+    override fun call() {
+        subFlow(ShareAccountInfoHandlerFlow(otherSession))
+    }
 }

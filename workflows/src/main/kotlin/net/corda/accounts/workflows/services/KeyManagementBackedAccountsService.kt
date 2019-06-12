@@ -5,25 +5,21 @@ import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.ShareAccountInfo
-import net.corda.accounts.workflows.flows.ShareStateAndSyncAccountsFlow
+import net.corda.accounts.workflows.flows.ShareStateAndSyncAccounts
 import net.corda.accounts.workflows.flows.ShareStateWithAccount
-import net.corda.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
-import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
-import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.node.services.vault.builder
 import net.corda.core.serialization.SingletonSerializeAsToken
 import java.security.PublicKey
 import java.util.*
@@ -69,8 +65,8 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         return flowAwareStartFlow(CreateAccount(name, id))
     }
 
-    override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: AbstractParty): CordaFuture<Unit> {
-        return flowAwareStartFlow(ShareStateAndSyncAccountsFlow(state, party))
+    override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit> {
+        return flowAwareStartFlow(ShareStateAndSyncAccounts(state, party))
     }
 
     @Suspendable
@@ -108,12 +104,11 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     @Suspendable
-    override fun broadcastedToAccountVaultQuery(accountIds: List<UUID>, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        val externalIdQuery = builder {
-            AllowedToSeeStateMapping::externalId.`in`(accountIds)
-        }
-        val joinedQuery = queryCriteria.and(QueryCriteria.VaultCustomQueryCriteria(externalIdQuery, Vault.StateStatus.ALL))
-        return services.vaultService.queryBy<ContractState>(joinedQuery).states
+    override fun broadcastedToAccountVaultQuery(
+            accountIds: List<UUID>,
+            queryCriteria: QueryCriteria
+    ): List<StateAndRef<*>> {
+        return services.vaultService.queryBy<ContractState>(allowedToSeeCriteria(accountIds)).states
     }
 
     @Suspendable
@@ -127,23 +122,27 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         return if (foundAccount != null) {
             flowAwareStartFlow(ShareAccountInfo(foundAccount, listOf(party)))
         } else {
-            CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
+            CompletableFuture<Unit>().also {
+                it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
+            }.asCordaFuture()
         }
     }
 
     @Suspendable
-    override fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit> {
+    override fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit> {
         val foundAccount = accountInfo(accountId)
         return if (foundAccount != null) {
             flowAwareStartFlow(ShareStateWithAccount(accountInfo = foundAccount.state.data, state = state))
         } else {
-            CompletableFuture<Unit>().also { it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node")) }.asCordaFuture()
+            CompletableFuture<Unit>().also {
+                it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
+            }.asCordaFuture()
         }
 
     }
 
     @Suspendable
-    inline fun <reified T : Any> flowAwareStartFlow(flowLogic: FlowLogic<T>): CordaFuture<T> {
+    private inline fun <reified T : Any> flowAwareStartFlow(flowLogic: FlowLogic<T>): CordaFuture<T> {
         val currentFlow = FlowLogic.currentTopLevel
         return if (currentFlow != null) {
             val result = currentFlow.subFlow(flowLogic)

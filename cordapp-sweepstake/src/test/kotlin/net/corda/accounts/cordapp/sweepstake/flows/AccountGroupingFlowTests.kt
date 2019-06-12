@@ -47,8 +47,6 @@ class AccountGroupingFlowTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-
-        bobNode.registerInitiatedFlow(IssueTeamResponse::class.java)
     }
 
     @After
