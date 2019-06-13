@@ -2,8 +2,9 @@ package net.corda.accounts.workflows.test
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
+import net.corda.accounts.workflows.accountService
 import net.corda.accounts.workflows.flows.CreateAccount
-import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
+import net.corda.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.accounts.workflows.services.AccountService
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.*
@@ -128,9 +129,8 @@ object ISSUE : CommandData
 class IssueFlow(private val owningAccount: UUID) : FlowLogic<StateAndRef<TestState>>() {
     @Suspendable
     override fun call(): StateAndRef<TestState> {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val accountInfo = accountService.accountInfo(owningAccount) ?: throw IllegalStateException()
-        val keyToUse = subFlow(RequestKeyForAccountFlow(accountInfo.state.data))
+        val keyToUse = subFlow(RequestKeyForAccount(accountInfo.state.data))
         val transactionBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
                 .addOutputState(TestState(keyToUse, ourIdentity))
                 .addCommand(ISSUE, ourIdentity.owningKey)

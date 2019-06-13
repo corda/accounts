@@ -4,7 +4,6 @@ import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.vault.QueryCriteria
@@ -92,8 +91,8 @@ interface AccountService : SerializeAsToken {
 
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
-    fun <T : ContractState> broadcastStateToAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
+    fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 
-    fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: AbstractParty): CordaFuture<Unit>
+    fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit>
 }
 

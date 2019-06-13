@@ -1,4 +1,4 @@
-package net.corda.accounts.workflows.schemas
+package net.corda.accounts.workflows.internal.schemas
 
 import net.corda.core.schemas.DirectStatePersistable
 import net.corda.core.schemas.MappedSchema
@@ -20,5 +20,5 @@ data class AllowedToSeeStateMapping(
 
         override var stateRef: PersistentStateRef?
 ) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
-        constructor() : this(null, null, null)
+    constructor() : this(null, null, null)
 }

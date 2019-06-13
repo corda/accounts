@@ -121,8 +121,11 @@ inline fun <reified T : ContractState> VaultService.queryBy(
     return _queryBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), Sort(emptySet()), T::class.java)
 }
 
-inline fun <reified T : ContractState> VaultService.queryBy(accountIds: List<UUID>, paging: PageSpecification): Vault.Page<T> {
-    return _queryBy(QueryCriteria.VaultQueryCriteria(), paging, Sort(emptySet()), T::class.java)
+inline fun <reified T : ContractState> VaultService.queryBy(
+        accountIds: List<UUID>,
+        paging: PageSpecification
+): Vault.Page<T> {
+    return _queryBy(externalIdCriteria(accountIds), paging, Sort(emptySet()), T::class.java)
 }
 
 inline fun <reified T : ContractState> VaultService.queryBy(
