@@ -116,6 +116,12 @@ function assignGroups(){
 function playMatches() {
     let teamsPromise = getRequest(`/load-teams/`).then(text => JSON.parse(text));
     Promise.all([teamsPromise]).then(results => {
+        let matches = document.getElementById("matches");
+        let header = document.createElement("H1");
+        let headerText = document.createTextNode("Match Results")
+        header.appendChild(headerText);
+        matches.appendChild(header);
+
         let teamStates = results[0];
         let matchResults = runMatches(teamStates);
         while (matchResults.length > 4) {
@@ -134,19 +140,26 @@ function playMatches() {
             'three': thirdTeam.linearId.id.toString(),
             'four': fourthTeam.linearId.id.toString(),
         }
+
         localStorage.setItem('winners', JSON.stringify(winners));
 
-        let matches = document.getElementById("matches");
-        matches.appendChild(document.createTextNode("--------------------------------"));
-        matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("1st place = " + firstTeam.team.teamName));
-        matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("2nd place = " + secondTeam.team.teamName));
-        matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("3rd place = " + thirdTeam.team.teamName));
-        matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("4th place = " + fourthTeam.team.teamName));
-        matches.appendChild(document.createElement("br"));
+        setTimeout(function(){
+            matches.appendChild(document.createTextNode("--------------------------------"));
+            matches.appendChild(document.createElement("br"));
+            matches.appendChild(document.createTextNode("1st place = " + firstTeam.team.teamName));
+            matches.appendChild(document.createElement("br"));
+            matches.appendChild(document.createTextNode("2nd place = " + secondTeam.team.teamName));
+        }, 20000);
+
+        setTimeout(function() {
+            matches.appendChild(document.createElement("br"));
+            matches.appendChild(document.createTextNode("3rd place = " + thirdTeam.team.teamName));
+            matches.appendChild(document.createElement("br"));
+            matches.appendChild(document.createTextNode("4th place = " + fourthTeam.team.teamName));
+            matches.appendChild(document.createElement("br"))
+        },22000);
+
+        document.getElementById("playMatchesBtn").disabled = 'true';
     });
 }
 
@@ -172,13 +185,16 @@ function runMatches(teamStates) {
         let linearIdForWinner = winningTeam.linearId.id.toString();
 
         let jsonObj = { teamAId: linearIdForTeamA, teamBId: linearIdForTeamB, winningTeamId: linearIdForWinner }
-        let jsonStr = JSON.stringify(jsonObj)
+        let jsonStr = JSON.stringify(jsonObj);
         // postRequest(jsonStr, "/play-match/")
 
-        let matches = document.getElementById("matches");
-        let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
-        matches.appendChild(matchResult);
-        matches.appendChild(document.createElement("br"));
+        (function(index) {
+            setTimeout(function() {
+                let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
+                matches.appendChild(matchResult);
+                matches.appendChild(document.createElement("br"));
+            }, i*500);
+        })(i);
     }
     return winningTeams;
 }
@@ -192,23 +208,21 @@ function shuffle(a) {
 }
 
 function distributeWinnings() {
+    let prize = prompt("Enter the total prize pot:");
+
     let winners = localStorage.getItem('winners');
     let accountIdPromise = postRequest(winners, "/distribute-winnings/");
 
     Promise.all([accountIdPromise]).then(results => {
         let json = results[0];
         let accountIds = JSON.parse(json);
-        // let headers = document.getElementById('headers').get;
-        // let th = document.createElement('th');
-        // th.innerHTML = "Prize money";
-        // headers.appendChild(th);
-
         let table = document.getElementById('tournamentData');
         let accounts = document.getElementsByClassName('thirdCol');
         let arr = Array.from(accounts);
         // Remove header from the array
         arr.shift();
 
+        let individualPrize = prize / accountIds.length;
         arr.forEach( function(element, i=0) {
             createCell(table.rows[i].insertCell(table.rows[i].cells.length), '£0.00', 'fourthCol');
         });
@@ -218,9 +232,10 @@ function distributeWinnings() {
                 if (accountIds[j] == arr[i].textContent) {
                     console.log("changing innerHTML of i: " + i)
                     let col = table.rows[i].cells;
-                    col[3].innerHTML = "£12.50";
+                    col[3].innerHTML = "£" + individualPrize.toFixed(2);
                 }
             }
         }
+        document.getElementById("distWinningsBtn").disabled = 'true';
     });
 }
