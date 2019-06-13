@@ -2,6 +2,7 @@ package net.corda.accounts.workflows
 
 import net.corda.accounts.contracts.schemas.PersistentAccountInfo
 import net.corda.accounts.contracts.states.AccountInfo
+import net.corda.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
@@ -55,6 +56,14 @@ fun externalIdCriteria(accountIds: List<UUID>): QueryCriteria {
     return builder {
         val externalIdSelector = VaultSchemaV1.StateToExternalId::externalId.`in`(accountIds)
         QueryCriteria.VaultCustomQueryCriteria(externalIdSelector)
+    }
+}
+
+/** To query [ContractState]s by which an account has been allowed to see an an observer. */
+fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
+    return builder {
+        val allowedToSeeSelector = AllowedToSeeStateMapping::externalId.`in`(accountIds)
+        QueryCriteria.VaultCustomQueryCriteria(allowedToSeeSelector, Vault.StateStatus.ALL)
     }
 }
 

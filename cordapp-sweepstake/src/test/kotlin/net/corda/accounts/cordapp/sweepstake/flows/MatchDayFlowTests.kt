@@ -5,8 +5,7 @@ import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.teams
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.workflows.flows.ReceiveStateAndSyncAccountsFlow
-import net.corda.accounts.workflows.flows.ShareStateAndSyncAccountsFlow
+import net.corda.accounts.workflows.flows.ShareStateAndSyncAccounts
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
@@ -50,13 +49,6 @@ class MatchDayFlowTests {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-
-        aliceNode.registerInitiatedFlow(MatchDayHandler::class.java)
-        aliceNode.registerInitiatedFlow(ReceiveStateAndSyncAccountsFlow::class.java)
-        bobNode.registerInitiatedFlow(MatchDayHandler::class.java)
-        bobNode.registerInitiatedFlow(ReceiveStateAndSyncAccountsFlow::class.java)
-        charlieNode.registerInitiatedFlow(MatchDayHandler::class.java)
-        charlieNode.registerInitiatedFlow(ReceiveStateAndSyncAccountsFlow::class.java)
     }
 
     @After
@@ -90,12 +82,12 @@ class MatchDayFlowTests {
             it.getOrThrow()
         }
 
-        aliceNode.services.startFlow(ShareStateAndSyncAccountsFlow(teamA, charlie)).also {
+        aliceNode.services.startFlow(ShareStateAndSyncAccounts(teamA, charlie)).also {
             mockNet.runNetwork()
             it.resultFuture.getOrThrow()
         }
 
-        bobNode.services.startFlow(ShareStateAndSyncAccountsFlow(teamB, charlie)).also {
+        bobNode.services.startFlow(ShareStateAndSyncAccounts(teamB, charlie)).also {
             mockNet.runNetwork()
             it.resultFuture.getOrThrow()
         }
@@ -143,7 +135,7 @@ class MatchDayFlowTests {
 
         // Share the team states with charlie so he can run the match day flows
         teams.forEach {
-            aliceNode.services.startFlow(ShareStateAndSyncAccountsFlow(it, charlie)).also {
+            aliceNode.services.startFlow(ShareStateAndSyncAccounts(it, charlie)).also {
                 mockNet.runNetwork()
                 it.resultFuture.getOrThrow()
             }

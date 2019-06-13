@@ -47,8 +47,6 @@ class DistributeWinningsTest {
         notary = mockNet.defaultNotaryIdentity
 
         mockNet.startNodes()
-
-        bobNode.registerInitiatedFlow(IssueTeamResponse::class.java)
     }
 
     @After
