@@ -24,7 +24,7 @@ class IssueTeamFlow(
         }.owningKey
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(TournamentContract.ISSUE_TEAM, serviceHub.myInfo.legalIdentities.first().owningKey)
-        txBuilder.addOutputState(TeamState(team, true, keyToUse))
+        txBuilder.addOutputState(TeamState(team,true, keyToUse))
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, sessions.filterNot { it.counterparty.name == ourIdentity.name }))
         return finalizedTx.coreTransaction.outRefsOfType(TeamState::class.java).single()

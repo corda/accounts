@@ -23,16 +23,28 @@ async function getRequest(url) {
 }
 
 async function postRequest(data, url) {
-    xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-type", "application/json");
-    xhr.onreadystatechange = function () {
-        if (xhr.readyState == 4 && xhr.status == 200) {
-            var json = JSON.parse(xhr.responseText);
-            console.log(json.body)
-        }
-    }
-    xhr.send(data);
+    return new Promise(function (resolve, reject) {
+        xhr = new XMLHttpRequest();
+        xhr.open("POST", url, true);
+        xhr.setRequestHeader("Content-type", "application/json");
+
+        xhr.onload = function() {
+            if (xhr.status == 200) {
+                resolve(xhr.response);
+            } else {
+                reject(Error(xhr.statusText));
+            }
+        };
+        xhr.onerror = function() {
+            reject(Error("Network error"));
+        };
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+                var json = JSON.parse(xhr.responseText);
+            }
+        };
+        xhr.send(data);
+    });
 }
 
 function importPlayers() {
@@ -60,7 +72,7 @@ function importPlayers() {
     })
 }
 
-function createAccounts() {
+function createAccountsAndIssueTeams() {
     let accountsAndTeamsPromise = getRequest(`/create-accounts-issue-teams/`).then(text => JSON.parse(text));
 
     Promise.all([accountsAndTeamsPromise]).then(results => {
@@ -70,16 +82,12 @@ function createAccounts() {
         let accountIds = Object.keys(accountsAndTeams)
         let teams = Object.values(accountsAndTeams)
 
-        let count;
-        teams.forEach( function(element, j=1) {
-            createCell(playersTable.rows[j].insertCell(playersTable.rows[j].cells.length), element, 'secondCol');
-            count++;
+        teams.forEach( function(element, i=1) {
+            createCell(playersTable.rows[i].insertCell(playersTable.rows[i].cells.length), element, 'secondCol');
         });
 
-        let count1;
-        accountIds.forEach(function(element, i=1) {
-            createCell(playersTable.rows[i].insertCell(playersTable.rows[i].cells.length), element, 'thirdCol');
-            count1++;
+        accountIds.forEach(function(element, j=1) {
+            createCell(playersTable.rows[j].insertCell(playersTable.rows[j].cells.length), element, 'thirdCol');
         });
         document.getElementById("accountBtn").disabled = 'true';
     });
@@ -115,17 +123,29 @@ function playMatches() {
         }
 
         let finalResult = shuffle(matchResults);
+        let firstTeam = finalResult[0];
+        let secondTeam = finalResult[1];
+        let thirdTeam = finalResult[2];
+        let fourthTeam = finalResult[3];
+
+        let winners = {
+            'one': firstTeam.linearId.id.toString(),
+            'two': secondTeam.linearId.id.toString(),
+            'three': thirdTeam.linearId.id.toString(),
+            'four': fourthTeam.linearId.id.toString(),
+        }
+        localStorage.setItem('winners', JSON.stringify(winners));
 
         let matches = document.getElementById("matches");
         matches.appendChild(document.createTextNode("--------------------------------"));
         matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("1st place = " + finalResult[0].team.teamName));
+        matches.appendChild(document.createTextNode("1st place = " + firstTeam.team.teamName));
         matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("2nd place = " + finalResult[1].team.teamName));
+        matches.appendChild(document.createTextNode("2nd place = " + secondTeam.team.teamName));
         matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("3rd place = " + finalResult[2].team.teamName));
+        matches.appendChild(document.createTextNode("3rd place = " + thirdTeam.team.teamName));
         matches.appendChild(document.createElement("br"));
-        matches.appendChild(document.createTextNode("4th place = " + finalResult[3].team.teamName));
+        matches.appendChild(document.createTextNode("4th place = " + fourthTeam.team.teamName));
         matches.appendChild(document.createElement("br"));
     });
 }
@@ -147,13 +167,13 @@ function runMatches(teamStates) {
         let winningTeam = generateWinner(teamA, teamB);
         winningTeams.push(winningTeam);
 
-        let linearIdForTeamA = teamA.linearId.toString();
-        let linearIdForTeamB = teamB.linearId.toString();
-        let linearIdForWinner = winningTeam.linearId.toString();
+        let linearIdForTeamA = teamA.linearId.id.toString();
+        let linearIdForTeamB = teamB.linearId.id.toString();
+        let linearIdForWinner = winningTeam.linearId.id.toString();
 
         let jsonObj = { teamAId: linearIdForTeamA, teamBId: linearIdForTeamB, winningTeamId: linearIdForWinner }
         let jsonStr = JSON.stringify(jsonObj)
-        postRequest(jsonStr, "/play-match/")
+        // postRequest(jsonStr, "/play-match/")
 
         let matches = document.getElementById("matches");
         let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
@@ -171,6 +191,36 @@ function shuffle(a) {
     return a;
 }
 
-function distributeWinnings(){
+function distributeWinnings() {
+    let winners = localStorage.getItem('winners');
+    let accountIdPromise = postRequest(winners, "/distribute-winnings/");
 
+    Promise.all([accountIdPromise]).then(results => {
+        let json = results[0];
+        let accountIds = JSON.parse(json);
+        // let headers = document.getElementById('headers').get;
+        // let th = document.createElement('th');
+        // th.innerHTML = "Prize money";
+        // headers.appendChild(th);
+
+        let table = document.getElementById('tournamentData');
+        let accounts = document.getElementsByClassName('thirdCol');
+        let arr = Array.from(accounts);
+        // Remove header from the array
+        arr.shift();
+
+        arr.forEach( function(element, i=0) {
+            createCell(table.rows[i].insertCell(table.rows[i].cells.length), '£0.00', 'fourthCol');
+        });
+        // Disgusting
+        for (let i = 0; i < arr.length; i++) {
+            for (let j = 0; j < accountIds.length; j++) {
+                if (accountIds[j] == arr[i].textContent) {
+                    console.log("changing innerHTML of i: " + i)
+                    let col = table.rows[i].cells;
+                    col[3].innerHTML = "£12.50";
+                }
+            }
+        }
+    });
 }

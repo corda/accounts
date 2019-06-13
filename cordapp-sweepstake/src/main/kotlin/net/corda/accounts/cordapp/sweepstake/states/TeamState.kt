@@ -13,7 +13,6 @@ import java.security.PublicKey
 data class TeamState(val team: WorldCupTeam,
                      val assignedToPlayer: Boolean? = false,
                      val owningKey: PublicKey? = null,
-                     val isStillPlaying: Boolean? = false,
                      override val linearId: UniqueIdentifier = UniqueIdentifier()) : LinearState {
     override val participants: List<AbstractParty>
         get() = listOfNotNull(owningKey).map { AnonymousParty(it) }

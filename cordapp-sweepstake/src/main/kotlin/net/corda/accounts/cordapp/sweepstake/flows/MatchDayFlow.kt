@@ -51,7 +51,7 @@ class MatchDayFlow(
         val transactionBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
                 .addInputState(teamA)
                 .addInputState(teamB)
-                .addOutputState(winningTeam.state.data.copy(owningKey = newOwner.owningKey, isStillPlaying = true))
+                .addOutputState(winningTeam.state.data.copy(owningKey = newOwner.owningKey))
                 .addCommand(TournamentContract.MATCH_WON, requiredSigners)
                 .addReferenceState(accountForTeamA!!.referenced())
                 .addReferenceState(accountForTeamB!!.referenced())

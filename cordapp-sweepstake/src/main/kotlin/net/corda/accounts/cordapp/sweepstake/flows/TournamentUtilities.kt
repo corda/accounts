@@ -3,6 +3,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
 import com.r3.corda.sdk.token.contracts.states.FungibleToken
+import com.r3.corda.sdk.token.money.FiatCurrency
 import com.r3.corda.sdk.token.money.GBP
 import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.contracts.states.AccountInfo
@@ -15,7 +16,9 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
+import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.CordaSerializable
@@ -30,7 +33,7 @@ import java.util.concurrent.ThreadLocalRandom
 @VisibleForTesting
 fun generateTeamsFromFile(filePath: String): MutableList<WorldCupTeam> {
     return File(filePath).readLines().map { teamString ->
-        WorldCupTeam(teamString, false)
+        WorldCupTeam(teamString,false)
     }.shuffled().toMutableList()
 }
 
@@ -246,9 +249,34 @@ class GetTeamStates : FlowLogic<List<StateAndRef<TeamState>>>() {
 
 
 @StartableByRPC
-class GetTeamFromId(private val linearId: UniqueIdentifier) : FlowLogic<StateAndRef<TeamState>>() {
+class GetTeamFromId(private val linearId: String) : FlowLogic<StateAndRef<TeamState>>() {
     override fun call(): StateAndRef<TeamState> {
-        return serviceHub.vaultService.queryBy<TeamState>(QueryCriteria.LinearStateQueryCriteria(linearId = listOf(linearId))).states.first()
+       return serviceHub.vaultService.queryBy<TeamState>(QueryCriteria.LinearStateQueryCriteria(
+                linearId = listOf(UniqueIdentifier.fromString(linearId)), status = Vault.StateStatus.UNCONSUMED)).states.first()
+    }
+}
+
+@StartableByRPC
+class GetWinningAccounts(private val winningTeams: List<StateAndRef<TeamState>>) : FlowLogic<List<StateAndRef<AccountInfo>>>() {
+
+    @Suspendable
+    override fun call(): List<StateAndRef<AccountInfo>> {
+        val winningKeys = winningTeams.map {
+            it.state.data.owningKey
+        }.toList()
+
+        val winningAccountIds = winningKeys.map {
+            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.id
+        }.toList()
+
+        val tournamentService = serviceHub.cordaService(TournamentService::class.java)
+
+        val winningAccounts = winningAccountIds.flatMap {
+            tournamentService.getAccountIdsForGroup(it!!)
+        }.toSet().map {
+            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it)!!
+        }
+        return winningAccounts
     }
 }
 
