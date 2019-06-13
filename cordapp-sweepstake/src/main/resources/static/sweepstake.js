@@ -160,6 +160,10 @@ function playMatches() {
         },22000);
 
         document.getElementById("playMatchesBtn").disabled = 'true';
+
+        setTimeout(function() {
+            document.getElementById("distWinningsBtn").disabled = false;
+        }, 22500);
     });
 }
 
@@ -211,7 +215,10 @@ function distributeWinnings() {
     let prize = prompt("Enter the total prize pot:");
 
     let winners = localStorage.getItem('winners');
-    let accountIdPromise = postRequest(winners, "/distribute-winnings/");
+    let json = JSON.parse(winners);
+    json.prize = prize;
+    json = JSON.stringify(json);
+    let accountIdPromise = postRequest(json, "/distribute-winnings/");
 
     Promise.all([accountIdPromise]).then(results => {
         let json = results[0];

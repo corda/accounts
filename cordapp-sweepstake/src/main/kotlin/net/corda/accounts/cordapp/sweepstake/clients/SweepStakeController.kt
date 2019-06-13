@@ -99,7 +99,8 @@ class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
         val fourthTeam = proxy.startFlow(::GetTeamFromId, results.fourthPlaceId).returnValue.getOrThrow()
         val winningTeams = listOf(firstTeam, secondTeam,thirdTeam, fourthTeam)
 
-//        proxy.startFlow(::DistributeWinningsFlow, winningTeams, 200, GBP).returnValue.getOrThrow()
+        val prize = results.totalPrize
+        proxy.startFlow(::DistributeWinningsFlow, winningTeams, prize, GBP).returnValue.getOrThrow()
 
         val winningAccounts = proxy.startFlow(::GetWinningAccounts, winningTeams).returnValue.getOrThrow()
         return winningAccounts.map { it.state.data.id.toString() }
@@ -131,6 +132,7 @@ class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
         var secondPlaceId = ""
         var thirdPlaceId = ""
         var fourthPlaceId = ""
+        var prize = ""
 
         JsonReader(StringReader(msg)).use { reader ->
             reader.beginObject() {
@@ -141,17 +143,18 @@ class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
                         "two" -> secondPlaceId = reader.nextString()
                         "three" -> thirdPlaceId = reader.nextString()
                         "four" -> fourthPlaceId = reader.nextString()
+                        "prize" -> prize = reader.nextString()
                         else -> throw IllegalArgumentException("")
                     }
                 }
             }
         }
-        return FinalResults(firstPlaceId, secondPlaceId, thirdPlaceId, fourthPlaceId)
+        return FinalResults(firstPlaceId, secondPlaceId, thirdPlaceId, fourthPlaceId, prize.toLong())
     }
 }
 
 data class MatchResult(val teamAId: String, val teamBId: String, val winningTeamId: String)
 
-data class FinalResults(val firstPlaceId: String, val secondPlaceId: String, val thirdPlaceId: String, val fourthPlaceId: String)
+data class FinalResults(val firstPlaceId: String, val secondPlaceId: String, val thirdPlaceId: String, val fourthPlaceId: String, val totalPrize: Long)
 
 data class Team(val team: WorldCupTeam, val linearId: UniqueIdentifier)

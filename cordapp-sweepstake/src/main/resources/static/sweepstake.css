@@ -17,6 +17,33 @@ div.b {
     line-height: 1.6;
 }
 
+.button {
+    background-color:#ffffff;
+    -moz-border-radius:9px;
+    -webkit-border-radius:9px;
+    border-radius:9px;
+    border:1px solid #949494;
+    display:inline-block;
+    cursor:pointer;
+    color:#080808;
+    font-family:Arial;
+    font-size:12px;
+    padding:9px 26px;
+    text-decoration:none;
+}
+.button:hover {
+    background-color:#dbdbdb;
+}
+.button:disabled,
+.button[disabled]{
+    border: 1px solid #999999;
+    background-color: #cccccc;
+    color: #666666;
+}
+
+
+
+
 .firstCol {
     width: 120px;
     text-align: left;
