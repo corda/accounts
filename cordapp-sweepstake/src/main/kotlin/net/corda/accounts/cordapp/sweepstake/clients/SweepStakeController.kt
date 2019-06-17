@@ -1,7 +1,7 @@
 package net.corda.accounts.cordapp.sweepstake.clients
 
 import com.beust.klaxon.JsonReader
-import com.r3.corda.sdk.token.money.GBP
+import com.r3.corda.lib.tokens.money.GBP
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.workflows.flows.OurAccounts

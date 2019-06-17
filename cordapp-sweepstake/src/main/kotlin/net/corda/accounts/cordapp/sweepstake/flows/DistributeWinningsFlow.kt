@@ -1,11 +1,11 @@
 package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.sdk.token.contracts.utilities.heldBy
-import com.r3.corda.sdk.token.contracts.utilities.issuedBy
-import com.r3.corda.sdk.token.contracts.utilities.of
-import com.r3.corda.sdk.token.money.FiatCurrency
-import com.r3.corda.sdk.token.workflow.flows.shell.IssueTokens
+import com.r3.corda.lib.tokens.contracts.utilities.heldBy
+import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
+import com.r3.corda.lib.tokens.contracts.utilities.of
+import com.r3.corda.lib.tokens.money.FiatCurrency
+import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.accounts.workflows.flows.RequestKeyForAccountFlow
