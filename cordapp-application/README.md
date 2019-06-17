@@ -28,7 +28,7 @@ From the root directory run the following commands:
 * `cordapp-application/build/nodes/runnodes`
 
 Once built, start the spring boot web application `WorldCupApplication` using the following command:
-`./gradlew runTournamentServer`
+* `./gradlew runTournamentServer`
 
 Navigate to the server
 `http://localhost:8080/`
