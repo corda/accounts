@@ -18,12 +18,10 @@ import net.corda.core.transactions.TransactionBuilder
 @StartableByRPC
 @StartableByService
 class IssueAccountToGroupFlow(
-//        private val otherParty: Party,
                               private val account: StateAndRef<AccountInfo>,
                               private val groupId: Int) : FlowLogic<StateAndRef<AccountGroup>>() {
     @Suspendable
     override fun call(): StateAndRef<AccountGroup> {
-//        val sessions = listOf(initiateFlow(otherParty))
         val keyToUse = subFlow(RequestKeyForAccountFlow(account.state.data)).owningKey
 
         val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.id), keyToUse)
@@ -60,7 +58,6 @@ class UpdateAccountGroupFlow(
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addInputState(inputState)
         txBuilder.addOutputState(outputState)
-        //TODO fix sigs
         txBuilder.addCommand(TournamentContract.UPDATE_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, listOf()))

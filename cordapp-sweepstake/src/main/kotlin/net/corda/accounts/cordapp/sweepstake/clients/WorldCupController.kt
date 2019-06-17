@@ -1,12 +1,12 @@
 package net.corda.accounts.cordapp.sweepstake.clients
 
-import com.beust.klaxon.JsonReader
 import com.r3.corda.lib.tokens.money.GBP
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.flows.*
+import net.corda.accounts.cordapp.sweepstake.service.Team
+import net.corda.accounts.cordapp.sweepstake.service.TournamentJsonParser
 import net.corda.accounts.workflows.flows.OurAccounts
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.contracts.UniqueIdentifier
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,10 +16,9 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
 import org.springframework.web.bind.annotation.RestController
-import java.io.StringReader
 
 @RestController
-class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
+class WorldCupController(@Autowired private val rpc: NodeRPCConnection) {
 
     private val proxy = rpc.proxy
 
@@ -77,7 +76,7 @@ class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
 
     @RequestMapping("/play-match/", method = [RequestMethod.POST])
     fun playMatch(@RequestBody msg: String): ResponseEntity<String> {
-        val matchResult = getMatchResult(msg)
+        val matchResult = TournamentJsonParser.getMatchResult(msg)
 
         val teamAState = proxy.startFlow(::GetTeamFromId, matchResult.teamAId).returnValue.getOrThrow()
         val teamBState = proxy.startFlow(::GetTeamFromId, matchResult.teamBId).returnValue.getOrThrow()
@@ -91,70 +90,17 @@ class SweepStakeController(@Autowired private val rpc: NodeRPCConnection) {
 
     @RequestMapping("/distribute-winnings/", method = [RequestMethod.POST])
     fun distributeWinnings(@RequestBody msg: String): List<String> {
-        val results = getFinalResult(msg)
+        val tournamentResult = TournamentJsonParser.getTournamentResult(msg)
 
-        val firstTeam = proxy.startFlow(::GetTeamFromId, results.firstPlaceId).returnValue.getOrThrow()
-        val secondTeam = proxy.startFlow(::GetTeamFromId, results.secondPlaceId).returnValue.getOrThrow()
-        val thirdTeam = proxy.startFlow(::GetTeamFromId, results.thirdPlaceId).returnValue.getOrThrow()
-        val fourthTeam = proxy.startFlow(::GetTeamFromId, results.fourthPlaceId).returnValue.getOrThrow()
+        val firstTeam = proxy.startFlow(::GetTeamFromId, tournamentResult.firstPlaceId).returnValue.getOrThrow()
+        val secondTeam = proxy.startFlow(::GetTeamFromId, tournamentResult.secondPlaceId).returnValue.getOrThrow()
+        val thirdTeam = proxy.startFlow(::GetTeamFromId, tournamentResult.thirdPlaceId).returnValue.getOrThrow()
+        val fourthTeam = proxy.startFlow(::GetTeamFromId, tournamentResult.fourthPlaceId).returnValue.getOrThrow()
         val winningTeams = listOf(firstTeam, secondTeam,thirdTeam, fourthTeam)
 
-        val prize = results.totalPrize
-        proxy.startFlow(::DistributeWinningsFlow, winningTeams, prize, GBP).returnValue.getOrThrow()
+        proxy.startFlow(::DistributeWinningsFlow, winningTeams, tournamentResult.totalPrize, GBP).returnValue.getOrThrow()
 
         val winningAccounts = proxy.startFlow(::GetWinningAccounts, winningTeams).returnValue.getOrThrow()
         return winningAccounts.map { it.state.data.id.toString() }
     }
-
-    private fun getMatchResult(msg: String): MatchResult {
-        var teamAId = ""
-        var teamBId = ""
-        var winningTeamId = ""
-
-        JsonReader(StringReader(msg)).use { reader ->
-            reader.beginObject() {
-                while (reader.hasNext()) {
-                    val readData = reader.nextName()
-                    when (readData) {
-                        "teamAId" -> teamAId = reader.nextString()
-                        "teamBId" -> teamBId = reader.nextString()
-                        "winningTeamId" -> winningTeamId = reader.nextString()
-                        else -> throw IllegalArgumentException("")
-                    }
-                }
-            }
-        }
-        return MatchResult(teamAId, teamBId, winningTeamId)
-    }
-
-    private fun getFinalResult(msg: String): FinalResults {
-        var firstPlaceId = ""
-        var secondPlaceId = ""
-        var thirdPlaceId = ""
-        var fourthPlaceId = ""
-        var prize = ""
-
-        JsonReader(StringReader(msg)).use { reader ->
-            reader.beginObject() {
-                while (reader.hasNext()) {
-                    val readData = reader.nextName()
-                    when (readData) {
-                        "one" -> firstPlaceId = reader.nextString()
-                        "two" -> secondPlaceId = reader.nextString()
-                        "three" -> thirdPlaceId = reader.nextString()
-                        "four" -> fourthPlaceId = reader.nextString()
-                        "prize" -> prize = reader.nextString()
-                        else -> throw IllegalArgumentException("")
-                    }
-                }
-            }
-        }
-        return FinalResults(firstPlaceId, secondPlaceId, thirdPlaceId, fourthPlaceId, prize.toLong())
-    }
 }
-
-data class MatchResult(val teamAId: String, val teamBId: String, val winningTeamId: String)
-
-data class FinalResults(val firstPlaceId: String, val secondPlaceId: String, val thirdPlaceId: String, val fourthPlaceId: String, val totalPrize: Long)
-
-data class Team(val team: WorldCupTeam, val linearId: UniqueIdentifier)

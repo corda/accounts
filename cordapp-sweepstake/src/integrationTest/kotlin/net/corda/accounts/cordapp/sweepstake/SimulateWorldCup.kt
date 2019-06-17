@@ -1,6 +1,6 @@
 package net.corda.accounts.cordapp.sweepstake
 
-import com.r3.corda.sdk.token.money.GBP
+import com.r3.corda.lib.tokens.money.GBP
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.flows.*
 import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
@@ -26,10 +26,10 @@ import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
 import net.corda.testing.node.User
 import org.assertj.core.api.Assertions
-import org.junit.Test
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.core.IsEqual
 import org.junit.Assert
+import org.junit.Test
 import java.util.concurrent.Future
 import kotlin.test.assertEquals
 
