@@ -1,3 +1,7 @@
+<p align="center">
+<a href="https://ibb.co/vcTTKgC"><img src="https://i.ibb.co/nwYY5Zq/Corda-World-Cup.jpg" alt="Corda-World-Cup" border="0"></a>
+</p>
+
 # Accounts World Cup Sweepstake CorDapp
 
 This app can be used to demonstrate the concept of _account grouping_ and integration with the `tokens-sdk`. We represent a simplified World Cup that is just a 32 team knockout tournament. For simplicity this is all run on one node but if we were to extend the app to run over multiple nodes we would just need to invoke the `ShareStateAndSyncAccountsFlow`. Examples of this can be seen in the `SimulateWorldCup`  integration test. 
