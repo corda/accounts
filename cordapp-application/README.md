@@ -27,7 +27,7 @@ From the root directory run the following commands:
 * `./gradlew clean deployNodes`
 * `cordapp-application/build/nodes/runnodes`
 
-Once built, start the spring boot web application [WorldCupApplication.kt] using the following command:
+Once built, start the spring boot web application `WorldCupApplication` using the following command:
 `./gradlew runTournamentServer`
 
 Navigate to the server

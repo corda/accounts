@@ -1,5 +1,3 @@
-import {Spinner} from 'spin.js';
-
 async function getRequest(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
