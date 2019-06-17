@@ -41,7 +41,7 @@ class MatchDayFlow(
                         teamA.state.data.owningKey, teamB.state.data.owningKey, newOwner.owningKey, ourIdentity.owningKey
                 )
 
-        // OK so required signers are:
+        // Required signers are:
         // 1.) us (match provider) - provided by initialSignature
         // 2.) hosts of both accounts
         // 3.) owner of team A (hosted by accountForTeamA.host)
@@ -63,20 +63,33 @@ class MatchDayFlow(
                 )
         )
 
-        val sessionForWinner = initiateFlow(winningAccount.state.data.host)
-        val sessionForTeamB = initiateFlow(accountForTeamB.state.data.host)
-        val sessionForTeamA = initiateFlow(accountForTeamA.state.data.host)
+        var sessionForWinner: FlowSession = initiateFlow(newOwner)
+        var sessionForTeamB: FlowSession? = null
+        var sessionForTeamA: FlowSession? = null
 
-        val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, listOf(
+        val accountAOwningKey = accountForTeamA.state.data.host.owningKey
+        val accountBOwningKey = accountForTeamB.state.data.host.owningKey
+        val newOwningKey = newOwner.owningKey
+
+        if (newOwningKey != accountAOwningKey && accountAOwningKey != accountBOwningKey) {
+            sessionForTeamB = initiateFlow(accountForTeamB.state.data.host)
+            sessionForTeamA = initiateFlow(accountForTeamA.state.data.host)
+        } else if (newOwningKey != accountAOwningKey) {
+            sessionForTeamA = initiateFlow(accountForTeamA.state.data.host)
+        } else if (newOwningKey != accountBOwningKey) {
+            sessionForTeamB = initiateFlow(accountForTeamB.state.data.host)
+        }
+
+        val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, listOfNotNull(
+                sessionForWinner,
                 sessionForTeamA,
-                sessionForTeamB,
-                sessionForWinner
+                sessionForTeamB
         )))
 
         val signedTx = subFlow(
                 FinalityFlow(
                         fullySignedExceptForNotaryTx,
-                        listOf(sessionForWinner, sessionForTeamA, sessionForTeamB).filter { sessionForWinner.counterparty != serviceHub.myInfo.legalIdentities.first() })
+                        listOfNotNull(sessionForWinner, sessionForTeamA, sessionForTeamB).filter { sessionForWinner.counterparty != serviceHub.myInfo.legalIdentities.first() })
         )
 
         return signedTx.coreTransaction.outRefsOfType(

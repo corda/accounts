@@ -69,8 +69,9 @@ class MatchDayFlow(
 
         val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, listOf(
                 sessionForTeamA,
-                sessionForTeamB,
-                sessionForWinner
+                sessionForTeamB
+//                ,
+//                sessionForWinner
         )))
 
         val signedTx = subFlow(

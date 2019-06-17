@@ -1,3 +1,5 @@
+import {Spinner} from 'spin.js';
+
 async function getRequest(url) {
     return new Promise(function (resolve, reject) {
         var xhr = new XMLHttpRequest();
@@ -75,6 +77,7 @@ function importPlayers() {
 function createAccountsAndIssueTeams() {
     let accountsAndTeamsPromise = getRequest(`/create-accounts-issue-teams/`).then(text => JSON.parse(text));
 
+
     Promise.all([accountsAndTeamsPromise]).then(results => {
         let accountsAndTeams = results[0];
 
@@ -91,7 +94,6 @@ function createAccountsAndIssueTeams() {
         });
         document.getElementById("accountBtn").disabled = 'true';
     });
-
 }
 
 function createCell(cell, text, style) {

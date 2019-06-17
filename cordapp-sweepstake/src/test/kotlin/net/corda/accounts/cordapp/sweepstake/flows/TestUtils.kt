@@ -2,6 +2,7 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
+import net.corda.testing.node.TestCordapp
 
 class TestUtils {
 
@@ -26,6 +27,17 @@ class TestUtils {
                 WorldCupTeam(NIGERIA, true)
         )
 
+        val REQUIRED_CORDAPP_PACKAGES_TESTCORDAPP = listOf(
+                TestCordapp.findCordapp("net.corda.accounts.cordapp.sweepstake.states"),
+                TestCordapp.findCordapp("net.corda.accounts.cordapp.sweepstake.contracts"),
+                TestCordapp.findCordapp("net.corda.accounts.cordapp.sweepstake.flows"),
+                TestCordapp.findCordapp("net.corda.accounts.cordapp.sweepstake.service"),
+                TestCordapp.findCordapp("net.corda.accounts.workflows.flows"),
+                TestCordapp.findCordapp("net.corda.accounts.workflows.schemas"),
+                TestCordapp.findCordapp("net.corda.accounts.workflows.services"),
+                TestCordapp.findCordapp("net.corda.accounts.contracts"),
+                TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
+                TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"))
         val REQUIRED_CORDAPP_PACKAGES = listOf(
                 "net.corda.accounts.cordapp.sweepstake.states",
                 "net.corda.accounts.cordapp.sweepstake.contracts",
@@ -35,8 +47,8 @@ class TestUtils {
                 "net.corda.accounts.workflows.schemas",
                 "net.corda.accounts.workflows.services",
                 "net.corda.accounts.contracts",
-                "com.r3.corda.sdk.token.contracts",
-                "com.r3.corda.sdk.token.workflow")
+                "com.r3.corda.lib.tokens.contracts",
+                "com.r3.corda.lib.tokens.workflows")
     }
 
 }

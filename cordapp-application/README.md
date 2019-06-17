@@ -8,7 +8,7 @@ Once the teams and accounts have been assigned, we then combine the accounts int
 
 The matches are simulated using the `MatchDayFlow` where two `TeamStates` are taken as the input states and the winning `TeamState` as the output state. This flow is repeated until four teams remain. The final four teams are shuffled to determine 1st, 2nd, 3rd and 4th place. 
 
-The total prize money in `GBP` is then distributed across winning accounts using the `DistributeWinningsFlow`. A `VaultQuery` is used to find the account linked to top four `TeamState`, and then find the list of accounts that share the same `AccountGroup` as those four accounts. 
+The total prize money in `GBP` is then distributed across winning accounts using the `DistributeWinningsFlow`. A `VaultQuery` is used to find the account linked to top four `TeamState`, and then find the list of accounts that share the same `AccountGroup` as those four winning accounts. 
 
 The prize money is split across the number of winning accounts and issued as `GBP` tokens using the `IssueTokens` flow.  
  

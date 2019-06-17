@@ -23,7 +23,6 @@ class IssueAccountToGroupFlow(
     @Suspendable
     override fun call(): StateAndRef<AccountGroup> {
         val keyToUse = subFlow(RequestKeyForAccountFlow(account.state.data)).owningKey
-
         val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.id), keyToUse)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addOutputState(outputState)
