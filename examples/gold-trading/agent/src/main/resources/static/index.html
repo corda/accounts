@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent Bank Control</title>
+</head>
+
+<style>
+    .styled-select {
+        background: url(http://i62.tinypic.com/15xvbd5.png) no-repeat 96% 0;
+        height: 29px;
+    }
+
+</style>
+
+<script type="application/javascript">
+    async function makeRequest(method, url) {
+        return new Promise(function (resolve, reject) {
+            var xhr = new XMLHttpRequest();
+            xhr.open(method, url);
+            xhr.onload = function () {
+                if (this.status >= 200 && this.status < 300) {
+                    resolve(xhr.response);
+                } else {
+                    reject({
+                        status: this.status,
+                        statusText: xhr.statusText
+                    });
+                }
+            };
+            xhr.onerror = function () {
+                reject({
+                    status: this.status,
+                    statusText: xhr.statusText
+                });
+            };
+            xhr.send();
+        });
+    }
+
+    let loansPromise = makeRequest("GET", "/loans").then(text => JSON.parse(text));
+    let accountsPromise = makeRequest("GET", "/accounts").then(text => JSON.parse(text));
+    Promise.all([loansPromise, accountsPromise]).then(results => {
+        let loans = results[0];
+        let accounts = results[1];
+        accounts.forEach(account => {
+            console.log(account)
+        });
+        let loanTable = document.getElementById("loanTableBody");
+        loans.forEach(loan => {
+            let loanRow = document.createElement("tr");
+            let dealIdCell = document.createElement("td");
+            let valueCell = document.createElement("td");
+            let buttonsCell = document.createElement("td");
+            dealIdCell.innerText = loan.dealId;
+            valueCell.innerText = loan.valueInUSD;
+            let splitButton = document.createElement("button");
+            splitButton.innerText = "split";
+            buttonsCell.appendChild(splitButton);
+            let accountsDropDown = document.createElement("select");
+            accounts.forEach(account => {
+                let textToDisplay = account.accountName + "@" + account.accountHost;
+                let option = document.createElement("option");
+                option.innerText = textToDisplay;
+                accountsDropDown.appendChild(option);
+                option.backingObject = account;
+            });
+            let spacer = document.createElement("tt");
+            spacer.innerText = "     ";
+            buttonsCell.appendChild(spacer);
+            let moveButton = document.createElement("button");
+            moveButton.select = accountsDropDown;
+            moveButton.innerText = "move to account: ";
+            buttonsCell.appendChild(moveButton);
+            buttonsCell.appendChild(accountsDropDown);
+            moveButton.onclick = function () {
+                let account = this.select.options[this.select.selectedIndex].backingObject;
+                console.log("moving " + `${loan.txHash}/${loan.index}` + " to account " + `${account.accountName} @ ${account.accountHost}`);
+                this.disabled = true;
+                makeRequest("GET", `/loan/move/${loan.txHash}/${loan.index}/${account.key}`).then(done => {
+                    location.reload()
+                });
+            };
+            splitButton.onclick = function () {
+                makeRequest("GET", `/loan/split/${loan.txHash}/${loan.index}`).then(whenDone => {
+                    location.reload();
+                })
+            };
+            loanRow.appendChild(dealIdCell);
+            loanRow.appendChild(valueCell);
+            loanRow.appendChild(buttonsCell);
+            loanTable.appendChild(loanRow);
+        })
+    });
+
+</script>
+
+<body>
+<h1>Hello, Welcome to the Agent Bank</h1>
+
+<h3>Loans</h3>
+<table id="loanTable">
+    <thead>
+    <tr>
+        <th>DealID</th>
+        <th>Facility Value (USD)</th>
+        <th>Events</th>
+    </tr>
+    </thead>
+    <tbody id="loanTableBody"></tbody>
+</table>
+
+</body>
+</html>
