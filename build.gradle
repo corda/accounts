@@ -35,8 +35,8 @@ plugins {
 }
 
 allprojects {
-    version "1.0-SNAPSHOT"
-    group "com.r3.accounts-sdk"
+    version accounts_release_version
+    group accounts_release_group
 
     configurations.all {
         resolutionStrategy {
