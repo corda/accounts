@@ -45,7 +45,6 @@ class GetAccountsFlowTests {
         network.stopNodes()
     }
 
-
     @Test
     fun `should lookup all hosted accounts`() {
         val account1 = a.startFlow(CreateAccount("Stefano_Account1")).runAndGet(network)
@@ -58,7 +57,7 @@ class GetAccountsFlowTests {
         val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         a.transaction {
-            Assert.assertThat(accountService.accountInfo(account4.state.data.id), `is`(account4))
+            Assert.assertThat(accountService.accountInfo(account4.uuid), `is`(account4))
             Assert.assertThat(accountService.ourAccounts(), containsInAnyOrder(account1, account2, account3))
             Assert.assertThat(accountService.ourAccounts(), not(hasItem(account4)))
         }
@@ -95,12 +94,10 @@ class GetAccountsFlowTests {
 
         val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
         a.transaction {
-            val foundAccount = accountService.accountInfo(result.state.data.id)
+            val foundAccount = accountService.accountInfo(result.uuid)
             Assert.assertThat(foundAccount, `is`(storedAccount))
         }
     }
-
-
 }
 
 

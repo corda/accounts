@@ -1,5 +1,6 @@
-package net.corda.accounts.workflows
+package net.corda.accounts.workflows.services
 
+import net.corda.accounts.workflows.internal.externalIdCriteria
 import net.corda.core.contracts.ContractState
 import net.corda.core.messaging.DataFeed
 import net.corda.core.node.services.Vault

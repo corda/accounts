@@ -2,9 +2,9 @@ package net.corda.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
-import com.r3.corda.sdk.token.contracts.states.FungibleToken
-import com.r3.corda.sdk.token.money.GBP
-import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import com.r3.corda.lib.tokens.money.GBP
+import com.r3.corda.lib.tokens.workflows.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
@@ -126,7 +126,7 @@ class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val accounts = accountService.allAccounts()
         accounts.forEach { account ->
-            accountService.shareAccountInfoWithParty(account.state.data.id, otherParty).getOrThrow()
+            accountService.shareAccountInfoWithParty(account.state.data.id.id, otherParty).getOrThrow()
         }
     }
 }

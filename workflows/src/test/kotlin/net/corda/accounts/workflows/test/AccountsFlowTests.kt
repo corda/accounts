@@ -71,32 +71,35 @@ class AccountsFlowTests {
         CompletableFuture.allOf(shareB1ToAFuture, shareB2ToAFuture, shareB3ToAFuture).getOrThrow()
 
         //share accountA1 with ONLY accountB1 rather than the entire B node
-        val resultOfPermissionedShareA1B1 = accountServiceOnA.shareStateWithAccount(futureB1.getOrThrow().state.data.id, futureA1.getOrThrow())
+        val resultOfPermissionedShareA1B1 = accountServiceOnA.shareStateWithAccount(futureB1.getOrThrow().uuid, futureA1.getOrThrow())
         //share accountA2 with ONLY accountB2 rather than the entire B node
-        val resultOfPermissionedShareA2B2 = accountServiceOnA.shareStateWithAccount(futureB2.getOrThrow().state.data.id, futureA2.getOrThrow())
+        val resultOfPermissionedShareA2B2 = accountServiceOnA.shareStateWithAccount(futureB2.getOrThrow().uuid, futureA2.getOrThrow())
         //share accountA3 with ONLY accountB3 rather than the entire B node
-        val resultOfPermissionedShareA3B3 = accountServiceOnA.shareStateWithAccount(futureB3.getOrThrow().state.data.id, futureA3.getOrThrow())
+        val resultOfPermissionedShareA3B3 = accountServiceOnA.shareStateWithAccount(futureB3.getOrThrow().uuid, futureA3.getOrThrow())
         network.runNetwork()
-        CompletableFuture.allOf(resultOfPermissionedShareA1B1.toCompletableFuture(), resultOfPermissionedShareA2B2.toCompletableFuture(), resultOfPermissionedShareA3B3.toCompletableFuture()).getOrThrow()
-
+        CompletableFuture.allOf(
+                resultOfPermissionedShareA1B1.toCompletableFuture(),
+                resultOfPermissionedShareA2B2.toCompletableFuture(),
+                resultOfPermissionedShareA3B3.toCompletableFuture()
+        ).getOrThrow()
 
         val permissionedStatesForAccountB1 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                    futureB1.getOrThrow().state.data.id,
+                    futureB1.getOrThrow().uuid,
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
         val permissionedStatesForAccountB2 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                    futureB2.getOrThrow().state.data.id,
+                    futureB2.getOrThrow().uuid,
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
 
         val permissionedStatesForAccountB3 = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                    futureB3.getOrThrow().state.data.id,
+                    futureB3.getOrThrow().uuid,
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }
@@ -109,13 +112,13 @@ class AccountsFlowTests {
         Assert.assertThat(permissionedStatesForAccountB3, `is`(IsEqual.equalTo(listOf(futureA3.getOrThrow().ref))))
 
         //share accountA1 with ONLY accountB3 rather than the entire B node
-        val resultOfPermissionedShareA1B3 = accountServiceOnA.shareStateWithAccount(futureB3.getOrThrow().state.data.id, futureA1.getOrThrow())
+        val resultOfPermissionedShareA1B3 = accountServiceOnA.shareStateWithAccount(futureB3.getOrThrow().uuid, futureA1.getOrThrow())
         network.runNetwork()
         resultOfPermissionedShareA1B3.getOrThrow()
 
         val permissionedStatesForAccountB3AfterA1Shared = b.transaction {
             accountServiceOnB.broadcastedToAccountVaultQuery(
-                    futureB3.getOrThrow().state.data.id,
+                    futureB3.getOrThrow().uuid,
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             )
         }.map { it.ref }

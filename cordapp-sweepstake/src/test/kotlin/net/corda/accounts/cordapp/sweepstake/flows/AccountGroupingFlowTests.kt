@@ -9,7 +9,6 @@ import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.CHARLIE_NAME
 import net.corda.testing.core.singleIdentity
-import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
 import org.hamcrest.CoreMatchers
@@ -34,10 +33,9 @@ class AccountGroupingFlowTests {
     fun before() {
         mockNet = InternalMockNetwork(
                 cordappPackages = TestUtils.REQUIRED_CORDAPP_PACKAGES,
-                cordappsForAllNodes = FINANCE_CORDAPPS,
                 networkSendManuallyPumped = false,
-                threadPerNode = true)
-
+                threadPerNode = true
+        )
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
         charlieNode = mockNet.createPartyNode(CHARLIE_NAME)

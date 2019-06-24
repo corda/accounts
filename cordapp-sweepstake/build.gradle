@@ -30,17 +30,22 @@ configurations {
 
 
 dependencies {
+    // Accounts.
     cordapp project(":workflows")
     cordapp project(":contracts")
-    
-    cordaCompile "$corda_release_group:corda-core:$corda_release_version"
-    
-    cordapp "com.r3.tokens-sdk:contract:$tokens_sdk_version"
-    cordapp "com.r3.tokens-sdk:workflow:$tokens_sdk_version"
-    cordapp "com.r3.tokens-sdk:money:$tokens_sdk_version"
 
+    // Corda.
+    cordaCompile "$corda_release_group:corda-core:$corda_release_version"
+
+    // Tokens.
+    cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+
+    // Kotlin.
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
+    // Testing.
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit: 4.12"
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"

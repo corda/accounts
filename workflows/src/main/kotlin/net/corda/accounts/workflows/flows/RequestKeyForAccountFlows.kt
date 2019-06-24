@@ -2,57 +2,16 @@ package net.corda.accounts.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.workflows.accountService
-import net.corda.core.crypto.DigitalSignature
-import net.corda.core.crypto.verify
+import net.corda.accounts.workflows.internal.accountService
+import net.corda.accounts.workflows.internal.flows.AccountSearchStatus
+import net.corda.accounts.workflows.internal.flows.IdentityWithSignature
+import net.corda.accounts.workflows.internal.flows.buildDataToSign
+import net.corda.accounts.workflows.internal.flows.validateAndRegisterIdentity
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
-import net.corda.core.identity.CordaX500Name
-import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
-import net.corda.core.node.ServiceHub
-import net.corda.core.serialization.CordaSerializable
-import net.corda.core.serialization.serialize
 import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
-import java.security.PublicKey
-import java.security.SignatureException
 import java.util.*
-
-@CordaSerializable
-internal enum class AccountSearchStatus {
-    FOUND,
-    NOT_FOUND
-}
-
-@CordaSerializable
-internal data class CertificateOwnershipAssertion(val name: CordaX500Name, val owningKey: PublicKey)
-
-@CordaSerializable
-internal data class IdentityWithSignature(val identity: PartyAndCertificate, val signature: DigitalSignature)
-
-internal fun buildDataToSign(identity: PartyAndCertificate): ByteArray {
-    return CertificateOwnershipAssertion(identity.name, identity.owningKey).serialize().bytes
-}
-
-internal fun validateAndRegisterIdentity(
-        serviceHub: ServiceHub,
-        otherSide: Party,
-        theirAnonymousIdentity: PartyAndCertificate,
-        signature: DigitalSignature
-): PartyAndCertificate {
-    if (theirAnonymousIdentity.name != otherSide.name) {
-        throw Exception("Certificate subject must match counterparty's well known identity.")
-    }
-    try {
-        theirAnonymousIdentity.owningKey.verify(buildDataToSign(theirAnonymousIdentity), signature)
-    } catch (ex: SignatureException) {
-        throw Exception("Signature does not match the expected identity ownership assertion.", ex)
-    }
-    // Validate then store their identity so that we can prove the key in the transaction is owned by the counterparty.
-    serviceHub.identityService.verifyAndRegisterIdentity(theirAnonymousIdentity)
-    return theirAnonymousIdentity
-}
 
 class RequestKeyForAccountFlow(
         private val accountInfo: AccountInfo,
@@ -62,12 +21,16 @@ class RequestKeyForAccountFlow(
     override fun call(): AnonymousParty {
         // TODO: Replace use of the old CI API With the new API.
         // If the host is the node running this flow then generate a new CI locally and return it. Otherwise call out
-        // to the remote host and ask THEM to gener ate a new CI and send it back. We cannot use the existing CI flows
+        // to the remote host and ask THEM to generate a new CI and send it back. We cannot use the existing CI flows
         // here because they don't allow us to supply an external ID when the new CI is created.
         val newKeyAndCert = if (accountInfo.host == ourIdentity) {
-            serviceHub.keyManagementService.freshKeyAndCert(ourIdentityAndCert, false, accountInfo.id)
+            serviceHub.keyManagementService.freshKeyAndCert(
+                    identity = ourIdentityAndCert,
+                    revocationEnabled = false,
+                    externalId = accountInfo.linearId.id
+            )
         } else {
-            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.id).unwrap { it }
+            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.id.id).unwrap { it }
             when (accountSearchStatus) {
                 AccountSearchStatus.NOT_FOUND -> {
                     throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.id} " +
@@ -84,7 +47,10 @@ class RequestKeyForAccountFlow(
                     // Store a local mapping of the account ID to the public key we've just received from the host.
                     // This allows us to look up the account which the PublicKey is linked to in the future.
                     serviceHub.withEntityManager {
-                        persist(PublicKeyHashToExternalId(accountInfo.id, newKeyAndCert.identity.owningKey))
+                        persist(PublicKeyHashToExternalId(
+                                accountId = accountInfo.linearId.id,
+                                publicKey = newKeyAndCert.identity.owningKey
+                        ))
                     }
                     newKeyAndCert.identity
                 }

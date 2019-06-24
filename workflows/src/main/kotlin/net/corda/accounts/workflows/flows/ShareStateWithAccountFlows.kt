@@ -14,7 +14,7 @@ import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.unwrap
 
 @CordaSerializable
-enum class ResultOfPermissioning {
+internal enum class ResultOfPermissioning {
     OK, FAIL
 }
 
@@ -44,7 +44,11 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
         val accountInfo = otherSession.receive<AccountInfo>().unwrap { it }
         try {
             serviceHub.withEntityManager {
-                val newEntry = AllowedToSeeStateMapping(null, accountInfo.id, PersistentStateRef(stateToPermission))
+                val newEntry = AllowedToSeeStateMapping(
+                        id = null,
+                        externalId = accountInfo.linearId.id,
+                        stateRef = PersistentStateRef(stateToPermission)
+                )
                 persist(newEntry)
             }
             otherSession.send(ResultOfPermissioning.OK)

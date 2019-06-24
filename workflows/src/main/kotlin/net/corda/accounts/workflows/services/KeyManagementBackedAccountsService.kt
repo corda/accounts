@@ -2,11 +2,11 @@ package net.corda.accounts.workflows.services
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.ShareAccountInfo
 import net.corda.accounts.workflows.flows.ShareStateAndSyncAccounts
 import net.corda.accounts.workflows.flows.ShareStateWithAccount
+import net.corda.accounts.workflows.internal.*
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef

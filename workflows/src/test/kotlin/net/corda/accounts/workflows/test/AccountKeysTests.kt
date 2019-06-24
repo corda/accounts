@@ -89,7 +89,6 @@ class AccountKeysTests {
         }
         Assert.assertThat(foundKeysForAccount1, containsInAnyOrder(keyToUse1.owningKey, keyToUse2.owningKey))
         Assert.assertThat(foundKeysForAccount2, containsInAnyOrder(keyToUse3.owningKey))
-
     }
 
     private fun findKeysForAccount(account2: StateAndRef<AccountInfo>): List<PublicKey>? {

@@ -1,7 +1,7 @@
 package net.corda.accounts.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.accounts.workflows.accountService
+import net.corda.accounts.workflows.internal.accountService
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
@@ -22,13 +22,13 @@ class ShareStateAndSyncAccountsFlow(
         val accountsInvolvedWithState = state.state.data.participants.map { participant ->
             val accountInfo = accountService.accountInfo(participant.owningKey)
             val partyAndCertificate = serviceHub.identityService.certificateFromKey(participant.owningKey)
-            accountInfo to partyAndCertificate
-        }.filter { it.first != null && it.second != null }
+            if (accountInfo != null && partyAndCertificate != null) accountInfo to partyAndCertificate else null
+        }.filterNotNull()
         if (accountsInvolvedWithState.isNotEmpty()) {
             sessionToShareWith.send(accountsInvolvedWithState.size)
             accountsInvolvedWithState.forEach { pair ->
-                subFlow(ShareAccountInfoFlow(pair.first!!, listOf(sessionToShareWith)))
-                sessionToShareWith.send(pair.second!!)
+                subFlow(ShareAccountInfoFlow(pair.first, listOf(sessionToShareWith)))
+                sessionToShareWith.send(pair.second)
             }
         } else {
             sessionToShareWith.send(0)
@@ -46,7 +46,7 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
             val certPath = otherSideSession.receive<PartyAndCertificate>().unwrap { it }
             serviceHub.identityService.verifyAndRegisterIdentity(certPath)
             serviceHub.withEntityManager {
-                persist(PublicKeyHashToExternalId(accountInfo!!.id, certPath.owningKey))
+                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, certPath.owningKey))
             }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
