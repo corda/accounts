@@ -1,7 +1,8 @@
 package net.corda.accounts.cordapp.sweepstake.flows
-import com.r3.corda.sdk.token.contracts.states.FungibleToken
-import com.r3.corda.sdk.token.money.GBP
-import com.r3.corda.sdk.token.workflow.utilities.tokenAmountWithIssuerCriteria
+
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken
+import com.r3.corda.lib.tokens.money.GBP
+import com.r3.corda.lib.tokens.workflows.utilities.tokenAmountWithIssuerCriteria
 import net.corda.accounts.cordapp.sweepstake.service.TournamentService
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
@@ -11,7 +12,6 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.core.ALICE_NAME
 import net.corda.testing.core.BOB_NAME
 import net.corda.testing.core.singleIdentity
-import net.corda.testing.node.internal.FINANCE_CORDAPPS
 import net.corda.testing.node.internal.InternalMockNetwork
 import net.corda.testing.node.internal.TestStartedNode
 import net.corda.testing.node.internal.startFlow
@@ -35,11 +35,10 @@ class DistributeWinningsTest {
     fun before() {
         mockNet = InternalMockNetwork(
                 cordappPackages = TestUtils.REQUIRED_CORDAPP_PACKAGES,
-                cordappsForAllNodes = FINANCE_CORDAPPS,
                 networkSendManuallyPumped = false,
                 threadPerNode = true,
-                initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4))
-
+                initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4)
+        )
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
         alice = aliceNode.info.singleIdentity()

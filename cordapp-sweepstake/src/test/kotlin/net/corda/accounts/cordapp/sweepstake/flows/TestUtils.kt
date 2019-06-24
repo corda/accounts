@@ -31,12 +31,11 @@ class TestUtils {
                 "net.corda.accounts.cordapp.sweepstake.contracts",
                 "net.corda.accounts.cordapp.sweepstake.flows",
                 "net.corda.accounts.cordapp.sweepstake.service",
-                "net.corda.accounts.workflows.flows",
-                "net.corda.accounts.workflows.internal.schemas",
-                "net.corda.accounts.workflows.services",
+                "net.corda.accounts.workflows",
                 "net.corda.accounts.contracts",
-                "com.r3.corda.sdk.token.contracts",
-                "com.r3.corda.sdk.token.workflow")
+                "com.r3.corda.lib.tokens.contracts",
+                "com.r3.corda.lib.tokens.workflows"
+        )
     }
 
 }

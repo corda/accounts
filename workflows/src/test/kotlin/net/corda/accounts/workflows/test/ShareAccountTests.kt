@@ -2,9 +2,9 @@ package net.corda.accounts.workflows.test
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.workflows.accountService
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.RequestKeyForAccount
+import net.corda.accounts.workflows.internal.accountService
 import net.corda.accounts.workflows.services.AccountService
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.*
@@ -61,11 +61,11 @@ class ShareAccountTests {
 
         val aAccountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
         a.transaction {
-            val foundAccount = aAccountService.accountInfo(result.state.data.id)
+            val foundAccount = aAccountService.accountInfo(result.uuid)
             Assert.assertThat(foundAccount, `is`(storedAccount))
         }
 
-        aAccountService.shareAccountInfoWithParty(result.state.data.id, b.info.legalIdentities.first()).let {
+        aAccountService.shareAccountInfoWithParty(result.uuid, b.info.legalIdentities.first()).let {
             network.runNetwork()
             it.getOrThrow()
         }
@@ -73,7 +73,7 @@ class ShareAccountTests {
         val bAccountService = b.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         val accountOnB = b.transaction {
-            bAccountService.accountInfo(result.state.data.id)
+            bAccountService.accountInfo(result.uuid)
         }
         Assert.assertThat(accountOnB, `is`(storedAccount))
     }
@@ -86,7 +86,7 @@ class ShareAccountTests {
             it.getOrThrow()
         }
 
-        val ownedByAccountState = a.startFlow(IssueFlow(result.state.data.id)).let {
+        val ownedByAccountState = a.startFlow(IssueFlow(result.uuid)).let {
             network.runNetwork()
             it.getOrThrow()
         }
@@ -102,7 +102,7 @@ class ShareAccountTests {
         val accountServiceOnB = b.accountService()
 
         b.transaction {
-            Assert.assertThat(accountServiceOnB.accountInfo(result.state.data.id), `is`(result))
+            Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
             Assert.assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
             //now check that nodeB knows who the account key really is
             Assert.assertThat(b.services.identityService.wellKnownPartyFromAnonymous(ownedByAccountState.state.data.owner), `is`(a.identity()))

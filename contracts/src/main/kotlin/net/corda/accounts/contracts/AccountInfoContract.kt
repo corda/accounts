@@ -1,7 +1,7 @@
 package net.corda.accounts.contracts
 
 import net.corda.accounts.contracts.commands.AccountCommand
-import net.corda.accounts.contracts.commands.Open
+import net.corda.accounts.contracts.commands.Create
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
@@ -10,7 +10,7 @@ import net.corda.core.transactions.LedgerTransaction
 class AccountInfoContract : Contract {
     override fun verify(tx: LedgerTransaction) {
         val accountCommand = tx.commands.requireSingleCommand(AccountCommand::class.java)
-        if (accountCommand.value is Open) {
+        if (accountCommand.value is Create) {
             require(tx.outputStates.size == 1) { "There should only ever be one output account state." }
             val accountInfo = tx.outputsOfType(AccountInfo::class.java).single()
             val requiredSigners = accountCommand.signers

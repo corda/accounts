@@ -41,8 +41,8 @@ class IssueTeamFlowTests {
         mockNet = InternalMockNetwork(
                 cordappPackages = REQUIRED_CORDAPP_PACKAGES,
                 initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4),
-                threadPerNode = true)
-
+                threadPerNode = true
+        )
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
         charlieNode = mockNet.createPartyNode(CHARLIE_NAME)
@@ -88,7 +88,7 @@ class IssueTeamFlowTests {
         val aliceAccount = aliceService.createAccount("TEST_ACCOUNT").getOrThrow()
 
         //Share alice's account with bob
-        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.id, bobNode.info.singleIdentity())
+        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.id.id, bobNode.info.singleIdentity())
         val future = bobNode.services.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).resultFuture.getOrThrow()
 
         val aliceAccounts = aliceNode.services.startFlow(OurAccounts()).resultFuture.getOrThrow()

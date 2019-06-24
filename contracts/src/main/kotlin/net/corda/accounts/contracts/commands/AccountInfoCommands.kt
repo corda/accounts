@@ -6,4 +6,4 @@ import net.corda.core.contracts.CommandData
 interface AccountCommand : CommandData
 
 /** For use when creating an [AccountInfo] for a new account. */
-class Open : AccountCommand
+class Create : AccountCommand

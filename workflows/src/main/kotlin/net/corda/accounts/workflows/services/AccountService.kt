@@ -11,6 +11,9 @@ import net.corda.core.serialization.SerializeAsToken
 import java.security.PublicKey
 import java.util.*
 
+/**
+ * The [AccountService] intends to
+ */
 @CordaService
 interface AccountService : SerializeAsToken {
 
@@ -26,7 +29,8 @@ interface AccountService : SerializeAsToken {
     /**
      * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
      * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
-     * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
+     * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception. This method
+     * auto-generate an [AccountInfo.id] for the new account.
      *
      * @param name the proposed name for this account.
      */
@@ -43,26 +47,26 @@ interface AccountService : SerializeAsToken {
     fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
-     * Returns all the keys for a specified accountInfo. Note that this method only operates on accounts created by the
-     * calling node, so calling this method with the [id] of an accountInfo created on another node will return an empty
-     * list.
+     * Returns all the keys associated with a specified account. These keys are [AnonymousParty]s which have been mapped
+     * to a [Party] and [AccountInfo] via [IdentityService.registerKeyToMapping].
      *
-     * @param id the accountInfo to return a list of keys for.
+     * @param id the [AccountInfo] to return a list of keys for.
      */
     fun accountKeys(id: UUID): List<PublicKey>
 
     /**
-     * Returns the [AccountInfo] for an accountInfo specified by [id]. This method will return accounts created on other
-     * nodes if those [AccountInfo]s have previously been shared with the calling node.
+     * Returns the [AccountInfo] for an account specified by [id]. This method will return accounts created on other
+     * nodes as well as accounts created on the calling node. Accounts created on other nodes will only be returned if
+     * they have been shared with your node, via the share account info flows.
      *
-     * @param id the accountInfo id to return the [AccountInfo] for.
+     * @param id the account ID to return the [AccountInfo] for.
      */
     fun accountInfo(id: UUID): StateAndRef<AccountInfo>?
 
     /**
-     * Returns the [AccountInfo] for an accountInfo specified by [owningKey]. Note that this method only operates on
-     * accounts created by the calling node, so calling this method with the [id] of an accountInfo created on another node
-     * will return an empty list.
+     * Returns the [AccountInfo] for an account specified by [owningKey]. This method will return accounts created on
+     * other nodes as well as accounts created on the calling node. Accounts created on other nodes will only be
+     * returned if they have been shared with your node, via the share account info flows.
      *
      * @param owningKey the public key to return an [AccountInfo] for.
      */
@@ -77,7 +81,6 @@ interface AccountService : SerializeAsToken {
      * @param name the accountInfo name to return an [AccountInfo] for.
      */
     fun accountInfo(name: String): StateAndRef<AccountInfo>?
-
 
     fun broadcastedToAccountVaultQuery(
             accountIds: List<UUID>,
@@ -96,3 +99,4 @@ interface AccountService : SerializeAsToken {
     fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit>
 }
 
+class DuplicateAccountNameException : Exception()

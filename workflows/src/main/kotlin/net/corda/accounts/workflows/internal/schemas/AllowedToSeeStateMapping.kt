@@ -7,6 +7,12 @@ import org.hibernate.annotations.Type
 import java.util.*
 import javax.persistence.*
 
+object AccountSchema : MappedSchema(
+        schemaFamily = AllowedToSeeStateMapping::class.java,
+        version = 1,
+        mappedTypes = listOf(AllowedToSeeStateMapping::class.java)
+)
+
 @Entity
 @Table(name = "account_to_state_refs", indexes = [Index(name = "external_id_idx", columnList = "external_id")])
 data class AllowedToSeeStateMapping(
@@ -19,6 +25,6 @@ data class AllowedToSeeStateMapping(
         var externalId: UUID?,
 
         override var stateRef: PersistentStateRef?
-) : DirectStatePersistable, MappedSchema(AllowedToSeeStateMapping::class.java, 1, listOf(AllowedToSeeStateMapping::class.java)) {
+) : DirectStatePersistable {
     constructor() : this(null, null, null)
 }

@@ -1,6 +1,6 @@
-package net.corda.accounts.workflows
+package net.corda.accounts.workflows.internal
 
-import net.corda.accounts.contracts.schemas.PersistentAccountInfo
+import net.corda.accounts.contracts.internal.schemas.PersistentAccountInfo
 import net.corda.accounts.contracts.states.AccountInfo
 import net.corda.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService

@@ -1,8 +1,9 @@
 package net.corda.accounts.contracts.states
 
 import net.corda.accounts.contracts.AccountInfoContract
-import net.corda.accounts.contracts.schemas.AccountSchema
-import net.corda.accounts.contracts.schemas.PersistentAccountInfo
+import net.corda.accounts.contracts.internal.schemas.AccountSchema
+import net.corda.accounts.contracts.internal.schemas.PersistentAccountInfo
+import net.corda.accounts.contracts.types.AccountStatus
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier
@@ -11,8 +12,6 @@ import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
 import net.corda.core.schemas.QueryableState
-import net.corda.core.serialization.CordaSerializable
-import java.util.*
 
 /**
  * A state which records the account name and number of an account as well as the node where it is currently hosted.
@@ -26,11 +25,11 @@ import java.util.*
 data class AccountInfo(
         val name: String,
         val host: Party,
-        val id: UUID,
+        val id: UniqueIdentifier,
         val status: AccountStatus = AccountStatus.ACTIVE
 ) : LinearState, QueryableState {
 
-    override val linearId: UniqueIdentifier get() = UniqueIdentifier(name, id)
+    override val linearId: UniqueIdentifier get() = id
 
     override val participants: List<AbstractParty> get() = listOf(host)
 
@@ -39,7 +38,7 @@ data class AccountInfo(
             return PersistentAccountInfo(
                     name = name,
                     host = host,
-                    id = id,
+                    id = id.id,
                     status = status
             )
         } else {
@@ -52,11 +51,7 @@ data class AccountInfo(
     }
 }
 
-@CordaSerializable
-enum class AccountStatus {
-    ACTIVE,
-    INACTIVE
-}
+
 
 
 

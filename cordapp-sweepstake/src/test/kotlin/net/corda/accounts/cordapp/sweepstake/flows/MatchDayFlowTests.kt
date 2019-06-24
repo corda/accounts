@@ -38,8 +38,8 @@ class MatchDayFlowTests {
     fun before() {
         mockNet = InternalMockNetwork(
                 cordappPackages = REQUIRED_CORDAPP_PACKAGES,
-                initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4))
-
+                initialNetworkParameters = testNetworkParameters(minimumPlatformVersion = 4)
+        )
         aliceNode = mockNet.createPartyNode(ALICE_NAME)
         bobNode = mockNet.createPartyNode(BOB_NAME)
         charlieNode = mockNet.createPartyNode(CHARLIE_NAME)
@@ -72,12 +72,12 @@ class MatchDayFlowTests {
             it.resultFuture.getOrThrow()
         }
 
-        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.id, charlieNode.info.legalIdentities.first()).also {
+        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.id.id, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
 
-        bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.id, charlieNode.info.legalIdentities.first()).also {
+        bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.id.id, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
@@ -116,7 +116,7 @@ class MatchDayFlowTests {
 
         // Alice creates accounts and shares them with charlie
         accounts.forEach {
-            accountOwningService.shareAccountInfoWithParty(it.state.data.id, charlieNode.info.legalIdentities.first()).also {
+            accountOwningService.shareAccountInfoWithParty(it.state.data.id.id, charlieNode.info.legalIdentities.first()).also {
                 mockNet.runNetwork()
                 it.getOrThrow()
             }

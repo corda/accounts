@@ -1,6 +1,6 @@
-package net.corda.accounts.contracts.schemas
+package net.corda.accounts.contracts.internal.schemas
 
-import net.corda.accounts.contracts.states.AccountStatus
+import net.corda.accounts.contracts.types.AccountStatus
 import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
@@ -23,12 +23,12 @@ object AccountSchema : MappedSchema(
     Index(name = "name_idx", columnList = "name")
 ])
 data class PersistentAccountInfo(
+        @Column(name = "id", unique = true, nullable = false)
+        val id: UUID,
         @Column(name = "name", unique = false, nullable = false)
         val name: String,
         @Column(name = "host", unique = false, nullable = false)
         val host: Party,
-        @Column(name = "id", unique = true, nullable = false)
-        val id: UUID,
         @Column(name = "status")
         val status: AccountStatus
 ) : PersistentState()

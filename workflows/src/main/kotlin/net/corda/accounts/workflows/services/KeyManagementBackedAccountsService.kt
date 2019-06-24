@@ -2,11 +2,11 @@ package net.corda.accounts.workflows.services
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.ShareAccountInfo
 import net.corda.accounts.workflows.flows.ShareStateAndSyncAccounts
 import net.corda.accounts.workflows.flows.ShareStateWithAccount
+import net.corda.accounts.workflows.internal.*
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -71,7 +71,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
         throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda4 please upgrade to Corda5")
-//        once the join column is introduced - use the following
+        // TODO once the join column is introduced - use the following
 //        return services.withEntityManager {
 //            val query = createQuery(
 //                    "select a.${PersistentIdentityService.PersistentIdentity::identity.name} from \n" +
