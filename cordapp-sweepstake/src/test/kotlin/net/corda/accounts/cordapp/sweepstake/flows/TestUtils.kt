@@ -1,6 +1,6 @@
-package net.corda.accounts.cordapp.sweepstake.flows
+package com.r3.corda.lib.accounts.cordapp.sweepstake.flows
 
-import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 
 class TestUtils {
@@ -27,12 +27,12 @@ class TestUtils {
         )
 
         val REQUIRED_CORDAPP_PACKAGES = listOf(
-                "net.corda.accounts.cordapp.sweepstake.states",
-                "net.corda.accounts.cordapp.sweepstake.contracts",
-                "net.corda.accounts.cordapp.sweepstake.flows",
-                "net.corda.accounts.cordapp.sweepstake.service",
-                "net.corda.accounts.workflows",
-                "net.corda.accounts.contracts",
+                "com.r3.corda.lib.accounts.cordapp.sweepstake.states",
+                "com.r3.corda.lib.accounts.cordapp.sweepstake.contracts",
+                "com.r3.corda.lib.accounts.cordapp.sweepstake.flows",
+                "com.r3.corda.lib.accounts.cordapp.sweepstake.service",
+                "com.r3.corda.lib.accounts.workflows",
+                "com.r3.corda.lib.accounts.contracts",
                 "com.r3.corda.lib.tokens.contracts",
                 "com.r3.corda.lib.tokens.workflows"
         )

@@ -1,15 +1,15 @@
-package net.corda.accounts.cordapp.sweepstake.flows
+package com.r3.corda.lib.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.google.common.annotations.VisibleForTesting
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.utilities.tokenAmountWithIssuerCriteria
-import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
-import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.cordapp.sweepstake.service.TournamentService
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.AccountGroup
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.TeamState
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.CordaInternal
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*

@@ -1,8 +1,8 @@
-package net.corda.accounts.cordapp.sweepstake.flows
+package com.r3.corda.lib.accounts.cordapp.sweepstake.flows
 
-import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
-import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.cordapp.sweepstake.service.TournamentService
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.AccountGroup
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.testing.core.ALICE_NAME

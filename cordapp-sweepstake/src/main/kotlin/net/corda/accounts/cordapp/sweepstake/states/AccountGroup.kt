@@ -1,6 +1,6 @@
-package net.corda.accounts.cordapp.sweepstake.states
+package com.r3.corda.lib.accounts.cordapp.sweepstake.states
 
-import net.corda.accounts.cordapp.sweepstake.contracts.TournamentContract
+import com.r3.corda.lib.accounts.cordapp.sweepstake.contracts.TournamentContract
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier

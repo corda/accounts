@@ -1,13 +1,13 @@
-package net.corda.accounts.cordapp.sweepstake.service
+package com.r3.corda.lib.accounts.cordapp.sweepstake.service
 
 import co.paralleluniverse.fibers.Suspendable
-import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.cordapp.sweepstake.flows.IssueAccountToGroupFlow
-import net.corda.accounts.cordapp.sweepstake.flows.UpdateAccountGroupFlow
-import net.corda.accounts.cordapp.sweepstake.flows.generateGroupIdsForAccounts
-import net.corda.accounts.cordapp.sweepstake.flows.splitAccountsIntoGroupsOfFour
-import net.corda.accounts.cordapp.sweepstake.states.AccountGroup
-import net.corda.accounts.cordapp.sweepstake.states.TeamState
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.IssueAccountToGroupFlow
+import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.UpdateAccountGroupFlow
+import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.generateGroupIdsForAccounts
+import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.splitAccountsIntoGroupsOfFour
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.AccountGroup
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.TeamState
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic

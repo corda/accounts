@@ -1,11 +1,11 @@
-package net.corda.accounts.cordapp.sweepstake.flows
+package com.r3.corda.lib.accounts.cordapp.sweepstake.flows
 
-import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
-import net.corda.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
-import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.workflows.flows.AllAccounts
-import net.corda.accounts.workflows.flows.OurAccounts
-import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.TestUtils.Companion.JAPAN
+import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.TeamState
+import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
+import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters

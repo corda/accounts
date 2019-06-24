@@ -1,4 +1,4 @@
-package net.corda.accounts.cordapp.sweepstake.flows
+package com.r3.corda.lib.accounts.cordapp.sweepstake.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
@@ -6,10 +6,10 @@ import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.FiatCurrency
 import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
-import net.corda.accounts.cordapp.sweepstake.service.TournamentService
-import net.corda.accounts.cordapp.sweepstake.states.TeamState
-import net.corda.accounts.workflows.flows.RequestKeyForAccount
-import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.cordapp.sweepstake.service.TournamentService
+import com.r3.corda.lib.accounts.cordapp.sweepstake.states.TeamState
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC

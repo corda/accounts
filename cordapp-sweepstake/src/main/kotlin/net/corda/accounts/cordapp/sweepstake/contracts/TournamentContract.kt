@@ -1,4 +1,4 @@
-package net.corda.accounts.cordapp.sweepstake.contracts
+package com.r3.corda.lib.accounts.cordapp.sweepstake.contracts
 
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.Contract
