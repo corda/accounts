@@ -1,0 +1,100 @@
+apply plugin: 'kotlin'
+apply plugin: 'net.corda.plugins.cordapp'
+apply plugin: 'net.corda.plugins.cordformation'
+apply plugin: 'net.corda.plugins.quasar-utils'
+
+cordapp {
+    info {
+        name "Loan Book Trading"
+        vendor "Corda Open Source"
+        targetPlatformVersion 4
+        minimumPlatformVersion 4
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir "../config/dev"
+        }
+    }
+    test {
+        resources {
+            srcDir "../config/test"
+        }
+    }
+}
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "junit:junit:$junit_version"
+
+    // Corda integration dependencies
+    cordaCompile group: "$corda_release_group", name: "corda-core", version: "$corda_release_version"
+    cordaCompile "$corda_release_group:corda-jackson:$corda_release_version"
+    cordaCompile "$corda_release_group:corda-rpc:$corda_release_version"
+    cordaRuntime "$corda_release_group:corda:$corda_release_version"
+
+    cordapp project(":contracts")
+    cordapp project(":workflows")
+
+    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+
+}
+
+
+task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
+
+    nodeDefaults {
+        cordapp project(":contracts")
+        cordapp project(":workflows")
+    }
+    
+    directory "./build/nodes"
+    node {
+        name "O=Notary,L=London,C=GB"
+        notary = [validating: false]
+        p2pPort 10000
+        rpcSettings {
+            address("localhost:10001")
+            adminAddress("localhost:10002")
+        }
+    }
+    node {
+        name "O=Agent,L=London,C=GB"
+        p2pPort 10004
+        rpcSettings {
+            address("localhost:10005")
+            adminAddress("localhost:10006")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=FundManager1,L=New York,C=US"
+        p2pPort 10008
+        rpcSettings {
+            address("localhost:10009")
+            adminAddress("localhost:10010")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=FundManager2,L=Paris,C=FR"
+        p2pPort 10012
+        rpcSettings {
+            address("localhost:10013")
+            adminAddress("localhost:10014")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+    node {
+        name "O=Administrator1,L=Paris,C=FR"
+        p2pPort 10020
+        rpcSettings {
+            address("localhost:10021")
+            adminAddress("localhost:10022")
+        }
+        rpcUsers = [[user: "user1", "password": "test", "permissions": ["ALL"]]]
+    }
+}
