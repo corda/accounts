@@ -2,6 +2,8 @@ package com.r3.corda.lib.accounts.workflows.test
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
@@ -48,7 +50,7 @@ class ShareAccountTests {
 
     @Test
     fun `should send account info to party provided`() {
-        val future = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account"))
+        val future = a.startFlow(CreateAccount("Stefano_Account"))
         network.runNetwork()
         val result = future.getOrThrow()
         val storedAccount = a.transaction {
@@ -79,7 +81,7 @@ class ShareAccountTests {
 
     @Test
     fun `should share a state and all required account info to party`() {
-        val result = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account")).let {
+        val result = a.startFlow(CreateAccount("Stefano_Account")).let {
             network.runNetwork()
             it.getOrThrow()
         }
@@ -128,7 +130,7 @@ class IssueFlow(private val owningAccount: UUID) : FlowLogic<StateAndRef<TestSta
     @Suspendable
     override fun call(): StateAndRef<TestState> {
         val accountInfo = accountService.accountInfo(owningAccount) ?: throw IllegalStateException()
-        val keyToUse = subFlow(com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount(accountInfo.state.data))
+        val keyToUse = subFlow(RequestKeyForAccount(accountInfo.state.data))
         val transactionBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
                 .addOutputState(TestState(keyToUse, ourIdentity))
                 .addCommand(ISSUE, ourIdentity.owningKey)

@@ -1,6 +1,7 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -43,7 +44,7 @@ class CreateAccountTests {
 
     @Test
     fun `should create new account`() {
-        val future = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account"))
+        val future = a.startFlow(CreateAccount("Stefano_Account"))
         network.runNetwork()
         val result = future.getOrThrow()
         val storedAccountInfo = a.services.vaultService.queryBy(AccountInfo::class.java).states.single()
@@ -52,8 +53,8 @@ class CreateAccountTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun `should not be possible to create an account which has same name on a single host`() {
-        val accountOne = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account 1")).runAndGet(network)
-        val accountTwo = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account 1")).runAndGet(network)
+        val accountOne = a.startFlow(CreateAccount("Stefano_Account 1")).runAndGet(network)
+        val accountTwo = a.startFlow(CreateAccount("Stefano_Account 1")).runAndGet(network)
     }
 
 }

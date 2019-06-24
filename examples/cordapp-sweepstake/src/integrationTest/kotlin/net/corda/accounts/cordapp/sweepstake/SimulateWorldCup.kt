@@ -1,6 +1,5 @@
 package com.r3.corda.lib.accounts.cordapp.sweepstake
 
-import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.*
 import com.r3.corda.lib.accounts.cordapp.sweepstake.flows.TestUtils.Companion.REQUIRED_CORDAPP_PACKAGES
@@ -8,6 +7,7 @@ import com.r3.corda.lib.accounts.cordapp.sweepstake.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
+import com.r3.corda.lib.tokens.money.GBP
 import net.corda.client.rpc.CordaRPCClient
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.CordaX500Name

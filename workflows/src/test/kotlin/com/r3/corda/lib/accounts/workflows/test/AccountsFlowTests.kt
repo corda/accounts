@@ -1,6 +1,8 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.getOrThrow
@@ -51,19 +53,19 @@ class AccountsFlowTests {
         val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
         val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
 
-        val futureA1 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("A_Account1"))
-        val futureA2 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("A_Account2"))
-        val futureA3 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("A_Account3"))
+        val futureA1 = a.startFlow(CreateAccount("A_Account1"))
+        val futureA2 = a.startFlow(CreateAccount("A_Account2"))
+        val futureA3 = a.startFlow(CreateAccount("A_Account3"))
 
-        val futureB1 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("B_Account1"))
-        val futureB2 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("B_Account2"))
-        val futureB3 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("B_Account3"))
+        val futureB1 = b.startFlow(CreateAccount("B_Account1"))
+        val futureB2 = b.startFlow(CreateAccount("B_Account2"))
+        val futureB3 = b.startFlow(CreateAccount("B_Account3"))
 
         network.runNetwork()
 
-        val shareB1ToAFuture = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
-        val shareB2ToAFuture = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
-        val shareB3ToAFuture = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB1ToAFuture = b.startFlow(ShareAccountInfo(futureB1.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB2ToAFuture = b.startFlow(ShareAccountInfo(futureB2.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
+        val shareB3ToAFuture = b.startFlow(ShareAccountInfo(futureB3.getOrThrow(), listOf(a.info.legalIdentities.first()))).toCompletableFuture()
         network.runNetwork()
 
         CompletableFuture.allOf(shareB1ToAFuture, shareB2ToAFuture, shareB3ToAFuture).getOrThrow()

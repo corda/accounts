@@ -1,6 +1,8 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.*
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -52,28 +54,28 @@ class AccountKeysTests {
     @Test
     fun `should create multiple keys for an account when requested`() {
 
-        val account1 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account1")).let {
+        val account1 = a.startFlow(CreateAccount("Stefano_Account1")).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val account2 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account2")).let {
+        val account2 = a.startFlow(CreateAccount("Stefano_Account2")).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
 
-        val keyToUse1 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount(account1.state.data)).let {
+        val keyToUse1 = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse2 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount(account1.state.data)).let {
+        val keyToUse2 = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse3 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount(account2.state.data)).let {
+        val keyToUse3 = b.startFlow(RequestKeyForAccount(account2.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
@@ -101,7 +103,7 @@ class AccountKeysTests {
                         """,
                     ByteArray::class.java
             )
-            query.setParameter("uuid", account2.state.data.id)
+            query.setParameter("uuid", account2.state.data.id.id)
             query.resultList.map { Crypto.decodePublicKey(it) }
         }
     }
@@ -109,22 +111,22 @@ class AccountKeysTests {
     @Test
     fun `should be possible to lookup account by previously used key`() {
 
-        val account1 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account1")).let {
+        val account1 = a.startFlow(CreateAccount("Stefano_Account1")).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val account2 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account2")).let {
+        val account2 = a.startFlow(CreateAccount("Stefano_Account2")).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse1 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount(account1.state.data)).let {
+        val keyToUse1 = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }
 
-        val keyToUse2 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount(account2.state.data)).let {
+        val keyToUse2 = b.startFlow(RequestKeyForAccount(account2.state.data)).let {
             network.runNetwork()
             it.getOrThrow()
         }

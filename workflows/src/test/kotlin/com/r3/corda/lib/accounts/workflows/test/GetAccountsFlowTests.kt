@@ -1,6 +1,8 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -45,12 +47,12 @@ class GetAccountsFlowTests {
 
     @Test
     fun `should lookup all hosted accounts`() {
-        val account1 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account1")).runAndGet(network)
-        val account2 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account2")).runAndGet(network)
-        val account3 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account3")).runAndGet(network)
-        val account4 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account3")).runAndGet(network)
+        val account1 = a.startFlow(CreateAccount("Stefano_Account1")).runAndGet(network)
+        val account2 = a.startFlow(CreateAccount("Stefano_Account2")).runAndGet(network)
+        val account3 = a.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
+        val account4 = b.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
 
-        b.startFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
+        b.startFlow(ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
 
         val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
 
@@ -64,12 +66,12 @@ class GetAccountsFlowTests {
 
     @Test
     fun `should lookup all accounts`() {
-        val account1 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account1")).runAndGet(network)
-        val account2 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account2")).runAndGet(network)
-        val account3 = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account3")).runAndGet(network)
-        val account4 = b.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account3")).runAndGet(network)
+        val account1 = a.startFlow(CreateAccount("Stefano_Account1")).runAndGet(network)
+        val account2 = a.startFlow(CreateAccount("Stefano_Account2")).runAndGet(network)
+        val account3 = a.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
+        val account4 = b.startFlow(CreateAccount("Stefano_Account3")).runAndGet(network)
 
-        b.startFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
+        b.startFlow(ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
 
         val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
 
@@ -81,7 +83,7 @@ class GetAccountsFlowTests {
 
     @Test
     fun `should be able to lookup account by UUID from service`() {
-        val future = a.startFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount("Stefano_Account"))
+        val future = a.startFlow(CreateAccount("Stefano_Account"))
         network.runNetwork()
         val result = future.getOrThrow()
         val storedAccount = a.transaction {
