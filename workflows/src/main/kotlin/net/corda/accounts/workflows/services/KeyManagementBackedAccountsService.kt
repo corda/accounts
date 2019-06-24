@@ -10,7 +10,6 @@ import net.corda.accounts.workflows.flows.ShareStateWithAccount
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
@@ -71,19 +70,20 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
-        return services.withEntityManager {
-            val query = createQuery(
-                    """
-                        select a.$persistentKey_publicKey
-                        from $persistentKey a, $publicKeyHashToExternalId b
-                        where b.$publicKeyHashToExternalId_externalId = :uuid
-                            and b.$publicKeyHashToExternalId_publicKeyHash = a.$persistentKey_publicKeyHash
-                    """,
-                    ByteArray::class.java
-            )
-            query.setParameter("uuid", id)
-            query.resultList.map { Crypto.decodePublicKey(it) }
-        }
+        throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda4 please upgrade to Corda5")
+//        once the join column is introduced - use the following
+//        return services.withEntityManager {
+//            val query = createQuery(
+//                    "select a.${PersistentIdentityService.PersistentIdentity::identity.name} from \n" +
+//                            "${PersistentIdentityService.PersistentIdentity::class.java.name} a, ${PublicKeyHashToExternalId::class.java.name} b \n" +
+//                            "where \n" +
+//                            "   b.${PublicKeyHashToExternalId::externalId.name} = :uuid \n" +
+//                            " and \n" +
+//                            "   b.${PublicKeyHashToExternalId::publicKeyHash.name} = a.${PersistentIdentityService.PersistentIdentity::publicKeyHash.name}", ByteArray::class.java)
+//
+//            query.setParameter("uuid", accountId)
+//            query.resultList.map { PartyAndCertificate(X509CertificateFactory().delegate.generateCertPath(it.inputStream())) }.map { it.owningKey }
+//        }
     }
 
     @Suspendable

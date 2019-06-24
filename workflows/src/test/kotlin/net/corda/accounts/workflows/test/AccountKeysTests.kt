@@ -1,9 +1,14 @@
 package net.corda.accounts.workflows.test
 
+import net.corda.accounts.contracts.states.AccountInfo
+import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
+import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.Crypto
 import net.corda.core.utilities.getOrThrow
+import net.corda.nodeapi.internal.persistence.currentDBSession
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
@@ -15,6 +20,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.security.PublicKey
 
 class AccountKeysTests {
 
@@ -74,19 +80,33 @@ class AccountKeysTests {
             it.getOrThrow()
         }
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-
         val foundKeysForAccount1 = a.transaction {
-            accountService.accountKeys(account1.state.data.id)
+            findKeysForAccount(account1)
         }
 
         val foundKeysForAccount2 = a.transaction {
-            accountService.accountKeys(account2.state.data.id)
+            findKeysForAccount(account2)
         }
-
         Assert.assertThat(foundKeysForAccount1, containsInAnyOrder(keyToUse1.owningKey, keyToUse2.owningKey))
         Assert.assertThat(foundKeysForAccount2, containsInAnyOrder(keyToUse3.owningKey))
 
+    }
+
+    private fun findKeysForAccount(account2: StateAndRef<AccountInfo>): List<PublicKey>? {
+        val em = currentDBSession().entityManagerFactory.createEntityManager()
+        return em?.let {
+            val query = em.createQuery(
+                    """
+                            select a.$persistentKey_publicKey
+                            from $persistentKey a, $publicKeyHashToExternalId b
+                            where b.$publicKeyHashToExternalId_externalId = :uuid
+                                and b.$publicKeyHashToExternalId_publicKeyHash = a.$persistentKey_publicKeyHash
+                        """,
+                    ByteArray::class.java
+            )
+            query.setParameter("uuid", account2.state.data.id)
+            query.resultList.map { Crypto.decodePublicKey(it) }
+        }
     }
 
     @Test
