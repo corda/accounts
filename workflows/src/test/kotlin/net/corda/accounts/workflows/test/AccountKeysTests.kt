@@ -1,9 +1,9 @@
 package net.corda.accounts.workflows.test
 
 import net.corda.accounts.contracts.states.AccountInfo
-import net.corda.accounts.workflows.*
 import net.corda.accounts.workflows.flows.CreateAccount
 import net.corda.accounts.workflows.flows.RequestKeyForAccount
+import net.corda.accounts.workflows.internal.*
 import net.corda.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.Crypto
