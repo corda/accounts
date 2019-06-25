@@ -1,4 +1,4 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.workflows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.FlowLogic

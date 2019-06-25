@@ -1,12 +1,16 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.workflows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccountFlow
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.contracts.ReferencedStateAndRef
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.gold.trading.contracts.LoanBookContract
 
 @StartableByRPC
 class SplitLoanFlow(
@@ -26,12 +30,10 @@ class SplitLoanFlow(
             throw IllegalStateException("Can only split a loan that is already owned")
         }
 
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-        val account =
-                accountService.accountInfo(oldLoanBook.state.data.owningAccount!!)
-                        ?: throw IllegalStateException("Attempting to split a loan owned by an account we do not know about")
+        val account = accountService.accountInfo(oldLoanBook.state.data.owningAccount!!)
+                ?: throw IllegalStateException("Attempting to split a loan owned by an account we do not know about")
 
-        if (account.state.data.accountHost != serviceHub.myInfo.legalIdentities.first()) {
+        if (account.state.data.host != serviceHub.myInfo.legalIdentities.first()) {
             throw IllegalStateException("Attempting to split a loan owned by an account we do not host")
         }
 
@@ -46,7 +48,7 @@ class SplitLoanFlow(
                 .addInputState(oldLoanBook)
                 .addOutputState(newLoanBook)
                 .addOutputState(oldLoanBookWithAmountReduced)
-                .addCommand(LoanBookContract.SPLIT, oldLoanBook.state.data.owningAccount!!, account.state.data.accountHost.owningKey)
+                .addCommand(LoanBookContract.SPLIT, oldLoanBook.state.data.owningAccount!!, account.state.data.host.owningKey)
                 .addReferenceState(ReferencedStateAndRef(account))
 
         //sign with our node key AND the private key which corresponds with this account - it must be in our kms as we are the hosts of the account
@@ -60,7 +62,7 @@ class SplitLoanFlow(
         val splitLoans = notarisedTransaction.coreTransaction.outRefsOfType<LoanBook>()
 
         val accountsToBroadCastTo = carbonCopyReceivers
-                ?: subFlow(GetAllInterestedAccountsFlow(account.state.data.accountId))
+                ?: subFlow(GetAllInterestedAccountsFlow(account.state.data.id.id))
 
         accountsToBroadCastTo.forEach { accountToNotify ->
             splitLoans.forEach { loanStateToShare ->

@@ -1,6 +1,7 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.workflows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.CommandData
 import net.corda.core.contracts.CommandWithParties
 import net.corda.core.contracts.ReferencedStateAndRef
@@ -31,7 +32,7 @@ private fun LedgerTransaction.allSigningAccounts(): List<StateAndRef<AccountInfo
 
 private fun LedgerTransaction.ourSigningAccounts(serviceHub: ServiceHub): List<StateAndRef<AccountInfo>> {
     return allSigningAccounts()
-            .filter { it.state.data.accountHost == serviceHub.myInfo.legalIdentities.first() }
+            .filter { it.state.data.host == serviceHub.myInfo.legalIdentities.first() }
 }
 
 fun ServiceHub.signInitialTransactionWithAccounts(builder: TransactionBuilder): SignedTransaction {
@@ -56,7 +57,7 @@ class CollectSignaturesWithAccountsFlow(
         val ledgerTx = partiallySignedTx.toLedgerTransaction(serviceHub, false)
         val ourSigningAccounts = ledgerTx.ourSigningAccounts(serviceHub)
         val theirSigningAccounts = ledgerTx.allSigningAccounts() - ourSigningAccounts
-        val theirSigningAccountsByParty = theirSigningAccounts.groupBy { it.state.data.accountHost }
+        val theirSigningAccountsByParty = theirSigningAccounts.groupBy { it.state.data.host }
 
         // collecting signatures for all accounts involved
         val allAccountsSigs = theirSigningAccountsByParty.flatMap { entry ->

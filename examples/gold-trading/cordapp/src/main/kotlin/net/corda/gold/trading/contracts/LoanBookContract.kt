@@ -1,25 +1,15 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.contracts
 
-import net.corda.core.contracts.*
-import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.AnonymousParty
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import net.corda.core.contracts.Contract
+import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.internal.sumByLong
 import net.corda.core.transactions.LedgerTransaction
-import net.corda.core.utilities.toSHA256Bytes
-import java.security.PublicKey
-import java.util.*
-
-@BelongsToContract(LoanBookContract::class)
-data class LoanBook(val dealId: UUID, val valueInUSD: Long, val owningAccount: PublicKey? = null) : ContractState {
-    override val participants: List<AbstractParty>
-        get() = listOfNotNull(owningAccount).map { AnonymousParty(it) }
-}
-
-
-data class LoanCommands(val id: String) : CommandData
-
+import net.corda.gold.trading.contracts.commands.LoanCommands
+import net.corda.gold.trading.contracts.states.LoanBook
 
 class LoanBookContract : Contract {
+
     companion object {
         val ISSUE: LoanCommands = LoanCommands("MINE")
         val TRANSFER_TO_ACCOUNT: LoanCommands = LoanCommands("ACCOUNT_TRANSFER")
@@ -51,11 +41,11 @@ class LoanBookContract : Contract {
                 if (inputGold.owningAccount != null) {
                     requireNotNull(accountForInputState) { "The account info state for the existing owner must be attached to the transaction" }
                     require(accountForInputState?.signingKey in command.signers) { "The account that is selling the loan must be a required signer" }
-                    require(accountForInputState?.accountHost?.owningKey in command.signers) { "The hosting party for the account that is sending the loan must be a required signer" }
+                    require(accountForInputState?.host?.owningKey in command.signers) { "The hosting party for the account that is sending the loan must be a required signer" }
                 }
 
                 require(accountForOutputState?.signingKey in command.signers) { "The account that is buying the loan must be a required signer" }
-                require(accountForOutputState?.accountHost?.owningKey in command.signers) { "The hosting party for the account that is receiving the loan must be a required signer" }
+                require(accountForOutputState?.host?.owningKey in command.signers) { "The hosting party for the account that is receiving the loan must be a required signer" }
 
             }
             command.value == TRANSFER_TO_HOLDER -> {
@@ -77,33 +67,9 @@ class LoanBookContract : Contract {
                 throw IllegalStateException("Invalid command for contract ${LoanBookContract::class.java.canonicalName}")
             }
         }
-
     }
 }
 
 
-data class LoanData(
-        val loanValue: Long,
-        val loanInterestRate: Double,
-        val issuerRefName: String,
-        val issuer: AbstractParty,
-        override val linearId: UniqueIdentifier = UniqueIdentifier(issuerRefName + " issued by " + issuer.owningKey.toSHA256Bytes())
-) : LinearState {
-    override val participants: List<AbstractParty>
-        get() = listOf(issuer)
-}
 
 
-data class LoanDataCommands(val id: String) : CommandData
-
-class LoanDataContract : Contract {
-    companion object {
-        val ISSUE: LoanCommands = LoanCommands("ISSUE")
-    }
-
-    override fun verify(tx: LedgerTransaction) {
-        TODO("not implemented")
-    }
-
-
-}

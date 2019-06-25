@@ -1,11 +1,14 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.workflows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
+import net.corda.gold.trading.contracts.LoanBookContract
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -23,7 +26,6 @@ class MoveLoanBookToNewAccount(
 
     @Suspendable
     override fun call(): StateAndRef<LoanBook> {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val currentHoldingAccount = loanBook.state.data.owningAccount?.let { accountService.accountInfo(it) }
         val accountInfoToMoveTo = accountService.accountInfo(accountIdToMoveTo)
 

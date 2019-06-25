@@ -1,6 +1,9 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.workflows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.internal.accountService
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
@@ -43,12 +46,11 @@ class BroadcastToCarbonCopyReceiversFlow(
 
     @Suspendable
     override fun call() {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-        owningAccount.accountId.let { accountThatOwnedStateId ->
+        owningAccount.id.let { accountThatOwnedStateId ->
             val accountsToBroadCastTo = carbonCopyReceivers
                     ?: subFlow(GetAllInterestedAccountsFlow(accountThatOwnedStateId))
             for (accountToBroadcastTo in accountsToBroadCastTo) {
-                accountService.broadcastStateToAccount(accountToBroadcastTo.accountId, stateToBroadcast)
+                accountService.broadcastStateToAccount(accountToBroadcastTo.id, stateToBroadcast)
             }
         }
     }
@@ -87,13 +89,13 @@ class GetAllInterestedAccountsFlow(val accountId: UUID) : FlowLogic<List<Account
             loadedAccount?.broadcastAccounts?.size
             refHolder.set(loadedAccount)
         })
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         return refHolder.get()?.let { it.broadcastAccounts?.mapNotNull(getAccountFromAccountId(accountService)) }
                 ?: listOf()
     }
 
-    private fun getAccountFromAccountId(accountService: KeyManagementBackedAccountService) =
-            { accountId: UUID -> accountService.accountInfo(accountId)?.state?.data }
+    private fun getAccountFromAccountId(accountService: KeyManagementBackedAccountService) = { accountId: UUID ->
+        accountService.accountInfo(accountId)?.state?.data
+    }
 }
 
 class BroadcastOperation(
@@ -104,6 +106,6 @@ class BroadcastOperation(
 
     @Suspendable
     override fun execute(deduplicationId: String): CordaFuture<Unit> {
-        return accountService.broadcastStateToAccount(accountToBroadcastTo.accountId, stateToBroadcast)
+        return accountService.broadcastStateToAccount(accountToBroadcastTo.id, stateToBroadcast)
     }
 }

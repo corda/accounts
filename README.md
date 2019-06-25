@@ -42,17 +42,17 @@ list of repositories for your project (if it hasn't already been added):
 Now, you can add the accounts dependencies to the `dependencies` block
 in each module of your CorDapp. For contract modules add:
 
-    cordaCompile "accounts_release_group:tokens-contracts:$accounts_release_version"
+    cordaCompile "accounts_release_group:accounts-contracts:$accounts_release_version"
 
 In your workflow `build.gradle` add:
 
-    cordaCompile "$accounts_release_group:tokens-workflows:$accounts_release_version"
+    cordaCompile "$accounts_release_group:accounts-workflows:$accounts_release_version"
 
 If you want to use the `deployNodes` task, you will need to add the
 following dependencies to your root `build.gradle` file:
 
-    cordapp "$accounts_release_group:contracts:$accounts_release_version"
-    cordapp "$accounts_release_group:workflows:$accounts_release_version"
+    cordapp "$accounts_release_group:accounts-contracts:$accounts_release_version"
+    cordapp "$accounts_release_group:accounts-workflows:$accounts_release_version"
 
 These should also be added to the `deployNodes` task with the following syntax:
 
@@ -60,8 +60,8 @@ These should also be added to the `deployNodes` task with the following syntax:
         projectCordapp {
             deploy = false
         }
-        cordapp("$accounts_release_group:contracts:$accounts_release_version")
-        cordapp("$accounts_release_group:workflows:$accounts_release_version")
+        cordapp("$accounts_release_group:accounts-contracts:$accounts_release_version")
+        cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
     }
 
 ### Installing the accounts library

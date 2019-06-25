@@ -4,10 +4,9 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.getOrThrow
-import net.corda.gold.trading.IssueLoanBookFlow
-import net.corda.gold.trading.LoanBook
-import net.corda.gold.trading.MoveLoanBookToNewAccount
-import net.corda.gold.trading.SplitLoanFlow
+import net.corda.gold.trading.workflows.IssueLoanBookFlow
+import net.corda.gold.trading.workflows.MoveLoanBookToNewAccount
+import net.corda.gold.trading.workflows.SplitLoanFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters

@@ -3,8 +3,7 @@ package net.corda.fundadmin
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
-import net.corda.core.utilities.toBase58String
-import net.corda.gold.trading.*
+import net.corda.gold.trading.workflows.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
