@@ -1,4 +1,4 @@
-package net.corda.gold.trading.workflows
+package net.corda.gold.trading.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -9,6 +9,11 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.gold.trading.contracts.LoanBookContract
+import net.corda.gold.trading.contracts.states.LoanBook
+import net.corda.gold.trading.workflows.CollectSignaturesWithAccountsFlow
+import net.corda.gold.trading.workflows.SignTransactionWithAccountsFlow
+import net.corda.gold.trading.workflows.addCommand
+import net.corda.gold.trading.workflows.signInitialTransactionWithAccounts
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -43,7 +48,7 @@ class MoveLoanBookToNewAccount(
 
             val locallySignedTx = serviceHub.signInitialTransactionWithAccounts(transactionBuilder)
 
-            val sessionForAccountToSendTo = initiateFlow(accountInfoToMoveTo.state.data.accountHost)
+            val sessionForAccountToSendTo = initiateFlow(accountInfoToMoveTo.state.data.host)
             val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesWithAccountsFlow(locallySignedTx, listOf(sessionForAccountToSendTo)))
 
             val signedTx = subFlow(
@@ -74,10 +79,7 @@ class AccountSigningResponder(val otherSession: FlowSession) : FlowLogic<Unit>()
 
     @Suspendable
     override fun call() {
-
         val accountMovedTo = AtomicReference<AccountInfo>()
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-
         val transactionSigner = object : SignTransactionWithAccountsFlow(otherSession) {
             override fun checkTransaction(tx: SignedTransaction) {
                 val keyStateMovedTo = tx.coreTransaction.outRefsOfType(LoanBook::class.java).first().state.data.owningAccount

@@ -1,4 +1,4 @@
-package net.corda.gold.trading.workflows
+package net.corda.gold.trading.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
@@ -10,33 +10,10 @@ import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.internal.FlowAsyncOperation
-import net.corda.core.schemas.MappedSchema
-import net.corda.core.serialization.CordaSerializable
-import org.hibernate.annotations.Type
+import net.corda.gold.trading.workflows.schemas.AccountBroadcastInfo
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
-import javax.persistence.*
-
-@Entity
-@Table(name = "account_broadcast", indexes = [Index(name = "account_pk_idx", columnList = "account_uuid")])
-@CordaSerializable
-data class AccountBroadcastInfo(
-
-        @Id
-        @Column(name = "account_uuid", unique = true, nullable = false)
-        @Type(type = "uuid-char")
-        var accountUUID: UUID?,
-
-        @Column(name = "broadcast_accounts", nullable = false)
-        @ElementCollection(fetch = FetchType.EAGER)
-        @Type(type = "uuid-char")
-        var broadcastAccounts: List<UUID>?
-
-
-) : MappedSchema(AccountBroadcastInfo::class.java, 1, listOf(AccountBroadcastInfo::class.java)) {
-    constructor() : this(null, null)
-}
 
 class BroadcastToCarbonCopyReceiversFlow(
         private val owningAccount: AccountInfo,
