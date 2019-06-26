@@ -2,9 +2,9 @@ package com.r3.corda.lib.accounts.workflows.test
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.*

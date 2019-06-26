@@ -63,7 +63,10 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
 @StartableByRPC
 @StartableByService
 @InitiatingFlow
-class ShareStateWithAccount<T : ContractState>(val accountInfo: AccountInfo, val state: StateAndRef<T>) : FlowLogic<Unit>() {
+class ShareStateWithAccount<T : ContractState>(
+        val accountInfo: AccountInfo,
+        val state: StateAndRef<T>
+) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val hostSession = initiateFlow(accountInfo.host)

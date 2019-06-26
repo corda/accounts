@@ -1,6 +1,7 @@
 package com.r3.corda.lib.accounts.workflows.services
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.workflows.ourIdentity
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
@@ -18,7 +19,6 @@ import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
-import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.SingletonSerializeAsToken
 import java.security.PublicKey
 import java.util.*
@@ -70,13 +70,9 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
-        throw UnsupportedOperationException()
-//        services.withEntityManager{
-//
-//            createQuery("select ${PublicKeyHashToExternalId::publicKeyHash.name} from ${PublicKeyHashToExternalId::class.java.name} WHERE ")
-//
-//        }
-
+        throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda 4 " +
+                "please upgrade to Corda 5 or perform the query in SQL using ServiceHub.jdbcConnection.")
+        // TODO once the join column is introduced - use the following
 //        return services.withEntityManager {
 //            val query = createQuery(
 //                    "select a.${PersistentIdentityService.PersistentIdentity::identity.name} from \n" +
@@ -106,19 +102,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             query.resultList
         }
         return uuid.singleOrNull()?.let { accountInfo(it) }
-    }
-
-    @Suspendable
-    override fun broadcastedToAccountVaultQuery(
-            accountIds: List<UUID>,
-            queryCriteria: QueryCriteria
-    ): List<StateAndRef<*>> {
-        return services.vaultService.queryBy<ContractState>(allowedToSeeCriteria(accountIds)).states
-    }
-
-    @Suspendable
-    override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        return broadcastedToAccountVaultQuery(listOf(accountId), queryCriteria)
     }
 
     @Suspendable
@@ -156,5 +139,4 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             this.services.startFlow(flowLogic).returnValue
         }
     }
-
 }
