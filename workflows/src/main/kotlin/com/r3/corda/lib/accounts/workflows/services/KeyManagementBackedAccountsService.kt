@@ -2,7 +2,12 @@ package com.r3.corda.lib.accounts.workflows.services
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.internal.*
+import com.r3.corda.lib.accounts.workflows.*
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId_externalId
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId_publicKeyHash
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -14,7 +19,6 @@ import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
-import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.serialization.SingletonSerializeAsToken
 import java.security.PublicKey
 import java.util.*
@@ -52,21 +56,22 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>> {
-        return flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount(name))
+        return flowAwareStartFlow(CreateAccount(name))
     }
 
     @Suspendable
     override fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>> {
-        return flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount(name, id))
+        return flowAwareStartFlow(CreateAccount(name, id))
     }
 
     override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit> {
-        return flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts(state, party))
+        return flowAwareStartFlow(ShareStateAndSyncAccounts(state, party))
     }
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
-        throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda4 please upgrade to Corda5")
+        throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda 4 " +
+                "please upgrade to Corda 5 or perform the query in SQL using ServiceHub.jdbcConnection.")
         // TODO once the join column is introduced - use the following
 //        return services.withEntityManager {
 //            val query = createQuery(
@@ -97,19 +102,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             query.resultList
         }
         return uuid.singleOrNull()?.let { accountInfo(it) }
-    }
-
-    @Suspendable
-    override fun broadcastedToAccountVaultQuery(
-            accountIds: List<UUID>,
-            queryCriteria: QueryCriteria
-    ): List<StateAndRef<*>> {
-        return services.vaultService.queryBy<ContractState>(allowedToSeeCriteria(accountIds)).states
-    }
-
-    @Suspendable
-    override fun broadcastedToAccountVaultQuery(accountId: UUID, queryCriteria: QueryCriteria): List<StateAndRef<*>> {
-        return broadcastedToAccountVaultQuery(listOf(accountId), queryCriteria)
     }
 
     @Suspendable
@@ -147,5 +139,4 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
             this.services.startFlow(flowLogic).returnValue
         }
     }
-
 }

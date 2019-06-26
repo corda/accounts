@@ -52,3 +52,16 @@ dependencies {
     testCompile "junit:junit:$junit_version"
 
 }
+
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("config/dev")
+        }
+    }
+    test {
+        resources {
+            srcDir rootProject.file("config/test")
+        }
+    }
+}
