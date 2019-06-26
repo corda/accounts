@@ -126,7 +126,7 @@ class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         val accounts = accountService.allAccounts()
         accounts.forEach { account ->
-            accountService.shareAccountInfoWithParty(account.state.data.id.id, otherParty).getOrThrow()
+            accountService.shareAccountInfoWithParty(account.state.data.identifier.id, otherParty).getOrThrow()
         }
     }
 }

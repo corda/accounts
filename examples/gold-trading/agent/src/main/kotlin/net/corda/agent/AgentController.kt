@@ -1,8 +1,12 @@
 package net.corda.agent
 
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.toBase58String
+import net.corda.gold.trading.contracts.states.LoanBook
 import net.corda.gold.trading.workflows.flows.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -33,7 +37,7 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
         return getAllAccounts().map { it.toAccountView() }
     }
 
-    private fun getAllAccounts() = rpcConnection.proxy.startFlowDynamic(GetAccountsFlow::class.java, false).returnValue.get()
+    private fun getAllAccounts() = rpcConnection.proxy.startFlowDynamic(AllAccounts::class.java, false).returnValue.get()
 
     @RequestMapping("/loan/split/{txHash}/{txIdx}", method = [RequestMethod.GET])
     fun splitLoan(@PathVariable("txHash") txHash: String, @PathVariable("txIdx") txIdx: Int): List<LoanBookView> {
@@ -45,8 +49,8 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
     @RequestMapping("/loan/move/{txHash}/{txIdx}/{accountKey}", method = [RequestMethod.GET])
     fun moveLoan(@PathVariable("txHash") txHash: String, @PathVariable("txIdx") txIdx: Int, @PathVariable("accountKey") accountKey: String): List<LoanBookView> {
         val loanToMove = getAllLoans().filter { it.ref.txhash.toString() == txHash }.single { it.ref.index == txIdx }
-        val accountToMoveInto = getAllAccounts().single { it.state.data.signingKey.toBase58String() == accountKey }
-        val resultOfMove = rpcConnection.proxy.startFlowDynamic(MoveLoanBookToNewAccount::class.java, accountToMoveInto.state.data.accountId, loanToMove).returnValue.get()
+        val accountToMoveInto = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
+        val resultOfMove = rpcConnection.proxy.startFlowDynamic(MoveLoanBookToNewAccount::class.java, accountToMoveInto.state.data.identifier.id, loanToMove).returnValue.get()
         return getAllLoans().map { it.toLoanBookView() }
     }
 
@@ -70,8 +74,8 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
 
     @RequestMapping("/users/permission/{userName}/{accountKey}", method = [RequestMethod.GET])
     fun permissionUserToAccount(@PathVariable("userName") userName: String, @PathVariable("accountKey") accountKey: String, request: HttpServletRequest): String {
-        val accountToUse = getAllAccounts().single { it.state.data.signingKey.toBase58String() == accountKey }
-        rpcConnection.proxy.startFlow(::PermissionWebLoginToAccountFlow, userName, accountToUse.state.data.accountId, true).returnValue.getOrThrow()
+        val accountToUse = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
+        rpcConnection.proxy.startFlow(::PermissionWebLoginToAccountFlow, userName, accountToUse.state.data.identifier.id, true).returnValue.getOrThrow()
         return "OK"
     }
 
@@ -90,8 +94,7 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
     data class AccountInfoView(
             val accountName: String,
             val accountHost: String,
-            val accountId: UUID,
-            val key: String?
+            val accountId: UUID
     )
 
     data class LoanBookView(val dealId: UUID, val valueInUSD: Long, val owningAccount: String? = null, val index: Int, val txHash: String)
@@ -104,10 +107,9 @@ private fun StateAndRef<AccountInfo>.toAccountView(): AgentController.AccountInf
 
 private fun AccountInfo.toAccountView(): AgentController.AccountInfoView {
     return AgentController.AccountInfoView(
-            this.accountName,
-            this.accountHost.name.toString(),
-            this.accountId,
-            this.signingKey.toBase58String()
+            this.name,
+            this.host.name.toString(),
+            this.identifier.id
     )
 }
 

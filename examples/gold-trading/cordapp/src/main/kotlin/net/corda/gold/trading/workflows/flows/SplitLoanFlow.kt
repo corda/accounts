@@ -2,7 +2,7 @@ package net.corda.gold.trading.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccountFlow
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.contracts.ReferencedStateAndRef
 import net.corda.core.contracts.StateAndRef
@@ -63,11 +63,11 @@ class SplitLoanFlow(
         val splitLoans = notarisedTransaction.coreTransaction.outRefsOfType<LoanBook>()
 
         val accountsToBroadCastTo = carbonCopyReceivers
-                ?: subFlow(GetAllInterestedAccountsFlow(account.state.data.id.id))
+                ?: subFlow(GetAllInterestedAccountsFlow(account.state.data.identifier.id))
 
         accountsToBroadCastTo.forEach { accountToNotify ->
             splitLoans.forEach { loanStateToShare ->
-                subFlow(ShareStateWithAccountFlow(accountToNotify, loanStateToShare))
+                subFlow(ShareStateWithAccount(accountToNotify, loanStateToShare))
             }
         }
 

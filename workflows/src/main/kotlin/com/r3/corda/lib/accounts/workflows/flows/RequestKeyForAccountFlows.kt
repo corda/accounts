@@ -30,10 +30,10 @@ class RequestKeyForAccountFlow(
                     externalId = accountInfo.linearId.id
             )
         } else {
-            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.id.id).unwrap { it }
+            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
             when (accountSearchStatus) {
                 AccountSearchStatus.NOT_FOUND -> {
-                    throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.id} " +
+                    throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.identifier} " +
                             "(${accountInfo.name}) responded with a not found status - contact them for assistance")
                 }
                 AccountSearchStatus.FOUND -> {

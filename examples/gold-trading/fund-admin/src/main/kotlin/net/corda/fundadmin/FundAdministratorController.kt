@@ -1,8 +1,14 @@
 package net.corda.fundadmin
 
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
+import net.corda.core.utilities.toBase58String
+import net.corda.gold.trading.contracts.states.LoanBook
 import net.corda.gold.trading.workflows.flows.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -27,8 +33,7 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
     @RequestMapping("/accounts", method = [RequestMethod.GET])
     fun accountsKnownAndHosted(): List<AccountInfoView> {
         val nodeParty = rpcConnection.proxy.nodeInfo().legalIdentities.first()
-        getAllAccounts().filter { it.state.data.accountHost == nodeParty }
-        return getAllAccounts().filter { it.state.data.accountHost == nodeParty }.map { it.toAccountView() }
+        return getAllAccounts().filter { it.state.data.host == nodeParty }.map { it.toAccountView() }
     }
 
     @RequestMapping("/users/all", method = [RequestMethod.GET])
@@ -51,8 +56,8 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
 
     @RequestMapping("/users/permission/{userName}/{accountKey}", method = [RequestMethod.GET])
     fun permissionUserToAccount(@PathVariable("userName") userName: String, @PathVariable("accountKey") accountKey: String, request: HttpServletRequest): String {
-        val accountToUse = getAllAccounts().single { it.state.data.signingKey.toBase58String() == accountKey }
-        rpcConnection.proxy.startFlow(::PermissionWebLoginToAccountFlow, userName, accountToUse.state.data.accountId, true).returnValue.getOrThrow()
+        val accountToUse = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
+        rpcConnection.proxy.startFlow(::PermissionWebLoginToAccountFlow, userName, accountToUse.state.data.identifier.id, true).returnValue.getOrThrow()
         return "OK"
     }
 
@@ -71,17 +76,17 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
         val adminAccountList = if (administratorAccountKey == "null") {
             listOf()
         } else {
-            listOf(getAllAccounts().single { it.state.data.signingKey.toBase58String() == administratorAccountKey }.state.data)
+            listOf(getAllAccounts().single { it.state.data.identifier.id.toString() == administratorAccountKey }.state.data)
         }
-        val openedAccount = rpcConnection.proxy.startFlow(::OpenNewAccountFlow, accountName).returnValue.get()
+        val openedAccount = rpcConnection.proxy.startFlow(::CreateAccount, accountName).returnValue.get()
         return openedAccount.toAccountView()
     }
 
     @RequestMapping("/accounts/share/{accountKey}/{party}", method = [RequestMethod.GET])
     fun shareAccount(@PathVariable("accountKey") accountKey: String, @PathVariable("party") party: String) {
         val partyToShareWith = rpcConnection.proxy.networkMapSnapshot().filter { it.legalIdentities.first().name.toString() == party }.single().legalIdentities.first()
-        val accountToShare = getAllAccounts().single { it.state.data.signingKey.toBase58String() == accountKey }
-        rpcConnection.proxy.startFlowDynamic(ShareAccountInfoWithNodes::class.java, accountToShare, listOf(partyToShareWith)).returnValue.getOrThrow()
+        val accountToShare = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
+        rpcConnection.proxy.startFlowDynamic(ShareAccountInfo::class.java, accountToShare, listOf(partyToShareWith)).returnValue.getOrThrow()
     }
 
     @RequestMapping("/parties")
@@ -99,8 +104,7 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
     data class AccountInfoView(
             val accountName: String,
             val accountHost: String,
-            val accountId: UUID,
-            val key: String?
+            val accountId: UUID
     )
 
     data class LoanBookView(val dealId: UUID, val valueInUSD: Long, val owningAccount: String? = null, val index: Int, val txHash: String)
@@ -112,16 +116,15 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
         }.getOrThrow()
     }
 
-    private fun getAllAccounts() = rpcConnection.proxy.startFlowDynamic(GetAccountsFlow::class.java, false).returnValue.get()
+    private fun getAllAccounts() = rpcConnection.proxy.startFlowDynamic(AllAccounts::class.java, false).returnValue.get()
 }
 
 private fun StateAndRef<AccountInfo>.toAccountView(): FundAdministratorController.AccountInfoView {
     val data = this.state.data
     return FundAdministratorController.AccountInfoView(
-            data.accountName,
-            data.accountHost.name.toString(),
-            data.accountId,
-            data.signingKey.toBase58String()
+            data.name,
+            data.host.name.toString(),
+            data.identifier.id
     )
 }
 

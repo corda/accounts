@@ -32,20 +32,14 @@ class LoanBookContract : Contract {
                 val outputGold = tx.outputsOfType(LoanBook::class.java).single()
                 val inputGold = tx.inputsOfType(LoanBook::class.java).single()
 
-                val accountForInputState = attachedAccounts.singleOrNull { it.state.data.signingKey == inputGold.owningAccount }?.state?.data
-                val accountForOutputState = attachedAccounts.singleOrNull { it.state.data.signingKey == outputGold.owningAccount }?.state?.data
+                require(attachedAccounts.size == 2) { "There must be two attached account reference states" }
 
-                requireNotNull(accountForOutputState) { "The account info state for the new owner must be attached to the transaction" }
-
-
-                if (inputGold.owningAccount != null) {
-                    requireNotNull(accountForInputState) { "The account info state for the existing owner must be attached to the transaction" }
-                    require(accountForInputState?.signingKey in command.signers) { "The account that is selling the loan must be a required signer" }
-                    require(accountForInputState?.host?.owningKey in command.signers) { "The hosting party for the account that is sending the loan must be a required signer" }
+                attachedAccounts.forEach {
+                    require(it.state.data.host.owningKey in command.signers) { "As an account host ${it.state.data.host} must be a required signer" }
                 }
 
-                require(accountForOutputState?.signingKey in command.signers) { "The account that is buying the loan must be a required signer" }
-                require(accountForOutputState?.host?.owningKey in command.signers) { "The hosting party for the account that is receiving the loan must be a required signer" }
+                require(outputGold.owningAccount in command.signers) { "The account receiving the loan must be a required signer" }
+                require(inputGold.owningAccount in command.signers) { "The account receiving the loan must be a required signer" }
 
             }
             command.value == TRANSFER_TO_HOLDER -> {

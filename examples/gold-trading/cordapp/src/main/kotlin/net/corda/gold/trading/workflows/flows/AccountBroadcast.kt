@@ -23,11 +23,11 @@ class BroadcastToCarbonCopyReceiversFlow(
 
     @Suspendable
     override fun call() {
-        owningAccount.id.let { accountThatOwnedStateId ->
+        owningAccount.identifier.id.let { accountThatOwnedStateId ->
             val accountsToBroadCastTo = carbonCopyReceivers
                     ?: subFlow(GetAllInterestedAccountsFlow(accountThatOwnedStateId))
             for (accountToBroadcastTo in accountsToBroadCastTo) {
-                accountService.broadcastStateToAccount(accountToBroadcastTo.id, stateToBroadcast)
+                accountService.shareStateWithAccount(accountToBroadcastTo.identifier.id, stateToBroadcast)
             }
         }
     }
@@ -83,6 +83,6 @@ class BroadcastOperation(
 
     @Suspendable
     override fun execute(deduplicationId: String): CordaFuture<Unit> {
-        return accountService.broadcastStateToAccount(accountToBroadcastTo.id, stateToBroadcast)
+        return accountService.shareStateWithAccount(accountToBroadcastTo.identifier.id, stateToBroadcast)
     }
 }

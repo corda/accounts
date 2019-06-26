@@ -19,7 +19,7 @@ class GetAllLoansOwnedByAccountFlow(private val account: StateAndRef<AccountInfo
                 contractStateTypes = setOf(LoanBook::class.java)
         )
         return serviceHub.vaultService.queryBy<LoanBook>(
-                accountIds = listOf(account.state.data.id.id),
+                accountIds = listOf(account.state.data.identifier.id),
                 criteria = criteria
         ).states
     }

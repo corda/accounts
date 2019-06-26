@@ -43,7 +43,7 @@ fun accountNameCriteria(name: String): QueryCriteria {
     }
 }
 
-/** To query [AccountInfo]s by id. */
+/** To query [AccountInfo]s by identifier. */
 fun accountUUIDCriteria(id: UUID): QueryCriteria {
     return builder {
         val idSelector = PersistentAccountInfo::id.equal(id)

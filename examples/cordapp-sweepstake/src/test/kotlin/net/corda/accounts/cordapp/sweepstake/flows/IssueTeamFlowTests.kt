@@ -88,7 +88,7 @@ class IssueTeamFlowTests {
         val aliceAccount = aliceService.createAccount("TEST_ACCOUNT").getOrThrow()
 
         //Share alice's account with bob
-        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.id.id, bobNode.info.singleIdentity())
+        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.identifier.id, bobNode.info.singleIdentity())
         val future = bobNode.services.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).resultFuture.getOrThrow()
 
         val aliceAccounts = aliceNode.services.startFlow(OurAccounts()).resultFuture.getOrThrow()
@@ -100,7 +100,7 @@ class IssueTeamFlowTests {
 
         aliceNode.database.transaction {
             val owningAccount = aliceService.accountInfo(future.state.data.owningKey!!)
-            Assert.assertThat(owningAccount!!.state.data.id, `is`(IsEqual.equalTo(aliceAccount.state.data.id)))
+            Assert.assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
         }
     }
 }

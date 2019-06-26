@@ -18,18 +18,18 @@ import net.corda.core.schemas.QueryableState
  *
  * @property name a string name for the account which will be unique at the level of the account host
  * @property host a Corda node, specified by a [Party] which hosts the account
- * @property id an UUID which should be unique at the network level
+ * @property identifier an UUID which should be unique at the network level
  * @property status indicates whether the account is open/closed/etc.
  */
 @BelongsToContract(AccountInfoContract::class)
 data class AccountInfo(
         val name: String,
         val host: Party,
-        val id: UniqueIdentifier,
+        val identifier: UniqueIdentifier,
         val status: AccountStatus = AccountStatus.ACTIVE
 ) : LinearState, QueryableState {
 
-    override val linearId: UniqueIdentifier get() = id
+    override val linearId: UniqueIdentifier get() = identifier
 
     override val participants: List<AbstractParty> get() = listOf(host)
 
@@ -38,7 +38,7 @@ data class AccountInfo(
             return PersistentAccountInfo(
                     name = name,
                     host = host,
-                    id = id.id,
+                    id = identifier.id,
                     status = status
             )
         } else {

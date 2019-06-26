@@ -17,7 +17,7 @@ import java.util.*
  * A flow to create a new account. The flow will fail if an account already exists with the provided [name] or [id].
  *
  * @property name the proposed name for the new account.
- * @property id the proposed id for the new account.
+ * @property id the proposed identifier for the new account.
  */
 @StartableByService
 @StartableByRPC
@@ -36,14 +36,14 @@ class CreateAccount(
                 "There is already an account registered with the specified name $name."
             }
             require(accountService.accountInfo(id) == null) {
-                "There is already an account registered with the specified id $id."
+                "There is already an account registered with the specified identifier $id."
             }
         }
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
         val newAccountInfo = AccountInfo(
                 name = name,
                 host = ourIdentity,
-                id = UniqueIdentifier(id = id)
+                identifier = UniqueIdentifier(id = id)
         )
         val transactionBuilder = TransactionBuilder(notary = notary).apply {
             addOutputState(newAccountInfo)
