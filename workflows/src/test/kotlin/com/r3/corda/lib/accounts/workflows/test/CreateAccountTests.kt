@@ -41,7 +41,6 @@ class CreateAccountTests {
         network.stopNodes()
     }
 
-
     @Test
     fun `should create new account`() {
         val future = a.startFlow(CreateAccount("Stefano_Account"))

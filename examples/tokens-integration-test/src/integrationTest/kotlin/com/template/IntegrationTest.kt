@@ -1,5 +1,8 @@
 package com.template
 
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.accountBaseCriteria
+import com.r3.corda.lib.accounts.workflows.accountUUIDCriteria
 import com.r3.corda.lib.accounts.workflows.externalIdCriteria
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
@@ -13,7 +16,7 @@ import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
 import com.r3.corda.lib.tokens.workflows.flows.shell.MoveFungibleTokens
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount
-import net.corda.core.identity.AbstractParty
+import net.corda.core.contracts.FungibleState
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
 import net.corda.core.internal.concurrent.transpose
@@ -27,7 +30,7 @@ import net.corda.testing.driver.NodeParameters
 import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import org.junit.Test
-import java.util.concurrent.CompletableFuture
+import kotlin.test.assertEquals
 
 class IntegrationTest {
 
@@ -75,62 +78,71 @@ class IntegrationTest {
             log.info("All nodes started up.")
 
             log.info("Creating two accounts on node A.")
-            CompletableFuture.allOf(
-                    A.rpc.startFlow(::CreateAccount, "PartyA - Roger").returnValue.toCompletableFuture(),
-                    A.rpc.startFlow(::CreateAccount, "PartyA - Kasia").returnValue.toCompletableFuture()
-            ).getOrThrow()
+            val createAccountsOnA = listOf(
+                    A.rpc.startFlow(::CreateAccount, "PartyA - Roger").returnValue,
+                    A.rpc.startFlow(::CreateAccount, "PartyA - Kasia").returnValue
+            ).transpose().getOrThrow()
 
-            val aAccounts = A.rpc.startFlow(::OurAccounts).returnValue.getOrThrow()
-            println(aAccounts)
+            // Check that A recorded all the new accounts.
+            val aAccountsQuery = A.rpc.startFlow(::OurAccounts).returnValue.getOrThrow()
+            assertEquals(createAccountsOnA.toSet(), aAccountsQuery.toSet())
 
             log.info("Creating two accounts on node B.")
-            CompletableFuture.allOf(
-                    B.rpc.startFlow(::CreateAccount, "PartyB - Stefano").returnValue.toCompletableFuture(),
-                    B.rpc.startFlow(::CreateAccount, "PartyB - Will").returnValue.toCompletableFuture()
-            ).getOrThrow()
+            val createAccountsOnB = listOf(
+                    B.rpc.startFlow(::CreateAccount, "PartyB - Stefano").returnValue,
+                    B.rpc.startFlow(::CreateAccount, "PartyB - Will").returnValue
+            ).transpose().getOrThrow()
 
-            val bAccounts = B.rpc.startFlow(::OurAccounts).returnValue.getOrThrow()
-            println(bAccounts)
+            // Check that B recorded all the new accounts.
+            val bAccountsQuery = B.rpc.startFlow(::OurAccounts).returnValue.getOrThrow()
+            assertEquals(createAccountsOnB.toSet(), bAccountsQuery.toSet())
 
             log.info("Sharing account info from node A to node B.")
-            val rogerAccount = aAccounts.single { it.state.data.name == "PartyA - Roger" }
+            val rogerAccount = aAccountsQuery.single { it.state.data.name == "PartyA - Roger" }
             A.rpc.startFlow(::ShareAccountInfo, rogerAccount, listOf(I.legalIdentity())).returnValue.getOrThrow()
+
+            // Check that B stored the account info.
+            val criteria = accountBaseCriteria.and(accountUUIDCriteria(rogerAccount.state.data.identifier.id))
+            val rogerAccountQuery = I.rpc.vaultQueryByCriteria(criteria, AccountInfo::class.java).states.single()
+            assertEquals(rogerAccount, rogerAccountQuery)
 
             log.info("Issuer requesting new key for account on node A.")
             val rogerAnonymousParty = I.rpc.startFlow(::RequestKeyForAccount, rogerAccount.state.data).returnValue.getOrThrow()
-            println(rogerAnonymousParty)
+            // Check we can resolve the anonymous key to the host node.
+            assertEquals(I.rpc.wellKnownPartyFromAnonymous(rogerAnonymousParty), A.legalIdentity())
 
             log.info("Issuer issuing 100 GBP to account on node A.")
-            val issueTokensTransaction = I.rpc.startFlow(
+            val tokens = 100 of GBP issuedBy I.legalIdentity() heldBy rogerAnonymousParty
+            I.rpc.startFlow(
                     ::IssueTokens,
-                    100 of GBP issuedBy I.legalIdentity() heldBy rogerAnonymousParty,
+                    tokens,
                     emptyList()
             ).returnValue.getOrThrow()
-            println(issueTokensTransaction)
-            println(issueTokensTransaction.tx)
-
-            log.info("Node A querying for tokens held by account.")
-            val rogerAccountCriteria = externalIdCriteria(listOf(rogerAccount.state.data.id.id))
-            val newlyIssuedTokens = A.rpc.vaultQueryByCriteria(rogerAccountCriteria, FungibleToken::class.java).states.single()
-            println(newlyIssuedTokens)
+            // Check that the tokens are assigned to Roger's account on node A.
+            val rogerTokensIssueQuery = A.rpc.vaultQueryByCriteria(
+                    externalIdCriteria(accountIds = listOf(rogerAccount.state.data.identifier.id)),
+                    FungibleState::class.java
+            ).states.single()
+            assertEquals(tokens, rogerTokensIssueQuery.state.data)
 
             log.info("Node A moving tokens between accounts.")
-            val kasiaAccount = aAccounts.single { it.state.data.name == "PartyA - Kasia" }
+            val kasiaAccount = aAccountsQuery.single { it.state.data.name == "PartyA - Kasia" }
             val kasiaAnonymousParty = A.rpc.startFlow(::RequestKeyForAccount, kasiaAccount.state.data).returnValue.getOrThrow()
+            // TODO: Need to pass in change key here...
             val moveTokensTransaction = A.rpc.startFlowDynamic(
                     MoveFungibleTokens::class.java,
                     PartyAndAmount(kasiaAnonymousParty, 50.GBP),
                     emptyList<Party>(),
-                    null,
-                    rogerAnonymousParty as AbstractParty?
+                    null
             ).returnValue.getOrThrow()
             println(moveTokensTransaction)
             println(moveTokensTransaction.tx)
 
             println("Roger")
-            println(A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(rogerAccount.state.data.id.id)), FungibleToken::class.java).states)
+            // TODO: Roger will have no tokens here as the change key isn't allocated to his account.
+            println(A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(rogerAccount.state.data.identifier.id)), FungibleToken::class.java).states)
             println("Kasia")
-            println(A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(kasiaAccount.state.data.id.id)), FungibleToken::class.java).states)
+            println(A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(kasiaAccount.state.data.identifier.id)), FungibleToken::class.java).states)
         }
     }
 }

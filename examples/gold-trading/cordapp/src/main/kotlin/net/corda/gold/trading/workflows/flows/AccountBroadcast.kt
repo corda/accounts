@@ -2,7 +2,7 @@ package net.corda.gold.trading.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.internal.accountService
+import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
