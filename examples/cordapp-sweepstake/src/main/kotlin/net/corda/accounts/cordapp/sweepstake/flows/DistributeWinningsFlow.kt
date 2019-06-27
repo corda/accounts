@@ -27,7 +27,7 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
         }.toList()
 
         val winningAccountIds = winningKeys.map {
-            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.id
+            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.identifier
         }.toList()
 
         val tournamentService = serviceHub.cordaService(TournamentService::class.java)

@@ -72,12 +72,12 @@ class MatchDayFlowTests {
             it.resultFuture.getOrThrow()
         }
 
-        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.id.id, charlieNode.info.legalIdentities.first()).also {
+        aliceAccountService.shareAccountInfoWithParty(testAccountA.state.data.identifier.id, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
 
-        bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.id.id, charlieNode.info.legalIdentities.first()).also {
+        bobAccountService.shareAccountInfoWithParty(testAccountB.state.data.identifier.id, charlieNode.info.legalIdentities.first()).also {
             mockNet.runNetwork()
             it.getOrThrow()
         }
@@ -104,7 +104,7 @@ class MatchDayFlowTests {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
 
-        Assert.assertThat(accountOfWinner!!.state.data.id, `is`(testAccountB.state.data.id))
+        Assert.assertThat(accountOfWinner!!.state.data.identifier, `is`(testAccountB.state.data.identifier))
     }
 
 
@@ -116,7 +116,7 @@ class MatchDayFlowTests {
 
         // Alice creates accounts and shares them with charlie
         accounts.forEach {
-            accountOwningService.shareAccountInfoWithParty(it.state.data.id.id, charlieNode.info.legalIdentities.first()).also {
+            accountOwningService.shareAccountInfoWithParty(it.state.data.identifier.id, charlieNode.info.legalIdentities.first()).also {
                 mockNet.runNetwork()
                 it.getOrThrow()
             }

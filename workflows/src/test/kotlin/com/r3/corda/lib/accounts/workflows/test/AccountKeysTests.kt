@@ -103,7 +103,7 @@ class AccountKeysTests {
                         """,
                     ByteArray::class.java
             )
-            query.setParameter("uuid", account2.state.data.id.id)
+            query.setParameter("uuid", account2.state.data.identifier.id)
             query.resultList.map { Crypto.decodePublicKey(it) }
         }
     }

@@ -15,7 +15,7 @@ import java.util.*
  * the account info with the requester. This flow assumes that the requester already knows the account ID as perhaps
  * it was obtained through some other means.
  *
- * @property id id to request the [AccountInfo] for.
+ * @property id identifier to request the [AccountInfo] for.
  * @property host session to request the [AccountInfo] from.
  */
 class RequestAccountInfoFlow(val id: UUID, val host: FlowSession) : FlowLogic<AccountInfo?>() {
@@ -45,7 +45,7 @@ class RequestAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<U
  * Shares an [AccountInfo] [StateAndRef] with the supplied [Party]s. The [AccountInfo] is always stored using
  * [StatesToRecord.ALL_VISIBLE].
  *
- * @property id id to request the [AccountInfo] for.
+ * @property id identifier to request the [AccountInfo] for.
  * @property host [Party] to request the [AccountInfo] from.
  */
 @StartableByRPC

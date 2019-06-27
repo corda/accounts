@@ -43,7 +43,7 @@ fun accountNameCriteria(name: String): QueryCriteria {
     }
 }
 
-/** To query [AccountInfo]s by id. */
+/** To query [AccountInfo]s by identifier. */
 fun accountUUIDCriteria(id: UUID): QueryCriteria {
     return builder {
         val idSelector = PersistentAccountInfo::id.equal(id)
@@ -65,6 +65,10 @@ fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
         val allowedToSeeSelector = AllowedToSeeStateMapping::externalId.`in`(accountIds)
         QueryCriteria.VaultCustomQueryCriteria(allowedToSeeSelector, Vault.StateStatus.ALL)
     }
+}
+
+fun accountQueryCriteria(accountIds: List<UUID>): QueryCriteria {
+    return allowedToSeeCriteria(accountIds).and(externalIdCriteria(accountIds))
 }
 
 // For writing less messy HQL.

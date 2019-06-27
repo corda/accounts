@@ -15,15 +15,15 @@ object AccountSchema : MappedSchema(
 
 @Entity
 @Table(name = "accounts", uniqueConstraints = [
-    UniqueConstraint(name = "id_constraint", columnNames = ["id"]),
+    UniqueConstraint(name = "id_constraint", columnNames = ["identifier"]),
     UniqueConstraint(name = "host_and_name_constraint", columnNames = ["host", "name"])
 ], indexes = [
-    Index(name = "accountId_idx", columnList = "id"),
+    Index(name = "accountId_idx", columnList = "identifier"),
     Index(name = "accountHost_idx", columnList = "host"),
     Index(name = "name_idx", columnList = "name")
 ])
 data class PersistentAccountInfo(
-        @Column(name = "id", unique = true, nullable = false)
+        @Column(name = "identifier", unique = true, nullable = false)
         val id: UUID,
         @Column(name = "name", unique = false, nullable = false)
         val name: String,

@@ -1,39 +1,19 @@
-package net.corda.gold.trading
+package net.corda.gold.trading.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.internal.accountService
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 import net.corda.core.flows.StartableByService
 import net.corda.core.internal.FlowAsyncOperation
-import net.corda.core.schemas.MappedSchema
-import net.corda.core.serialization.CordaSerializable
-import org.hibernate.annotations.Type
+import net.corda.gold.trading.workflows.schemas.AccountBroadcastInfo
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
-import javax.persistence.*
-
-@Entity
-@Table(name = "account_broadcast", indexes = [Index(name = "account_pk_idx", columnList = "account_uuid")])
-@CordaSerializable
-data class AccountBroadcastInfo(
-
-        @Id
-        @Column(name = "account_uuid", unique = true, nullable = false)
-        @Type(type = "uuid-char")
-        var accountUUID: UUID?,
-
-        @Column(name = "broadcast_accounts", nullable = false)
-        @ElementCollection(fetch = FetchType.EAGER)
-        @Type(type = "uuid-char")
-        var broadcastAccounts: List<UUID>?
-
-
-) : MappedSchema(AccountBroadcastInfo::class.java, 1, listOf(AccountBroadcastInfo::class.java)) {
-    constructor() : this(null, null)
-}
 
 class BroadcastToCarbonCopyReceiversFlow(
         private val owningAccount: AccountInfo,
@@ -43,12 +23,11 @@ class BroadcastToCarbonCopyReceiversFlow(
 
     @Suspendable
     override fun call() {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-        owningAccount.accountId.let { accountThatOwnedStateId ->
+        owningAccount.identifier.id.let { accountThatOwnedStateId ->
             val accountsToBroadCastTo = carbonCopyReceivers
                     ?: subFlow(GetAllInterestedAccountsFlow(accountThatOwnedStateId))
             for (accountToBroadcastTo in accountsToBroadCastTo) {
-                accountService.broadcastStateToAccount(accountToBroadcastTo.accountId, stateToBroadcast)
+                accountService.shareStateWithAccount(accountToBroadcastTo.identifier.id, stateToBroadcast)
             }
         }
     }
@@ -87,13 +66,13 @@ class GetAllInterestedAccountsFlow(val accountId: UUID) : FlowLogic<List<Account
             loadedAccount?.broadcastAccounts?.size
             refHolder.set(loadedAccount)
         })
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
         return refHolder.get()?.let { it.broadcastAccounts?.mapNotNull(getAccountFromAccountId(accountService)) }
                 ?: listOf()
     }
 
-    private fun getAccountFromAccountId(accountService: KeyManagementBackedAccountService) =
-            { accountId: UUID -> accountService.accountInfo(accountId)?.state?.data }
+    private fun getAccountFromAccountId(accountService: KeyManagementBackedAccountService) = { accountId: UUID ->
+        accountService.accountInfo(accountId)?.state?.data
+    }
 }
 
 class BroadcastOperation(
@@ -104,6 +83,6 @@ class BroadcastOperation(
 
     @Suspendable
     override fun execute(deduplicationId: String): CordaFuture<Unit> {
-        return accountService.broadcastStateToAccount(accountToBroadcastTo.accountId, stateToBroadcast)
+        return accountService.shareStateWithAccount(accountToBroadcastTo.identifier.id, stateToBroadcast)
     }
 }

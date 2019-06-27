@@ -1,8 +1,8 @@
 package net.corda.gold.test
 
 import net.corda.core.utilities.getOrThrow
-import net.corda.gold.trading.GetAllWebUsersFlow
-import net.corda.gold.trading.NewWebAccountFlow
+import net.corda.gold.trading.workflows.flows.GetAllWebUsersFlow
+import net.corda.gold.trading.workflows.flows.NewWebAccountFlow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters

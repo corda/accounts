@@ -30,7 +30,7 @@ interface AccountService : SerializeAsToken {
      * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
      * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
      * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception. This method
-     * auto-generate an [AccountInfo.id] for the new account.
+     * auto-generate an [AccountInfo.identifier] for the new account.
      *
      * @param name the proposed name for this account.
      */

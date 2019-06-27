@@ -25,7 +25,7 @@ class IssueAccountToGroupFlow(private val otherParty: Party,
         val sessions = listOf(initiateFlow(otherParty))
         val keyToUse = subFlow(RequestKeyForAccount(account.state.data)).owningKey
 
-        val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.id.id), keyToUse)
+        val outputState = AccountGroup("GROUP$groupId", listOf(account.state.data.identifier.id), keyToUse)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addOutputState(outputState)
         txBuilder.addCommand(TournamentContract.ISSUE_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
@@ -56,7 +56,7 @@ class UpdateAccountGroupFlow(private val otherParty: Party,
 
         val inputState = getStateForLinearId(serviceHub, linearId)
         val groupAccountIds = inputState.state.data.accounts
-        val outputState = inputState.state.data.copy(accounts = groupAccountIds.plus(account.state.data.id.id), owningKey = newKey)
+        val outputState = inputState.state.data.copy(accounts = groupAccountIds.plus(account.state.data.identifier.id), owningKey = newKey)
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addInputState(inputState)
         txBuilder.addOutputState(outputState)
