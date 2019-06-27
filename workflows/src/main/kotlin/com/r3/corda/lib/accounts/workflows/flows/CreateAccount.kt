@@ -14,16 +14,16 @@ import net.corda.core.transactions.TransactionBuilder
 import java.util.*
 
 /**
- * A flow to create a new account. The flow will fail if an account already exists with the provided [name] or [id].
+ * A flow to create a new account. The flow will fail if an account already exists with the provided [name] or [identifier].
  *
  * @property name the proposed name for the new account.
- * @property id the proposed identifier for the new account.
+ * @property identifier the proposed identifier for the new account.
  */
 @StartableByService
 @StartableByRPC
 class CreateAccount(
         private val name: String,
-        private val id: UUID
+        private val identifier: UUID
 ) : FlowLogic<StateAndRef<AccountInfo>>() {
 
     /** Create a new account with a specified [name] but generate a new random [id]. */
@@ -35,15 +35,15 @@ class CreateAccount(
             require(accountService.accountInfo(name) == null) {
                 "There is already an account registered with the specified name $name."
             }
-            require(accountService.accountInfo(id) == null) {
-                "There is already an account registered with the specified identifier $id."
+            require(accountService.accountInfo(identifier) == null) {
+                "There is already an account registered with the specified identifier $identifier."
             }
         }
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
         val newAccountInfo = AccountInfo(
                 name = name,
                 host = ourIdentity,
-                identifier = UniqueIdentifier(id = id)
+                identifier = UniqueIdentifier(id = identifier)
         )
         val transactionBuilder = TransactionBuilder(notary = notary).apply {
             addOutputState(newAccountInfo)
