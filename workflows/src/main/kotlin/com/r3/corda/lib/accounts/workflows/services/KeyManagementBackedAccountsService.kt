@@ -66,8 +66,15 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
-        throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda4 please upgrade to Corda5")
-        // TODO once the join column is introduced - use the following
+
+        throw UnsupportedOperationException()
+
+//        services.withEntityManager{
+//
+//            createQuery("select ${PublicKeyHashToExternalId::publicKeyHash.name} from ${PublicKeyHashToExternalId::class.java.name} WHERE ")
+//
+//        }
+
 //        return services.withEntityManager {
 //            val query = createQuery(
 //                    "select a.${PersistentIdentityService.PersistentIdentity::identity.name} from \n" +

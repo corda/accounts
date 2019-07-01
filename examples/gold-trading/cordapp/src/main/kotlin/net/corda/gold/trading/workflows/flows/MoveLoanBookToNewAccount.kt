@@ -33,7 +33,7 @@ class MoveLoanBookToNewAccount(
 
         if (accountInfoToMoveTo == null) {
             throw IllegalStateException()
-        } else if (currentHoldingAccount == null && loanBook.state.data.owningAccount != null)
+        } else if ((currentHoldingAccount == null && loanBook.state.data.owningAccount != null) && (loanBook.state.data.owningAccount?.equals(ourIdentity.owningKey) == false))
             throw IllegalStateException("Attempting to move a loan book from an account we do not know about")
         else {
             val keyToMoveTo = subFlow(RequestKeyForAccount(accountInfoToMoveTo.state.data)).owningKey
@@ -41,7 +41,8 @@ class MoveLoanBookToNewAccount(
                     .addInputState(loanBook)
                     .addOutputState(loanBook.state.data.copy(owningAccount = keyToMoveTo))
                     .addCommand(LoanBookContract.TRANSFER_TO_ACCOUNT, listOfNotNull(keyToMoveTo, loanBook.state.data.owningAccount))
-            val locallySignedTx = serviceHub.signInitialTransaction(transactionBuilder, loanBook.state.data.owningAccount!!)
+
+            val locallySignedTx = serviceHub.signInitialTransaction(transactionBuilder, listOfNotNull(loanBook.state.data.owningAccount, ourIdentity.owningKey))
             val sessionForAccountToSendTo = initiateFlow(accountInfoToMoveTo.state.data.host)
             val accountToMoveToSignature = subFlow(CollectSignatureFlow(locallySignedTx, sessionForAccountToSendTo, keyToMoveTo))
             val signedByCounterParty = locallySignedTx.withAdditionalSignatures(accountToMoveToSignature)

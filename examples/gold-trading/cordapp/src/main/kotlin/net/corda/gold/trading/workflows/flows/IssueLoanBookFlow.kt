@@ -26,11 +26,12 @@ class IssueLoanBookFlow(
 
         val owningKey = accountToMineInto?.let {
             subFlow(RequestKeyForAccount(it.state.data)).owningKey
-        } ?: ourIdentity.owningKey
+        }
 
         val transactionBuilder = TransactionBuilder()
         transactionBuilder.notary = serviceHub.networkMapCache.notaryIdentities.first()
-        transactionBuilder.addCommand(LoanBookContract.ISSUE, serviceHub.myInfo.legalIdentities.first().owningKey)
+        transactionBuilder.addCommand(LoanBookContract.ISSUE, owningKey?.let { listOf(it) }
+                ?: listOf(ourIdentity.owningKey))
         transactionBuilder.addOutputState(LoanBook(dealId, valueInUsd, owningKey))
         val signedTxLocally = serviceHub.signInitialTransaction(transactionBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, listOf()))

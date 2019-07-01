@@ -1,80 +1,77 @@
-//package net.corda.gold.test
-//
-//import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccountFlow
-//import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
-//import net.corda.core.contracts.StateAndRef
-//import net.corda.core.node.services.Vault
-//import net.corda.core.node.services.vault.QueryCriteria
-//import net.corda.core.utilities.getOrThrow
-//import net.corda.gold.trading.contracts.states.LoanBook
-//import net.corda.gold.trading.workflows.flows.IssueLoanBookFlow
-//import net.corda.gold.trading.workflows.flows.MoveLoanBookToNewAccount
-//import net.corda.gold.trading.workflows.flows.SplitLoanFlow
-//import net.corda.testing.common.internal.testNetworkParameters
-//import net.corda.testing.node.MockNetwork
-//import net.corda.testing.node.MockNetworkParameters
-//import net.corda.testing.node.StartedMockNode
-//import org.hamcrest.CoreMatchers.*
-//import org.junit.After
-//import org.junit.Assert
-//import org.junit.Before
-//import org.junit.Test
-//
-//class LoanBookTradingTests {
-//
-//    lateinit var network: MockNetwork
-//    lateinit var a: StartedMockNode
-//    lateinit var b: StartedMockNode
-//
-//    @Before
-//    fun setup() {
-//        network = MockNetwork(
-//                listOf("net.corda.gold", "net.corda.accounts.service", "net.corda.accounts.contracts", "net.corda.accounts.flows"), MockNetworkParameters(
-//                networkParameters = testNetworkParameters(
-//                        minimumPlatformVersion = 4
-//                )
-//        )
-//        )
-//        a = network.createPartyNode()
-//        b = network.createPartyNode()
-//
-//        a.registerInitiatedFlow(GetAccountInfo::class.java)
-//        b.registerInitiatedFlow(GetAccountInfo::class.java)
-//        a.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
-//        b.registerInitiatedFlow(ReceiveStateForAccountFlow::class.java)
-//        network.runNetwork()
-//    }
-//
-//    @After
-//    fun tearDown() {
-//        network.stopNodes()
-//    }
-//
-//
-//    @Test
-//    fun `should mine new gold brick`() {
-//        val future = a.startFlow(IssueLoanBookFlow(100))
-//        network.runNetwork()
-//        val result = future.getOrThrow()
-//        Assert.assertThat(result.state.data, `is`(notNullValue(LoanBook::class.java)))
-//    }
-//
-//    @Test
-//    fun `should transfer freshly created loanbook to account on same node`() {
-//        val createdAccountFuture =
-//                a.services.cordaService(KeyManagementBackedAccountService::class.java).createAccount("TESTING_ACCOUNT")
-//        network.runNetwork()
-//        val createdAccount = createdAccountFuture.getOrThrow()
-//
-//        val miningFuture = a.startFlow(IssueLoanBookFlow(100))
-//        network.runNetwork()
-//        val miningResult = miningFuture.getOrThrow()
-//
-//
-//        val moveFuture = a.startFlow(MoveLoanBookToNewAccount(createdAccount.state.data.identifier.id, miningResult, listOf()))
-//        network.runNetwork()
-//        moveFuture.getOrThrow()
-//    }
+package net.corda.gold.test
+
+import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccount
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import net.corda.core.utilities.getOrThrow
+import net.corda.gold.trading.contracts.states.LoanBook
+import net.corda.gold.trading.workflows.flows.IssueLoanBookFlow
+import net.corda.gold.trading.workflows.flows.MoveLoanBookToNewAccount
+import net.corda.testing.common.internal.testNetworkParameters
+import net.corda.testing.node.MockNetwork
+import net.corda.testing.node.MockNetworkParameters
+import net.corda.testing.node.StartedMockNode
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.CoreMatchers.notNullValue
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
+
+class LoanBookTradingTests {
+
+    lateinit var network: MockNetwork
+    lateinit var a: StartedMockNode
+    lateinit var b: StartedMockNode
+
+    @Before
+    fun setup() {
+        network = MockNetwork(
+                listOf("net.corda.gold", "com.r3.corda.lib.accounts.workflows", "com.r3.corda.lib.accounts.contracts"), MockNetworkParameters(
+                networkParameters = testNetworkParameters(
+                        minimumPlatformVersion = 4
+                )
+        ))
+        a = network.createPartyNode()
+        b = network.createPartyNode()
+
+
+        a.registerInitiatedFlow(ReceiveStateForAccount::class.java)
+        b.registerInitiatedFlow(ReceiveStateForAccount::class.java)
+        network.runNetwork()
+    }
+
+    @After
+    fun tearDown() {
+        network.stopNodes()
+    }
+
+
+    @Test
+    fun `should mine new gold brick`() {
+        val future = a.startFlow(IssueLoanBookFlow(100))
+        network.runNetwork()
+        val result = future.getOrThrow()
+        Assert.assertThat(result.state.data, `is`(notNullValue(LoanBook::class.java)))
+        Assert.assertThat(result.state.data.valueInUSD, `is`(100L))
+    }
+
+    @Test
+    fun `should transfer freshly created loanbook to an account on same node`() {
+        val createdAccountFuture =
+                a.services.cordaService(KeyManagementBackedAccountService::class.java).createAccount("TESTING_ACCOUNT")
+        network.runNetwork()
+        val createdAccount = createdAccountFuture.getOrThrow()
+
+        val miningFuture = a.startFlow(IssueLoanBookFlow(100))
+        network.runNetwork()
+        val miningResult = miningFuture.getOrThrow()
+
+        val moveFuture = a.startFlow(MoveLoanBookToNewAccount(createdAccount.state.data.identifier.id, miningResult, listOf()))
+        network.runNetwork()
+        moveFuture.getOrThrow()
+
+    }
+
 //
 //    @Test
 //    fun `should transfer freshly created loanbook to account on different node`() {
@@ -379,4 +376,4 @@
 //        Assert.assertThat(splitLoanBooks.sortedBy { it.state.data.valueInUSD }, `is`(equalTo(loansInAccount1OnB.sortedBy { it.state.data.valueInUSD })))
 //
 //    }
-//}
+}
