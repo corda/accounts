@@ -1,13 +1,15 @@
 package com.r3.corda.lib.accounts.workflows.services
 
 import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.accounts.workflows.ourIdentity
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.*
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount
-import com.r3.corda.lib.accounts.workflows.internal.*
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId_externalId
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId_publicKeyHash
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef

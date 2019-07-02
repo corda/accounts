@@ -13,8 +13,8 @@ import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
 import com.r3.corda.lib.tokens.money.GBP
-import com.r3.corda.lib.tokens.workflows.flows.shell.IssueTokens
-import com.r3.corda.lib.tokens.workflows.flows.shell.MoveFungibleTokens
+import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
+import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount
 import net.corda.core.contracts.FungibleState
 import net.corda.core.identity.CordaX500Name
@@ -133,7 +133,8 @@ class IntegrationTest {
                     MoveFungibleTokens::class.java,
                     PartyAndAmount(kasiaAnonymousParty, 50.GBP),
                     emptyList<Party>(),
-                    null
+                    null,
+                    A.legalIdentity()
             ).returnValue.getOrThrow()
             println(moveTokensTransaction)
             println(moveTokensTransaction.tx)

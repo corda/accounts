@@ -1,6 +1,7 @@
 package net.corda.gold.test
 
 import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccount
+import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.accounts.workflows.services.queryBy
 import net.corda.core.internal.sumByLong
@@ -314,10 +315,10 @@ class LoanBookTradingTests {
 
         //QUERY ON B - IT SHOULD HAVE RECEIVED AN UPDATE AND UPDATED IT'S RECORDS
         val loansInAccount1 = b.transaction {
-            accountServiceOnB.broadcastedToAccountVaultQuery(
-                    defaultAccountOnBFuture.getOrThrow().state.data.identifier.id,
+            b.services.vaultService.accountObservedQueryBy<LoanBook>(
+                    listOf(defaultAccountOnBFuture.getOrThrow().state.data.identifier.id),
                     QueryCriteria.VaultQueryCriteria(status = Vault.StateStatus.UNCONSUMED, contractStateTypes = setOf(LoanBook::class.java))
-            )
+            ).states
         }
 
         Assert.assertThat(loansInAccount1.size, `is`(1))
