@@ -60,7 +60,6 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
 }
 
 // Initiating versions of the above flows.
-
 @StartableByRPC
 @StartableByService
 @InitiatingFlow

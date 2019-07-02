@@ -67,10 +67,6 @@ fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
     }
 }
 
-fun accountQueryCriteria(accountIds: List<UUID>): QueryCriteria {
-    return allowedToSeeCriteria(accountIds).and(externalIdCriteria(accountIds))
-}
-
 // For writing less messy HQL.
 
 /** Table names. */

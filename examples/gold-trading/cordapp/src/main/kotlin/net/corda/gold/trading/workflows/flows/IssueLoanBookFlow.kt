@@ -33,8 +33,12 @@ class IssueLoanBookFlow(
         transactionBuilder.addCommand(LoanBookContract.ISSUE, owningKey?.let { listOf(it) }
                 ?: listOf(ourIdentity.owningKey))
         transactionBuilder.addOutputState(LoanBook(dealId, valueInUsd, owningKey))
-        val signedTxLocally = serviceHub.signInitialTransaction(transactionBuilder)
-        val finalizedTx = subFlow(FinalityFlow(signedTxLocally, listOf()))
+
+        val localSigned = owningKey?.let {
+            serviceHub.signInitialTransaction(transactionBuilder, listOfNotNull(owningKey))
+        } ?: serviceHub.signInitialTransaction(transactionBuilder)
+
+        val finalizedTx = subFlow(FinalityFlow(localSigned, listOf()))
         return finalizedTx.coreTransaction.outRefsOfType(LoanBook::class.java).single()
 
     }

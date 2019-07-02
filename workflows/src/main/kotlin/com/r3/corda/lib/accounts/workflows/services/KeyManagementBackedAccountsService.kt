@@ -2,6 +2,10 @@ package com.r3.corda.lib.accounts.workflows.services
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
+import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount
 import com.r3.corda.lib.accounts.workflows.internal.*
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
@@ -52,23 +56,21 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>> {
-        return flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount(name))
+        return flowAwareStartFlow(CreateAccount(name))
     }
 
     @Suspendable
     override fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>> {
-        return flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.CreateAccount(name, id))
+        return flowAwareStartFlow(CreateAccount(name, id))
     }
 
     override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit> {
-        return flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts(state, party))
+        return flowAwareStartFlow(ShareStateAndSyncAccounts(state, party))
     }
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
-
         throw UnsupportedOperationException()
-
 //        services.withEntityManager{
 //
 //            createQuery("select ${PublicKeyHashToExternalId::publicKeyHash.name} from ${PublicKeyHashToExternalId::class.java.name} WHERE ")
@@ -123,7 +125,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     override fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit> {
         val foundAccount = accountInfo(accountId)
         return if (foundAccount != null) {
-            flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo(foundAccount, listOf(party)))
+            flowAwareStartFlow(ShareAccountInfo(foundAccount, listOf(party)))
         } else {
             CompletableFuture<Unit>().also {
                 it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
@@ -135,7 +137,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     override fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit> {
         val foundAccount = accountInfo(accountId)
         return if (foundAccount != null) {
-            flowAwareStartFlow(com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount(accountInfo = foundAccount.state.data, state = state))
+            flowAwareStartFlow(ShareStateWithAccount(accountInfo = foundAccount.state.data, state = state))
         } else {
             CompletableFuture<Unit>().also {
                 it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
