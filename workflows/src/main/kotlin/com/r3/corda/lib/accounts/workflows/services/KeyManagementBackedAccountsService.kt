@@ -128,7 +128,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
                 it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
             }.asCordaFuture()
         }
-
     }
 
     @Suspendable
