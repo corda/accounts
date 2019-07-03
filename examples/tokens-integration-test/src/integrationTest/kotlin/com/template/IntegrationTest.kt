@@ -1,8 +1,6 @@
 package com.template
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.accountBaseCriteria
-import com.r3.corda.lib.accounts.workflows.accountUUIDCriteria
 import com.r3.corda.lib.accounts.workflows.externalIdCriteria
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
@@ -16,11 +14,17 @@ import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount
+import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.FungibleState
+import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.identity.Party
+import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.internal.concurrent.transpose
+import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
+import net.corda.core.toFuture
+import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -64,7 +68,7 @@ class IntegrationTest {
     )
 
     private val driverParameters = DriverParameters(
-            startNodesInProcess = true,
+            startNodesInProcess = false,
             cordappsForAllNodes = defaultCorDapps,
             networkParameters = testNetworkParameters(notaries = emptyList(), minimumPlatformVersion = 4)
     )
@@ -100,10 +104,9 @@ class IntegrationTest {
             log.info("Sharing account info from node A to node B.")
             val rogerAccount = aAccountsQuery.single { it.state.data.name == "PartyA - Roger" }
             A.rpc.startFlow(::ShareAccountInfo, rogerAccount, listOf(I.legalIdentity())).returnValue.getOrThrow()
-
+            I.rpc.watchForTransaction(rogerAccount.ref.txhash).getOrThrow()
             // Check that B stored the account info.
-            val criteria = accountBaseCriteria.and(accountUUIDCriteria(rogerAccount.state.data.identifier.id))
-            val rogerAccountQuery = I.rpc.vaultQueryByCriteria(criteria, AccountInfo::class.java).states.single()
+            val rogerAccountQuery = I.rpc.vaultQuery(AccountInfo::class.java).states.single()
             assertEquals(rogerAccount, rogerAccountQuery)
 
             log.info("Issuer requesting new key for account on node A.")
@@ -113,11 +116,13 @@ class IntegrationTest {
 
             log.info("Issuer issuing 100 GBP to account on node A.")
             val tokens = 100 of GBP issuedBy I.legalIdentity() heldBy rogerAnonymousParty
-            I.rpc.startFlow(
+            val issuanceResult = I.rpc.startFlow(
                     ::IssueTokens,
                     tokens,
                     emptyList()
             ).returnValue.getOrThrow()
+
+            A.rpc.watchForTransaction(issuanceResult).getOrThrow()
             // Check that the tokens are assigned to Roger's account on node A.
             val rogerTokensIssueQuery = A.rpc.vaultQueryByCriteria(
                     externalIdCriteria(accountIds = listOf(rogerAccount.state.data.identifier.id)),
@@ -140,10 +145,30 @@ class IntegrationTest {
             println(moveTokensTransaction.tx)
 
             println("Roger")
-            // TODO: Roger will have no tokens here as the change key isn't allocated to his account.
+
+            A.rpc.watchForTransaction(kasiaAccount.ref.txhash).getOrThrow()
+            A.rpc.watchForTransaction(moveTokensTransaction).getOrThrow()
             println(A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(rogerAccount.state.data.identifier.id)), FungibleToken::class.java).states)
             println("Kasia")
             println(A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(kasiaAccount.state.data.identifier.id)), FungibleToken::class.java).states)
         }
+    }
+}
+
+fun CordaRPCOps.watchForTransaction(tx: SignedTransaction): CordaFuture<SignedTransaction> {
+    val (snapshot, feed) = internalVerifiedTransactionsFeed()
+    return if (tx in snapshot) {
+        doneFuture(tx)
+    } else {
+        feed.filter { it.id == tx.id }.toFuture()
+    }
+}
+
+fun CordaRPCOps.watchForTransaction(txId: SecureHash): CordaFuture<SignedTransaction> {
+    val (snapshot, feed) = internalVerifiedTransactionsFeed()
+    return if (txId in snapshot.map { it.id }) {
+        doneFuture(snapshot.single { txId == it.id })
+    } else {
+        feed.filter { it.id == txId }.toFuture()
     }
 }
