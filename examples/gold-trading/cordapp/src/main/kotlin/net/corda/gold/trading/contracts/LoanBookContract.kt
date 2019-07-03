@@ -1,6 +1,5 @@
 package net.corda.gold.trading.contracts
 
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.internal.sumByLong
@@ -28,19 +27,12 @@ class LoanBookContract : Contract {
             }
 
             command.value == TRANSFER_TO_ACCOUNT -> {
-                val attachedAccounts = tx.referenceInputRefsOfType(AccountInfo::class.java)
                 val outputGold = tx.outputsOfType(LoanBook::class.java).single()
                 val inputGold = tx.inputsOfType(LoanBook::class.java).single()
-
-                require(attachedAccounts.size == 2) { "There must be two attached account reference states" }
-
-                attachedAccounts.forEach {
-                    require(it.state.data.host.owningKey in command.signers) { "As an account host ${it.state.data.host} must be a required signer" }
-                }
-
                 require(outputGold.owningAccount in command.signers) { "The account receiving the loan must be a required signer" }
-                require(inputGold.owningAccount in command.signers) { "The account receiving the loan must be a required signer" }
-
+                inputGold.owningAccount?.let {
+                    require(inputGold.owningAccount in command.signers) { "The account sending the loan must be a required signer" }
+                }
             }
             command.value == TRANSFER_TO_HOLDER -> {
             }

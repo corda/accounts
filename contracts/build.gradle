@@ -40,3 +40,16 @@ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
         javaParameters = true   // Useful for reflection.
     }
 }
+
+sourceSets {
+    main {
+        resources {
+            srcDir rootProject.file("config/dev")
+        }
+    }
+    test {
+        resources {
+            srcDir rootProject.file("config/test")
+        }
+    }
+}

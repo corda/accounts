@@ -2,7 +2,7 @@ package com.r3.corda.lib.accounts.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.internal.accountService
+import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
 import com.r3.corda.lib.accounts.workflows.internal.flows.IdentityWithSignature
 import com.r3.corda.lib.accounts.workflows.internal.flows.buildDataToSign

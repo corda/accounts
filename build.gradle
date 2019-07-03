@@ -116,7 +116,6 @@ configure(publishProjects) { subproject ->
     }
 }
 
-
 artifactory {
     publish {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'

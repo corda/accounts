@@ -41,7 +41,6 @@ class CreateAccountTests {
         network.stopNodes()
     }
 
-
     @Test
     fun `should create new account`() {
         val future = a.startFlow(CreateAccount("Stefano_Account"))
@@ -53,8 +52,8 @@ class CreateAccountTests {
 
     @Test(expected = IllegalArgumentException::class)
     fun `should not be possible to create an account which has same name on a single host`() {
-        val accountOne = a.startFlow(CreateAccount("Stefano_Account 1")).runAndGet(network)
-        val accountTwo = a.startFlow(CreateAccount("Stefano_Account 1")).runAndGet(network)
+        a.startFlow(CreateAccount("Stefano_Account 1")).runAndGet(network)
+        a.startFlow(CreateAccount("Stefano_Account 1")).runAndGet(network)
     }
 
 }
