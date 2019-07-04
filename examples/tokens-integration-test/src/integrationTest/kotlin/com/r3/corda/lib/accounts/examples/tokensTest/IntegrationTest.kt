@@ -1,8 +1,12 @@
 package com.r3.corda.lib.accounts.examples.tokensTest
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.examples.flows.NewKeyForAccount
 import com.r3.corda.lib.accounts.workflows.externalIdCriteria
-import com.r3.corda.lib.accounts.workflows.flows.*
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.*
 import com.r3.corda.lib.tokens.money.FiatCurrency
@@ -62,7 +66,8 @@ class IntegrationTest {
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
-            TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
+            TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
+            TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.flows") // Contains NewKeyForAccount.
     )
 
     private val driverParameters = DriverParameters(

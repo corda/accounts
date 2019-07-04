@@ -1,4 +1,4 @@
-package com.r3.corda.lib.accounts.workflows.flows
+package com.r3.corda.lib.accounts.examples.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import net.corda.core.flows.FlowLogic
