@@ -10,14 +10,19 @@ apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 apply plugin: 'kotlin-jpa'
 
-jar.baseName = "accounts-sdk-contracts"
+jar.baseName = "accounts-contracts"
 
 cordapp {
-    info {
+    targetPlatformVersion 4
+    minimumPlatformVersion 4
+    contract {
         name "Accounts SDK - States and Contracts"
-        vendor "Corda Open Source"
-        targetPlatformVersion 4
-        minimumPlatformVersion 4
+        vendor "R3"
+        licence "Apache 2"
+        versionId 1
+    }
+    signing {
+        enabled false
     }
 }
 

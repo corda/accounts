@@ -11,6 +11,13 @@ import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
 
+/**
+ * This flow shares all of the [AccountInfo]s for a [StateAndRef], as well as the [StateAndRef] itself with a specified
+ * party.
+ *
+ * @property state the state to share
+ * @property sessionToShareWith existing session with a receiving [Party]
+ */
 class ShareStateAndSyncAccountsFlow(
         private val state: StateAndRef<ContractState>,
         private val sessionToShareWith: FlowSession
@@ -27,7 +34,7 @@ class ShareStateAndSyncAccountsFlow(
         if (accountsInvolvedWithState.isNotEmpty()) {
             sessionToShareWith.send(accountsInvolvedWithState.size)
             accountsInvolvedWithState.forEach { pair ->
-                subFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfoFlow(pair.first, listOf(sessionToShareWith)))
+                subFlow(ShareAccountInfoFlow(pair.first, listOf(sessionToShareWith)))
                 sessionToShareWith.send(pair.second)
             }
         } else {
@@ -37,12 +44,13 @@ class ShareStateAndSyncAccountsFlow(
     }
 }
 
+/** Responder flow for [ShareStateAndSyncAccountsFlow]. */
 class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val numberOfAccounts = otherSideSession.receive<Int>().unwrap { it }
         for (it in 0 until numberOfAccounts) {
-            val accountInfo = subFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfoHandlerFlow(otherSideSession))
+            val accountInfo = subFlow(ShareAccountInfoHandlerFlow(otherSideSession))
             val certPath = otherSideSession.receive<PartyAndCertificate>().unwrap { it }
             serviceHub.identityService.verifyAndRegisterIdentity(certPath)
             serviceHub.withEntityManager {
@@ -55,6 +63,12 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
 
 // Initiating versions of the above flows.
 
+/**
+ * Initiating and startable by service and RPC version of [ShareStateAndSyncAccountsFlow].
+ *
+ * @property state the state to share
+ * @property sessionToShareWith existing session with a receiving [Party]
+ */
 @InitiatingFlow
 @StartableByRPC
 @StartableByService
@@ -69,6 +83,7 @@ class ShareStateAndSyncAccounts(
     }
 }
 
+/** Responder flow for [ShareStateAndSyncAccounts]. */
 @InitiatedBy(ShareStateAndSyncAccounts::class)
 class ReceiveStateAndSyncAccounts(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable

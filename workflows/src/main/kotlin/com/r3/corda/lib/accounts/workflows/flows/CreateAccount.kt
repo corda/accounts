@@ -31,13 +31,11 @@ class CreateAccount(
 
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
-        synchronized(CreateAccount::class) {
-            require(accountService.accountInfo(name) == null) {
-                "There is already an account registered with the specified name $name."
-            }
-            require(accountService.accountInfo(identifier) == null) {
-                "There is already an account registered with the specified identifier $identifier."
-            }
+        require(accountService.accountInfo(name) == null) {
+            "There is already an account registered with the specified name $name."
+        }
+        require(accountService.accountInfo(identifier) == null) {
+            "There is already an account registered with the specified identifier $identifier."
         }
         val notary = serviceHub.networkMapCache.notaryIdentities.first()
         val newAccountInfo = AccountInfo(

@@ -62,6 +62,7 @@ class ShareAccountInfo(val accountInfo: StateAndRef<AccountInfo>, val recipients
     }
 }
 
+/** Responder flow for [ShareAccountInfo]. */
 @InitiatedBy(ShareAccountInfo::class)
 class ShareAccountInfoHandler(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable

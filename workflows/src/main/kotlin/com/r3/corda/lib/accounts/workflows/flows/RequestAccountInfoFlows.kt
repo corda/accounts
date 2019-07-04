@@ -22,7 +22,7 @@ class RequestAccountInfoFlow(val id: UUID, val host: FlowSession) : FlowLogic<Ac
     @Suspendable
     override fun call(): AccountInfo? {
         val hasAccount = host.sendAndReceive<Boolean>(id).unwrap { it }
-        return if (hasAccount) subFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfoHandlerFlow(host)) else null
+        return if (hasAccount) subFlow(ShareAccountInfoHandlerFlow(host)) else null
     }
 }
 
@@ -34,7 +34,7 @@ class RequestAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<U
         if (response == null) {
             otherSession.send(false)
         } else {
-            subFlow(com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfoFlow(response, listOf(otherSession)))
+            subFlow(ShareAccountInfoFlow(response, listOf(otherSession)))
         }
     }
 }

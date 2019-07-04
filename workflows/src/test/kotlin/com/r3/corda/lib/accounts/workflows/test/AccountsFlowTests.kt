@@ -63,21 +63,30 @@ class AccountsFlowTests {
         val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         // Create accounts on node A.
-        val futureA1 = a.startFlow(CreateAccount("A_Account1")).getOrThrow()
-        val futureA2 = a.startFlow(CreateAccount("A_Account2")).getOrThrow()
-        val futureA3 = a.startFlow(CreateAccount("A_Account3")).getOrThrow()
+        val futureA1 = a.startFlow(CreateAccount("A_Account1")).toCompletableFuture()
+        val futureA2 = a.startFlow(CreateAccount("A_Account2")).toCompletableFuture()
+        val futureA3 = a.startFlow(CreateAccount("A_Account3")).toCompletableFuture()
 
         // Create accounts on node B.
-        val futureB1 = b.startFlow(CreateAccount("B_Account1")).getOrThrow()
-        val futureB2 = b.startFlow(CreateAccount("B_Account2")).getOrThrow()
-        val futureB3 = b.startFlow(CreateAccount("B_Account3")).getOrThrow()
+        val futureB1 = b.startFlow(CreateAccount("B_Account1")).toCompletableFuture()
+        val futureB2 = b.startFlow(CreateAccount("B_Account2")).toCompletableFuture()
+        val futureB3 = b.startFlow(CreateAccount("B_Account3")).toCompletableFuture()
 
         network.runNetwork()
 
+        CompletableFuture.allOf(futureA1, futureA2, futureA3, futureB1, futureB2, futureB3)
+
+        val a1 = futureA1.getOrThrow()
+        val a2 = futureA2.getOrThrow()
+        val a3 = futureA3.getOrThrow()
+        val b1 = futureB1.getOrThrow()
+        val b2 = futureB2.getOrThrow()
+        val b3 = futureB3.getOrThrow()
+
         // Share all accounts on B with node A.
-        val shareB1ToAFuture = b.shareAccountInfo(futureB1, a).toCompletableFuture()
-        val shareB2ToAFuture = b.shareAccountInfo(futureB2, a).toCompletableFuture()
-        val shareB3ToAFuture = b.shareAccountInfo(futureB3, a).toCompletableFuture()
+        val shareB1ToAFuture = b.shareAccountInfo(b1, a).toCompletableFuture()
+        val shareB2ToAFuture = b.shareAccountInfo(b2, a).toCompletableFuture()
+        val shareB3ToAFuture = b.shareAccountInfo(b3, a).toCompletableFuture()
 
         network.runNetwork()
 
@@ -86,11 +95,12 @@ class AccountsFlowTests {
         // Share account A1 with node B1, etc.
 
         //share accountA1 with ONLY accountB1 rather than the entire B node
-        val resultOfPermissionedShareA1B1 = accountServiceOnA.shareStateWithAccount(futureB1.uuid, futureA1)
+        val resultOfPermissionedShareA1B1 = accountServiceOnA.shareStateWithAccount(b1.uuid, a1)
         //share accountA2 with ONLY accountB2 rather than the entire B node
-        val resultOfPermissionedShareA2B2 = accountServiceOnA.shareStateWithAccount(futureB2.uuid, futureA2)
+        val resultOfPermissionedShareA2B2 = accountServiceOnA.shareStateWithAccount(b2.uuid, a2)
         //share accountA3 with ONLY accountB3 rather than the entire B node
-        val resultOfPermissionedShareA3B3 = accountServiceOnA.shareStateWithAccount(futureB3.uuid, futureA3)
+        val resultOfPermissionedShareA3B3 = accountServiceOnA.shareStateWithAccount(b3.uuid, a3)
+
         network.runNetwork()
 
         CompletableFuture.allOf(
@@ -101,44 +111,44 @@ class AccountsFlowTests {
 
         val permissionedStatesForAccountB1 = b.transaction {
             b.services.vaultService.accountObservedQueryBy<AccountInfo>(
-                    listOf(futureB1.uuid),
+                    listOf(b1.uuid),
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             ).states
         }.map { it.ref }
 
         val permissionedStatesForAccountB2 = b.transaction {
             b.services.vaultService.accountObservedQueryBy<AccountInfo>(
-                    listOf(futureB2.uuid),
+                    listOf(b2.uuid),
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             ).states
         }.map { it.ref }
 
         val permissionedStatesForAccountB3 = b.transaction {
             b.services.vaultService.accountObservedQueryBy<AccountInfo>(
-                    listOf(futureB3.uuid),
+                    listOf(b3.uuid),
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             ).states
         }.map { it.ref }
 
         //AccountB1 should be permissioned to look at AccountA1
-        Assert.assertThat(permissionedStatesForAccountB1, `is`(IsEqual.equalTo(listOf(futureA1.ref))))
+        Assert.assertThat(permissionedStatesForAccountB1, `is`(IsEqual.equalTo(listOf(a1.ref))))
         //AccountB2 should be permissioned to look at AccountA2
-        Assert.assertThat(permissionedStatesForAccountB2, `is`(IsEqual.equalTo(listOf(futureA2.ref))))
+        Assert.assertThat(permissionedStatesForAccountB2, `is`(IsEqual.equalTo(listOf(a2.ref))))
         //AccountB3 should be permissioned to look at AccountA3
-        Assert.assertThat(permissionedStatesForAccountB3, `is`(IsEqual.equalTo(listOf(futureA3.ref))))
+        Assert.assertThat(permissionedStatesForAccountB3, `is`(IsEqual.equalTo(listOf(a3.ref))))
 
         //share accountA1 with ONLY accountB3 rather than the entire B node
-        val resultOfPermissionedShareA1B3 = accountServiceOnA.shareStateWithAccount(futureB3.uuid, futureA1)
+        val resultOfPermissionedShareA1B3 = accountServiceOnA.shareStateWithAccount(b3.uuid, a1)
         network.runNetwork()
         resultOfPermissionedShareA1B3.getOrThrow()
 
         val permissionedStatesForAccountB3AfterA1Shared = b.transaction {
             b.services.vaultService.accountObservedQueryBy<AccountInfo>(
-                    listOf(futureB3.uuid),
+                    listOf(b3.uuid),
                     QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             ).states
         }.map { it.ref }
 
-        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (containsInAnyOrder(futureA3.ref, futureA1.ref)))
+        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (containsInAnyOrder(a3.ref, a1.ref)))
     }
 }

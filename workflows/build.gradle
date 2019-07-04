@@ -1,5 +1,4 @@
 buildscript {
-
     repositories {
         mavenCentral()
         jcenter()
@@ -20,14 +19,19 @@ apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
-jar.baseName = "accounts-sdk-flows"
+jar.baseName = "accounts-flows"
 
 cordapp {
-    info {
-        name "Accounts SDK - Flows"
-        vendor "Corda Open Source"
-        targetPlatformVersion 4
-        minimumPlatformVersion 4
+    targetPlatformVersion 4
+    minimumPlatformVersion 4
+    contract {
+        name "Accounts - Flows"
+        vendor "R3"
+        licence "Apache 2"
+        versionId 1
+    }
+    signing {
+        enabled false
     }
 }
 
@@ -50,7 +54,6 @@ dependencies {
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
-
 }
 
 sourceSets {

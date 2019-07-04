@@ -7,6 +7,7 @@ import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.Party
 import net.corda.core.messaging.DataFeed
+import net.corda.core.node.StatesToRecord
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.VaultService
@@ -33,7 +34,7 @@ interface AccountService : SerializeAsToken {
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     /**
-     * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
+     * Creates a new account by calling the [CreateAccount] flow. This method returns a future which completes to return
      * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
      * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception. This method
      * auto-generate an [AccountInfo.identifier] for the new account.
@@ -43,7 +44,7 @@ interface AccountService : SerializeAsToken {
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
-     * Creates a new account by calling the [CreateAccount] flow. This flow returns a future which completes to return
+     * Creates a new account by calling the [CreateAccount] flow. This method returns a future which completes to return
      * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
      * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
      *
@@ -88,8 +89,23 @@ interface AccountService : SerializeAsToken {
      */
     fun accountInfo(name: String): StateAndRef<AccountInfo>?
 
+    /**
+     * Shares an [AccountInfo] [StateAndRef] with the specified [Party]. The [AccountInfo]is always stored by the
+     * recipient using [StatesToRecord.ALL_VISIBLE].
+     *
+     * @param accountId the account ID of the [AccountInfo] to share.
+     * @param party the [Party] to share the [AccountInfo] with.
+     */
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
+    /**
+     * This flow shares a [StateAndRef] with an account as opposed to a full node. See the documentation for
+     * [ShareStateWithAccountFlow] for further information. This method returns a future which completes to return the
+     * result of the [ShareStateWithAccount] flow.
+     *
+     * @param accountId the account to share the [StateAndRef] with
+     * @param state the [StateAndRef] to share
+     */
     fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 
     fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit>
@@ -195,6 +211,8 @@ fun <T : ContractState> VaultService.trackBy(
 ): DataFeed<Vault.Page<T>, Vault.Update<T>> {
     return _trackBy(criteria.and(externalIdCriteria(accountIds)), paging, sorting, contractStateType)
 }
+
+// Helpers using reified generics which are nicer to use with Kotlin.
 
 inline fun <reified T : ContractState> VaultService.queryBy(accountIds: List<UUID>): Vault.Page<T> {
     return _queryBy(externalIdCriteria(accountIds), PageSpecification(), Sort(emptySet()), T::class.java)
