@@ -27,7 +27,7 @@ wish to use:
 
     buildscript {
         ext {
-            accounts_release_version = '1.0'
+            accounts_release_version = '1.0-RC01'
             accounts_release_group = 'com.r3.corda.lib.accounts'
         }
     }
@@ -36,7 +36,8 @@ Second, you must add the accounts artifactory repository to the
 list of repositories for your project (if it hasn't already been added):
 
     repositories {
-        maven { url 'XXX' }
+        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
+        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
     }
 
 Now, you can add the accounts dependencies to the `dependencies` block
