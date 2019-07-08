@@ -86,7 +86,7 @@ class DistributeWinningsTest {
         }.getOrThrow()
 
         val issuerCriteria = tokenAmountWithIssuerCriteria(GBP, aliceNode.services.myInfo.legalIdentities.first())
-        val tokens = aliceNode.services.vaultService.queryBy<FungibleToken<*>>(issuerCriteria).states
+        val tokens = aliceNode.services.vaultService.queryBy<FungibleToken>(issuerCriteria).states
         Assert.assertThat(tokens.size, `is`(IsEqual.equalTo(winningParties.size)))
 
         val winningQuantity = 200L/(winningParties.size) * 100

@@ -5,10 +5,10 @@ import com.r3.corda.lib.accounts.examples.sweepstake.service.TournamentService
 import com.r3.corda.lib.accounts.examples.sweepstake.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
 import com.r3.corda.lib.tokens.contracts.utilities.of
-import com.r3.corda.lib.tokens.money.FiatCurrency
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
@@ -18,7 +18,7 @@ import net.corda.core.identity.AnonymousParty
 @StartableByRPC
 class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamState>>,
                              private val prizeAmount: Long,
-                             private val prizeCurrency: FiatCurrency) : FlowLogic<List<AnonymousParty>>() {
+                             private val prizeCurrency: TokenType) : FlowLogic<List<AnonymousParty>>() {
 
     @Suspendable
     override fun call(): List<AnonymousParty> {
@@ -47,7 +47,7 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
         // TODO make division of winnings more realistic
         val prize = prizeAmount / winningAccounts.size
         parties.forEach {
-            subFlow(IssueTokens(prize of prizeCurrency issuedBy serviceHub.myInfo.legalIdentities.first() heldBy it))
+            subFlow(IssueTokens(listOf(prize of prizeCurrency issuedBy serviceHub.myInfo.legalIdentities.first() heldBy it)))
         }
 
         return parties
