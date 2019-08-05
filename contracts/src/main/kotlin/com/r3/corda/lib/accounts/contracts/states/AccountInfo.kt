@@ -46,6 +46,7 @@ data class AccountInfo(
         }
     }
 
+
     override fun supportedSchemas(): Iterable<MappedSchema> {
         return listOf(AccountSchema)
     }

@@ -60,7 +60,6 @@ class UpdateAccountGroupFlow(private val otherParty: Party,
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addInputState(inputState)
         txBuilder.addOutputState(outputState)
-        //TODO fix sigs
         txBuilder.addCommand(TournamentContract.UPDATE_GROUP, serviceHub.myInfo.legalIdentities.first().owningKey)
         val signedTxLocally = serviceHub.signInitialTransaction(txBuilder)
         val finalizedTx = subFlow(FinalityFlow(signedTxLocally, sessions.filterNot { it.counterparty.name == ourIdentity.name }))

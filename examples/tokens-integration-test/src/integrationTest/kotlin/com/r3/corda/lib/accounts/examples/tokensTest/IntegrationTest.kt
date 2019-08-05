@@ -67,7 +67,8 @@ class IntegrationTest {
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
-            TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.flows") // Contains NewKeyForAccount.
+            TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.flows"), // Contains NewKeyForAccount.
+            TestCordapp.findCordapp("com.r3.corda.lib.ci")
     )
 
     private val driverParameters = DriverParameters(

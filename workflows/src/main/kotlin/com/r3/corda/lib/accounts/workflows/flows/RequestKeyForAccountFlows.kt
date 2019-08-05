@@ -4,13 +4,10 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
-import com.r3.corda.lib.accounts.workflows.internal.flows.IdentityWithSignature
-import com.r3.corda.lib.accounts.workflows.internal.flows.buildDataToSign
-import com.r3.corda.lib.accounts.workflows.internal.flows.validateAndRegisterIdentity
+import com.r3.corda.lib.ci.RequestKeyInitiator
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 class RequestKeyForAccountFlow(
@@ -19,16 +16,10 @@ class RequestKeyForAccountFlow(
 ) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
-        // TODO: Replace use of the old CI API With the new API.
-        // If the host is the node running this flow then generate a new CI locally and return it. Otherwise call out
-        // to the remote host and ask THEM to generate a new CI and send it back. We cannot use the existing CI flows
-        // here because they don't allow us to supply an external ID when the new CI is created.
-        val newKeyAndCert = if (accountInfo.host == ourIdentity) {
-            serviceHub.keyManagementService.freshKeyAndCert(
-                    identity = ourIdentityAndCert,
-                    revocationEnabled = false,
-                    externalId = accountInfo.linearId.id
-            )
+        // If the account host is the node running this flow then generate a new CI locally and return it. Otherwise call out
+        // to the remote host and ask THEM to generate a new CI and send it back.
+        val newKey = if (accountInfo.host == ourIdentity) {
+            subFlow(RequestKeyInitiator(ourIdentity, serviceHub.keyManagementService.freshKey(accountInfo.identifier.id))).publicKey
         } else {
             val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
             when (accountSearchStatus) {
@@ -37,26 +28,12 @@ class RequestKeyForAccountFlow(
                             "(${accountInfo.name}) responded with a not found status - contact them for assistance")
                 }
                 AccountSearchStatus.FOUND -> {
-                    val newKeyAndCert = hostSession.receive<IdentityWithSignature>().unwrap { it }
-                    validateAndRegisterIdentity(
-                            serviceHub = serviceHub,
-                            otherSide = accountInfo.host,
-                            theirAnonymousIdentity = newKeyAndCert.identity,
-                            signature = newKeyAndCert.signature
-                    )
-                    // Store a local mapping of the account ID to the public key we've just received from the host.
-                    // This allows us to look up the account which the PublicKey is linked to in the future.
-                    serviceHub.withEntityManager {
-                        persist(PublicKeyHashToExternalId(
-                                accountId = accountInfo.linearId.id,
-                                publicKey = newKeyAndCert.identity.owningKey
-                        ))
-                    }
-                    newKeyAndCert.identity
+                    val keyFromRemoteHost = subFlow(RequestKeyInitiator(hostSession.counterparty, accountInfo.identifier.id)).publicKey
+                    keyFromRemoteHost
                 }
             }
         }
-        return AnonymousParty(newKeyAndCert.owningKey)
+        return AnonymousParty(newKey)
     }
 }
 
@@ -69,22 +46,12 @@ class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
             otherSide.send(AccountSearchStatus.NOT_FOUND)
         } else {
             otherSide.send(AccountSearchStatus.FOUND)
-            val freshKeyAndCert = serviceHub.keyManagementService.freshKeyAndCert(
-                    identity = ourIdentityAndCert,
-                    revocationEnabled = false,
-                    externalId = requestedAccountForKey
-            )
-            val data: ByteArray = buildDataToSign(freshKeyAndCert)
-            val signature = serviceHub.keyManagementService.sign(data, freshKeyAndCert.owningKey).withoutKey()
-            val keyWithSignature = IdentityWithSignature(freshKeyAndCert, signature)
-            otherSide.send(keyWithSignature)
         }
     }
 }
 
 // Initiating flows which can be started via RPC or a service. Calling these as a sub-flow from an existing flow will
 // result in a new session being created.
-
 @InitiatingFlow
 @StartableByRPC
 @StartableByService

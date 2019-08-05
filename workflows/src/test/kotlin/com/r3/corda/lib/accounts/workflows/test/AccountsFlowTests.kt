@@ -2,11 +2,13 @@ package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.internal.hash
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -22,6 +24,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.CompletableFuture
+import kotlin.test.assertNotNull
 
 class AccountsFlowTests {
 
@@ -36,7 +39,8 @@ class AccountsFlowTests {
                         networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
                         cordappsForAllNodes = listOf(
                                 TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
-                                TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
+                                TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.ci")
                         )
                 )
         )
