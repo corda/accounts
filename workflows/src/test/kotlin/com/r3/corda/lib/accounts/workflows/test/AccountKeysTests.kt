@@ -21,6 +21,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.security.PublicKey
+import java.util.concurrent.CompletableFuture
 
 class AccountKeysTests {
 
@@ -35,7 +36,9 @@ class AccountKeysTests {
                         networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
                         cordappsForAllNodes = listOf(
                                 TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
-                                TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
+                                TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
+                                TestCordapp.findCordapp("com.r3.corda.lib.ci")
+
                         )
                 )
         )
@@ -137,7 +140,34 @@ class AccountKeysTests {
             Assert.assertThat(accountService.accountInfo(keyToUse1.owningKey), `is`(account1))
             Assert.assertThat(accountService.accountInfo(keyToUse2.owningKey), `is`(account2))
         }
+    }
 
+    @Test
+    fun `request key for accounts`() {
+        // Create account on node A.
+        val accountA = a.startFlow(CreateAccount("A_Account1")).let {
+            network.runNetwork()
+            it.getOrThrow()
+        }
+
+        // Create account on node B.
+        val accountB = b.startFlow(CreateAccount("B_Account1")).let {
+            network.runNetwork()
+            it.getOrThrow()
+        }
+
+        val anonA1 = a.startFlow(RequestKeyForAccount(accountA.state.data)).let {
+            network.runNetwork()
+            it.toCompletableFuture()
+        }.getOrThrow()
+
+        val anonB1 = a.startFlow(RequestKeyForAccount(accountB.state.data)).let {
+            network.runNetwork()
+            it.toCompletableFuture()
+        }.getOrThrow()
+
+        Assert.assertThat(a.services.identityService.wellKnownPartyFromAnonymous(anonA1), `is`(accountA.state.data.host))
+        Assert.assertThat(a.services.identityService.wellKnownPartyFromAnonymous(anonB1), `is`(accountB.state.data.host))
     }
 
 }
