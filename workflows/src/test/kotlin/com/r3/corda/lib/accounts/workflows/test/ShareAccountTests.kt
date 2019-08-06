@@ -34,7 +34,10 @@ class ShareAccountTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                cordappPackages = listOf("com.r3.corda.lib.accounts.contracts", "com.r3.corda.lib.accounts.workflows"),
+                cordappPackages = listOf(
+                    "com.r3.corda.lib.accounts.contracts",
+                    "com.r3.corda.lib.accounts.workflows",
+                    "com.r3.corda.lib.ci"),
                 defaultParameters = MockNetworkParameters(networkParameters = testNetworkParameters(minimumPlatformVersion = 4))
         )
         a = network.createPartyNode()
