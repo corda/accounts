@@ -103,7 +103,7 @@ class ShareAccountTests {
         }
 
         val accountServiceOnB = b.accountService()
-
+        println("ACCOUNT OWNER KEY: " + ownedByAccountState.state.data.owner.owningKey)
         b.transaction {
             Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
             Assert.assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
