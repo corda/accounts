@@ -5,6 +5,7 @@ import com.r3.corda.lib.accounts.workflows.accountService
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
@@ -28,8 +29,8 @@ class ShareStateAndSyncAccountsFlow(
                 ?: throw IllegalStateException("Transaction: ${state.ref.txhash} was not found on this node")
         val accountsInvolvedWithState = state.state.data.participants.map { participant ->
             val accountInfo = accountService.accountInfo(participant.owningKey)
-            val partyAndCertificate = serviceHub.identityService.certificateFromKey(participant.owningKey)
-            if (accountInfo != null && partyAndCertificate != null) accountInfo to partyAndCertificate else null
+            val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(participant.owningKey))
+            if (accountInfo != null && party != null) accountInfo to party else null
         }.filterNotNull()
         if (accountsInvolvedWithState.isNotEmpty()) {
             sessionToShareWith.send(accountsInvolvedWithState.size)
@@ -51,10 +52,10 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
         val numberOfAccounts = otherSideSession.receive<Int>().unwrap { it }
         for (it in 0 until numberOfAccounts) {
             val accountInfo = subFlow(ShareAccountInfoHandlerFlow(otherSideSession))
-            val certPath = otherSideSession.receive<PartyAndCertificate>().unwrap { it }
-            serviceHub.identityService.verifyAndRegisterIdentity(certPath)
+            val party = otherSideSession.receive<Party>().unwrap { it }
+            serviceHub.identityService.registerKeyToParty(party.owningKey, party)
             serviceHub.withEntityManager {
-                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, certPath.owningKey))
+                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, party.owningKey))
             }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
