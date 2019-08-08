@@ -11,6 +11,7 @@ import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
+import java.security.PublicKey
 
 /**
  * This flow shares all of the [AccountInfo]s for a [StateAndRef], as well as the [StateAndRef] itself with a specified
@@ -30,7 +31,10 @@ class ShareStateAndSyncAccountsFlow(
         val accountsInvolvedWithState = state.state.data.participants.map { participant ->
             val accountInfo = accountService.accountInfo(participant.owningKey)
             val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(participant.owningKey))
-            if (accountInfo != null && party != null) accountInfo to party else null
+            if (accountInfo != null && party != null) {
+                // Map the participant key to the well known party resolved by this node
+                accountInfo to mapOf(participant.owningKey to party)
+            } else null
         }.filterNotNull()
         if (accountsInvolvedWithState.isNotEmpty()) {
             sessionToShareWith.send(accountsInvolvedWithState.size)
@@ -52,10 +56,12 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
         val numberOfAccounts = otherSideSession.receive<Int>().unwrap { it }
         for (it in 0 until numberOfAccounts) {
             val accountInfo = subFlow(ShareAccountInfoHandlerFlow(otherSideSession))
-            val party = otherSideSession.receive<Party>().unwrap { it }
-            serviceHub.identityService.registerKeyToParty(party.owningKey, party)
+            val keyToParty = otherSideSession.receive<Map<PublicKey, Party>>().unwrap { it }
+            val key = keyToParty.keys.first()
+            val party = keyToParty.values.first()
+            serviceHub.identityService.registerKeyToParty(key, party)
             serviceHub.withEntityManager {
-                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, party.owningKey))
+                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, key))
             }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
@@ -63,7 +69,6 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
 }
 
 // Initiating versions of the above flows.
-
 /**
  * Initiating and startable by service and RPC version of [ShareStateAndSyncAccountsFlow].
  *
