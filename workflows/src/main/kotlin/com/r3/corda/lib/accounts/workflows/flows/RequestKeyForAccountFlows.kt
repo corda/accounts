@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
+import com.r3.corda.lib.ci.RequestKeyFlow
 import com.r3.corda.lib.ci.RequestKeyInitiator
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
