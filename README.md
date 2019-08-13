@@ -65,7 +65,25 @@ These should also be added to the `deployNodes` task with the following syntax:
         cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
     }
 
-### Installing the accounts library
+### Modifying An Existing CorDapp to Use Accounts
+
+States should use `PublicKey` instead of `Party` as a Party refers to a node and the PublicKey can refer to an account.
+
+In order to create your state you need to request the PublicKey with a flow. e.g.
+
+    val lenderKey = subFlow(RequestKeyForAccount(lenderAccountInfo.state.data)).owningKey
+
+Once you have keys you need to have logic to determine who signs.
+
+If your accounts are on the same node that you are running the flow on then they can all be on the `signInitialTransaction`, however, if one is on another node you need to use a `CollectSignatureFlow` 
+
+When calling the `FinalityFlow` you will need different sessions depending on if all the accounts are on one node or on different nodes.
+ 
+If accounts are on different nodes you need to `shareAccountInfoWithParty` before you can transact between accounts otherwise the nodes running the flows wont be aware of the accounts on the other nodes.
+
+Currently, if accounts are on different nodes you also need to run `shareStateAndSyncAccounts` after the flow to make sure that you can use all methods to look up accountInfo.
+
+## Installing the accounts library
 
 If you wish to build the accounts library from source then do the following to
 publish binaries to your local maven repository:
