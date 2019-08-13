@@ -16,9 +16,13 @@ TODO
 
 ## How to use the library?
 
-### Using the accounts template.
+### Example Account Projects
 
-TODO
+There are three projects demonstrating how to use accounts in the examples sub-directory:
+
+* [Sweepstake](examples/cordapp-sweepstake)
+* [Gold Trading](examples/gold-trading)
+* [Tokens](examples/tokens-integration-test)
 
 ### Adding accounts dependencies to an existing CorDapp
 
