@@ -98,4 +98,4 @@ TODO
 
 ## Other useful links
 
-TODO
+[Contributing](CONTRIBUTING.md)
