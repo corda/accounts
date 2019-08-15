@@ -5,7 +5,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
 import com.r3.corda.lib.ci.RequestKeyFlow
-import com.r3.corda.lib.ci.RequestKeyInitiator
+import com.r3.corda.lib.ci.VerifyAndAddKey
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.utilities.unwrap
@@ -20,7 +20,7 @@ class RequestKeyForAccountFlow(
         // If the account host is the node running this flow then generate a new CI locally and return it. Otherwise call out
         // to the remote host and ask THEM to generate a new CI and send it back.
         val newKey = if (accountInfo.host == ourIdentity) {
-            subFlow(RequestKeyInitiator(ourIdentity, serviceHub.keyManagementService.freshKey(accountInfo.identifier.id))).publicKey
+            subFlow(VerifyAndAddKey(ourIdentity, serviceHub.keyManagementService.freshKey(accountInfo.identifier.id))).publicKey
         } else {
             val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
             when (accountSearchStatus) {
@@ -29,7 +29,7 @@ class RequestKeyForAccountFlow(
                             "(${accountInfo.name}) responded with a not found status - contact them for assistance")
                 }
                 AccountSearchStatus.FOUND -> {
-                    val keyFromRemoteHost = subFlow(RequestKeyInitiator(hostSession.counterparty, accountInfo.identifier.id)).publicKey
+                    val keyFromRemoteHost = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).publicKey
                     keyFromRemoteHost
                 }
             }
