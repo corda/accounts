@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
+import com.r3.corda.lib.ci.ProvideKeyFlow
 import com.r3.corda.lib.ci.RequestKeyFlow
 import com.r3.corda.lib.ci.VerifyAndAddKey
 import net.corda.core.flows.*
@@ -47,6 +48,7 @@ class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
             otherSide.send(AccountSearchStatus.NOT_FOUND)
         } else {
             otherSide.send(AccountSearchStatus.FOUND)
+            subFlow(ProvideKeyFlow(otherSide))
         }
     }
 }
