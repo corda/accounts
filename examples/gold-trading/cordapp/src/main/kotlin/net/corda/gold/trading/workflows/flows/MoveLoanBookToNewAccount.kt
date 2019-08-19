@@ -6,6 +6,7 @@ import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.internal.hash
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder

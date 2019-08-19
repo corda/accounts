@@ -1,6 +1,6 @@
 package com.r3.corda.lib.accounts.examples.sweepstake.test.flows
 
-import com.r3.corda.lib.accounts.examples.sweepstake.flows.IssueTeamWrapper
+import com.r3.corda.lib.accounts.examples.sweepstake.flows.IssueTeamInitiator
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.MatchDayFlow
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.WorldCupTeam
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.generateQuickWinner
@@ -63,17 +63,17 @@ class MatchDayFlowTests {
     }
 
     @Test
-    fun `match day outcome`() {
+    fun `match day outcome across multiple nodes`() {
         val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val testAccountA = aliceAccountService.createAccount("TEST_ACCOUNT_A").getOrThrow()
-        val teamA = aliceNode.startFlow(IssueTeamWrapper(testAccountA, WorldCupTeam(JAPAN, true))).let {
+        val teamA = aliceNode.startFlow(IssueTeamInitiator(testAccountA, WorldCupTeam(JAPAN, true))).let {
             mockNet.runNetwork()
             it.getOrThrow()
         }
 
         val bobAccountService = bobNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val testAccountB = bobAccountService.createAccount("TEST_ACCOUNT_B").getOrThrow()
-        val teamB = bobNode.startFlow(IssueTeamWrapper(testAccountB, WorldCupTeam(BELGIUM, true))).let {
+        val teamB = bobNode.startFlow(IssueTeamInitiator(testAccountB, WorldCupTeam(BELGIUM, true))).let {
             mockNet.runNetwork()
             it.getOrThrow()
         }
@@ -117,41 +117,24 @@ class MatchDayFlowTests {
     @Test
     fun `run multiple match day flows`() {
         val accountOwningService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val tournamentService = aliceNode.services.cordaService(TournamentService::class.java)
         createAccountsForNode(accountOwningService)
         val accounts = accountOwningService.allAccounts()
 
-        // Alice creates accounts and shares them with charlie
-        accounts.forEach {
-            accountOwningService.shareAccountInfoWithParty(it.state.data.identifier.id, charlieNode.info.legalIdentities.first()).also {
-                mockNet.runNetwork()
-                it.getOrThrow()
-            }
-        }
-
-        // Bob issues the teams
         accounts.zip(teams).forEach {
-            bobNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
+            aliceNode.startFlow(IssueTeamInitiator(it.first, it.second)).also {
                 mockNet.runNetwork()
                 it.getOrThrow()
             }
         }
 
-        val tournamentService = aliceNode.services.cordaService(TournamentService::class.java)
         val teams = tournamentService.getTeamStates()
-
-        // Share the team states with charlie so he can run the match day flows
-        teams.forEach {
-            aliceNode.startFlow(ShareStateAndSyncAccounts(it, charlie)).also {
-                mockNet.runNetwork()
-                it.getOrThrow()
-            }
-        }
 
         for (i in 1..teams.size step 2) {
             val teamA = teams[i - 1]
             val teamB = teams[i]
 
-            charlieNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
+            aliceNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
                 mockNet.runNetwork()
                 getOrThrow()
             }
@@ -164,7 +147,7 @@ class MatchDayFlowTests {
             val teamA = winningTeams[i - 1]
             val teamB = winningTeams[i]
 
-            charlieNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
+            aliceNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
                 mockNet.runNetwork()
                 getOrThrow()
             }

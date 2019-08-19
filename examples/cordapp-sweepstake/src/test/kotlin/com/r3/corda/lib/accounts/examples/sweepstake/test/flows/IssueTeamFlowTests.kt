@@ -1,6 +1,6 @@
 package com.r3.corda.lib.accounts.examples.sweepstake.test.flows
 
-import com.r3.corda.lib.accounts.examples.sweepstake.flows.IssueTeamWrapper
+import com.r3.corda.lib.accounts.examples.sweepstake.flows.IssueTeamInitiator
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.WorldCupTeam
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.generateParticipantsFromFile
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.generateTeamsFromFile
@@ -78,7 +78,7 @@ class IssueTeamFlowTests {
     fun `issue a team to an account`() {
         val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val testAccount = aliceAccountService.createAccount("TEST_ACCOUNT").getOrThrow()
-        val future = aliceNode.startFlow(IssueTeamWrapper(testAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
+        val future = aliceNode.startFlow(IssueTeamInitiator(testAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
 
         Assert.assertThat(future.state.data, `is`(notNullValue(TeamState::class.java)))
         Assert.assertThat(future.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
@@ -95,7 +95,7 @@ class IssueTeamFlowTests {
 
         //Share alice's account with bob
         aliceService.shareAccountInfoWithParty(aliceAccount.state.data.identifier.id, bobNode.info.singleIdentity())
-        val future = bobNode.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
+        val future = bobNode.startFlow(IssueTeamInitiator(aliceAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
 
         val aliceAccounts = aliceNode.startFlow(OurAccounts()).getOrThrow()
         val bobAccounts = bobNode.startFlow(AllAccounts()).getOrThrow()

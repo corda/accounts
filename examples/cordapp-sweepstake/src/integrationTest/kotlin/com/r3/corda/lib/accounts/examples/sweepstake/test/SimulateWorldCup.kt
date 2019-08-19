@@ -102,7 +102,7 @@ class SimulateWorldCup {
         while (iterableMap.hasNext()) {
             val entry = iterableMap.next()
             if (!entry.value.isAssigned) {
-                val team = proxyA.startFlow(::IssueTeamWrapper, entry.key, entry.value).returnValue.getOrThrow()
+                val team = proxyA.startFlow(::IssueTeamInitiator, entry.key, entry.value).returnValue.getOrThrow()
                 listOfIssuedTeamStates.add(team)
                 mapPlayerToTeam.replace(entry.key, entry.value.copy(isAssigned = true))
             }

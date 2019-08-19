@@ -1,7 +1,7 @@
 package com.r3.corda.lib.accounts.examples.sweepstake.test.flows
 
 import com.r3.corda.lib.accounts.examples.sweepstake.flows.DistributeWinningsFlow
-import com.r3.corda.lib.accounts.examples.sweepstake.flows.IssueTeamWrapper
+import com.r3.corda.lib.accounts.examples.sweepstake.flows.IssueTeamInitiator
 import com.r3.corda.lib.accounts.examples.sweepstake.service.TournamentService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
@@ -69,7 +69,7 @@ class DistributeWinningsTest {
 
         // Issue the teams
         accounts.zip(TestUtils.teams).forEach {
-            bobNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
+            bobNode.startFlow(IssueTeamInitiator(it.first, it.second)).also {
                 it.getOrThrow()
             }
         }

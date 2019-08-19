@@ -64,7 +64,6 @@ class AccountsFlowTests {
     @Test
     fun `should share state with only specified account`() {
         val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         // Create accounts on node A.
         val futureA1 = a.startFlow(CreateAccount("A_Account1")).toCompletableFuture()

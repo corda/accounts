@@ -31,7 +31,7 @@ class LoanBookTradingTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                listOf("net.corda.gold", "com.r3.corda.lib.accounts.workflows", "com.r3.corda.lib.accounts.contracts"), MockNetworkParameters(
+                listOf("net.corda.gold", "com.r3.corda.lib.accounts.workflows", "com.r3.corda.lib.accounts.contracts", "com.r3.corda.lib.ci"), MockNetworkParameters(
                 networkParameters = testNetworkParameters(
                         minimumPlatformVersion = 4
                 )

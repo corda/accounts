@@ -10,6 +10,7 @@ import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
 import net.corda.core.flows.ReceiveFinalityFlow
+import net.corda.core.internal.hash
 import net.corda.core.transactions.TransactionBuilder
 
 class IssueTeamFlow(
@@ -22,6 +23,9 @@ class IssueTeamFlow(
         val keyToUse = accountInfo.state.data.let {
             subFlow(RequestKeyForAccount(accountInfo = it))
         }.owningKey
+        println("**************")
+        println("Issue team key: " + keyToUse.hash)
+        println("**************")
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(TournamentContract.ISSUE_TEAM, serviceHub.myInfo.legalIdentities.first().owningKey)
         txBuilder.addOutputState(TeamState(team, true, keyToUse))

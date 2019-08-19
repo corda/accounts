@@ -7,6 +7,7 @@ import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.internal.hash
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -28,12 +29,17 @@ class MatchDayFlow(
         log.info("${teamA.state.data.team.teamName} are playing ${teamB.state.data.team.teamName}.")
 
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
-
+        println("**********")
+        println("Owning key for teamA: " + teamA.state.data.owningKey!!.hash)
+        println("Owning key for teamB: " + teamB.state.data.owningKey!!.hash)
+        println("Owning key for winner: " + winningTeam.state.data.owningKey!!.hash)
+        println("**********")
         val accountForTeamA = accountService.accountInfo(teamA.state.data.owningKey!!)
         val accountForTeamB = accountService.accountInfo(teamB.state.data.owningKey!!)
 
         val signingAccounts = listOfNotNull(accountForTeamA, accountForTeamB)
         val winningAccount = accountService.accountInfo(winningTeam.state.data.owningKey!!)
+        println("Winning team owning key: " + winningTeam.state.data.owningKey)
 
         val newOwner = subFlow(RequestKeyForAccount(winningAccount!!.state.data))
         val requiredSigners =
@@ -63,20 +69,15 @@ class MatchDayFlow(
                 )
         )
 
-        val sessionForWinner = initiateFlow(winningAccount.state.data.host)
-        val sessionForTeamB = initiateFlow(accountForTeamB.state.data.host)
-        val sessionForTeamA = initiateFlow(accountForTeamA.state.data.host)
+        val accountHosts = setOf(winningAccount.state.data.host, accountForTeamA.state.data.host, accountForTeamB.state.data.host)
+        val sessions = accountHosts.map { initiateFlow(it) }
 
-        val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, listOf(
-                sessionForTeamA,
-                sessionForTeamB,
-                sessionForWinner
-        )))
+        val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, sessions))
 
         val signedTx = subFlow(
                 FinalityFlow(
                         fullySignedExceptForNotaryTx,
-                        listOf(sessionForWinner, sessionForTeamA, sessionForTeamB).filter { sessionForWinner.counterparty != serviceHub.myInfo.legalIdentities.first() })
+                        sessions.filter { winningAccount.state.data.host != serviceHub.myInfo.legalIdentities.first() })
         )
 
         return signedTx.coreTransaction.outRefsOfType(

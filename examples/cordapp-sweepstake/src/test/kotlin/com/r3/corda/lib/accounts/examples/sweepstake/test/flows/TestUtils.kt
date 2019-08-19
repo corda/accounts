@@ -37,7 +37,8 @@ class TestUtils {
                 TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
-                TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows")
+                TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                TestCordapp.findCordapp("com.r3.corda.lib.ci")
         )
     }
 

@@ -9,7 +9,9 @@ import com.r3.corda.lib.ci.RequestKeyFlow
 import com.r3.corda.lib.ci.VerifyAndAddKey
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
+import net.corda.core.internal.hash
 import net.corda.core.utilities.unwrap
+import net.corda.node.services.keys.PublicKeyHashToExternalId
 import java.util.*
 
 class RequestKeyForAccountFlow(
@@ -31,6 +33,14 @@ class RequestKeyForAccountFlow(
                 }
                 AccountSearchStatus.FOUND -> {
                     val keyFromRemoteHost = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).publicKey
+                    // Store a local mapping of the account ID to the public key we've just received from the host.
+                    // This allows us to look up the account which the PublicKey is linked to in the future.
+                    serviceHub.withEntityManager {
+                        persist(PublicKeyHashToExternalId(
+                                accountId = accountInfo.linearId.id,
+                                publicKey = keyFromRemoteHost
+                        ))
+                    }
                     keyFromRemoteHost
                 }
             }

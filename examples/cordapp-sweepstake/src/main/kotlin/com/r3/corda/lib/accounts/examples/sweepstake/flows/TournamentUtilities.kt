@@ -93,15 +93,15 @@ data class Participant(val playerName: String, val hasAccount: Boolean)
  */
 @StartableByRPC
 @InitiatingFlow
-class IssueTeamWrapper(private val accountInfo: StateAndRef<AccountInfo>,
-                       private val team: WorldCupTeam) : FlowLogic<StateAndRef<TeamState>>() {
+class IssueTeamInitiator(private val accountInfo: StateAndRef<AccountInfo>,
+                         private val team: WorldCupTeam) : FlowLogic<StateAndRef<TeamState>>() {
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
         return (subFlow(IssueTeamFlow(setOf(initiateFlow(accountInfo.state.data.host)), accountInfo, team)))
     }
 }
 
-@InitiatedBy(IssueTeamWrapper::class)
+@InitiatedBy(IssueTeamInitiator::class)
 class IssueTeamResponse(private val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
