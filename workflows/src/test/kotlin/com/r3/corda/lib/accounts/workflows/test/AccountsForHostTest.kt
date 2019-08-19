@@ -4,46 +4,39 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.AccountsForHost
-import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
-import org.hamcrest.CoreMatchers
 import org.hamcrest.CoreMatchers.`is`
-import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
-import org.hamcrest.core.IsEqual
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.util.concurrent.CompletableFuture
 
 class AccountsForHostTest {
 
     lateinit var network: MockNetwork
-    lateinit var a: StartedMockNode
-    lateinit var b: StartedMockNode
+    lateinit var nodeA: StartedMockNode
+    lateinit var nodeB: StartedMockNode
 
     @Before
     fun setup() {
         network = MockNetwork(
-                MockNetworkParameters(
-                        networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
-                        cordappsForAllNodes = listOf(
-                                TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
-                                TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
-                        )
+            MockNetworkParameters(
+                networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
+                cordappsForAllNodes = listOf(
+                    TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
+                    TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
                 )
+            )
         )
-        a = network.createPartyNode()
-        b = network.createPartyNode()
+        nodeA = network.createPartyNode()
+        nodeB = network.createPartyNode()
 
         network.runNetwork()
     }
@@ -65,20 +58,20 @@ class AccountsForHostTest {
     fun `should list all hosted accounts`() {
 
         //Create two accounts in host A
-        val account1 = a.startFlow(CreateAccount("Host_Account1")).runAndGet(network)
-        val account2 = a.startFlow(CreateAccount("Host_Account2")).runAndGet(network)
+        val accountA1 = nodeA.startFlow(CreateAccount("Test_AccountA1")).runAndGet(network)
+        val accountA2 =nodeA.startFlow(CreateAccount("Test_AccountA2")).runAndGet(network)
 
         //Call AccountsForHost from host A which returns the accounts of host A
-        val hostAccountsA = a.startFlow(AccountsForHost(a.identity())).runAndGet(network)
+        val hostAccountInfoA = nodeA.startFlow(AccountsForHost(nodeA.identity())).runAndGet(network)
 
-        //Checking if first account in the list hostAccountsA is account1
-        Assert.assertEquals(account1, hostAccountsA[0])
+        //Checking if first account in the list hostAccountInfoA is accountA1
+        Assert.assertEquals(accountA1, hostAccountInfoA[0])
 
-        //Checking if first account in the list hostAccountsA is account2
-        Assert.assertEquals(account2, hostAccountsA[1])
+        //Checking if first account in the list hostAccountInfoA is accountA2
+        Assert.assertEquals(accountA2, hostAccountInfoA[1])
 
-        //Checking if hostAccountsA contain account1 and account2
-        Assert.assertEquals(listOf(account1,account2), hostAccountsA)
+        //Checking if hostAccountInfoA contain accountA1 and accountA2
+        Assert.assertEquals(listOf(accountA1,accountA2), hostAccountInfoA)
 
     }
 
@@ -91,29 +84,29 @@ class AccountsForHostTest {
     fun `should not list accounts that does not belong to the host`() {
 
         //Create two accounts in host A
-        val account1 = a.startFlow(CreateAccount("Host_Account1")).runAndGet(network)
-        val account2 = a.startFlow(CreateAccount("Host_Account2")).runAndGet(network)
+        val accountA1 = nodeA.startFlow(CreateAccount("Test_AccountA1")).runAndGet(network)
+        val accountA2 = nodeA.startFlow(CreateAccount("Test_AccountA2")).runAndGet(network)
 
         //Create an account in host B
-        val account3 = b.startFlow(CreateAccount("Host_Account3")).runAndGet(network)
+        val accountB1 = nodeB.startFlow(CreateAccount("Test_AccountB")).runAndGet(network)
 
         //Call AccountsForHost from host A which returns the accounts of host A
-        val hostAccountsA = a.startFlow(AccountsForHost(a.identity())).runAndGet(network)
+        val hostAccountInfoA = nodeA.startFlow(AccountsForHost(nodeA.identity())).runAndGet(network)
 
         //Call AccountsForHost from host B which returns the accounts of host B
-        val hostAccountsB = b.startFlow(AccountsForHost(b.identity())).runAndGet(network)
+        val hostAccountInfoB = nodeB.startFlow(AccountsForHost(nodeB.identity())).runAndGet(network)
 
-        //Checking if hostAccountsA contain both account1 and account2
-        Assert.assertEquals(listOf(account1,account2), hostAccountsA)
+        //Checking if hostAccountInfoA contain both accountA1 and accountA2
+        Assert.assertEquals(listOf(accountA1,accountA2), hostAccountInfoA)
 
-        //Checking if hostAccountsB contains account3
-        Assert.assertEquals(listOf(account3), hostAccountsB)
+        //Checking if hostAccountInfoB contains accountB1
+        Assert.assertEquals(listOf(accountB1), hostAccountInfoB)
 
-        //Checking that hostAccountsA does not contain account3
-        Assert.assertNotEquals(listOf(account3), hostAccountsA)
+        //Checking that hostAccountInfoA does not contain accountB1
+        Assert.assertNotEquals(listOf(accountB1), hostAccountInfoA)
 
-        //Checking that hostAccountsB does not contain account1 and account2
-        Assert.assertNotEquals(listOf(account1, account2), hostAccountsB)
+        //Checking that hostAccountInfoB does not contain accountA1 and accountA2
+        Assert.assertNotEquals(listOf(accountA1, accountA2), hostAccountInfoB)
 
     }
 
@@ -126,31 +119,31 @@ class AccountsForHostTest {
     fun `should not lookup shared accounts`() {
 
         //Create an account in host A
-        val account1 = a.startFlow(CreateAccount("Test_AccountA")).runAndGet(network)
+        val accountA = nodeA.startFlow(CreateAccount("Test_AccountA")).runAndGet(network)
 
         //Create an account in host B
-        val account2 = b.startFlow(CreateAccount("Test_AccountB")).runAndGet(network)
+        val accountB = nodeB.startFlow(CreateAccount("Test_AccountB")).runAndGet(network)
 
-        //Share account1 with host B
-        a.startFlow(ShareAccountInfo(account1, listOf(b.identity()))).runAndGet(network)
+        //Share accountA with host B
+        nodeA.startFlow(ShareAccountInfo(accountA, listOf(nodeB.identity()))).runAndGet(network)
 
         //Call AccountsForHost from host A which return all hosted accounts of A
-        val hostAccountInfoA = a.startFlow(AccountsForHost(a.identity())).runAndGet(network)
+        val hostAccountInfoA = nodeA.startFlow(AccountsForHost(nodeA.identity())).runAndGet(network)
 
         //Call AccountsForHost from host B which return all hosted accounts of B
-        val hostAccountInfoB = b.startFlow(AccountsForHost(b.identity())).runAndGet(network)
+        val hostAccountInfoB = nodeB.startFlow(AccountsForHost(nodeB.identity())).runAndGet(network)
 
-        //Checking if first account in hostAccountInfoA is account1
-        Assert.assertEquals(account1, hostAccountInfoA[0])
+        //Checking if first account in hostAccountInfoA is accountA
+        Assert.assertEquals(accountA, hostAccountInfoA[0])
 
-        //Checking if first account in hostAccountInfoB is account2
-        Assert.assertEquals(account2, hostAccountInfoB[0])
+        //Checking if first account in hostAccountInfoB is accountB
+        Assert.assertEquals(accountB, hostAccountInfoB[0])
 
-        //Checking that hostAccountInfoA is the list in which only account1 is there
-        Assert.assertEquals(listOf(account1), hostAccountInfoA)
+        //Checking that hostAccountInfoA is the list in which only accountA is there
+        Assert.assertEquals(listOf(accountA), hostAccountInfoA)
 
-        //Checking that hostAccountInfoA does not contain account2 after that account being shared by B
-        Assert.assertNotEquals(listOf(account1, account2), hostAccountInfoA)
+        //Checking that hostAccountInfoA does not contain accountB after that account being shared by B
+        Assert.assertNotEquals(listOf(accountA, accountB), hostAccountInfoA)
     }
 
 
@@ -162,14 +155,14 @@ class AccountsForHostTest {
     fun `should be possible to lookup account by UUID`() {
 
         //Create an account in host A
-        val account1 = a.startFlow(CreateAccount("Account1")).runAndGet(network)
+        val accountA = nodeA.startFlow(CreateAccount("Test_AccountA")).runAndGet(network)
 
         //Create accountService for host A
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = nodeA.services.cordaService(KeyManagementBackedAccountService::class.java)
 
-        //Checking if it is possible to look-up the account info using UUID and again checking if that account info is of account1
-        a.transaction {
-            Assert.assertThat(accountService.accountInfo(account1.uuid), `is`(account1))
+        //Checking if it is possible to look-up the account info using UUID and again checking if that account info is of accountA
+        nodeA.transaction {
+            Assert.assertThat(accountService.accountInfo(accountA.uuid), `is`(accountA))
         }
     }
 
@@ -181,14 +174,14 @@ class AccountsForHostTest {
     fun `should be possible to lookup account by name`() {
 
         //Create an account in host A
-        val account1 = a.startFlow(CreateAccount("Account1")).runAndGet(network)
+        val accountA = nodeA.startFlow(CreateAccount("Test_AccountA")).runAndGet(network)
 
         //Create accountService for host A
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = nodeA.services.cordaService(KeyManagementBackedAccountService::class.java)
 
-        //Checking if it is possible to look-up the account info using name and again checking if that account info is of account1
-        a.transaction {
-            Assert.assertThat(accountService.accountInfo("Account1"), `is`(account1))
+        //Checking if it is possible to look-up the account info using name and again checking if that account info is of accountA
+        nodeA.transaction {
+            Assert.assertThat(accountService.accountInfo("Test_AccountA"), `is`(accountA))
         }
     }
 
