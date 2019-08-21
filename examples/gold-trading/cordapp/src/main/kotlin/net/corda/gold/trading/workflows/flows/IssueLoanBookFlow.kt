@@ -2,6 +2,7 @@ package net.corda.gold.trading.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.CreateKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FinalityFlow
@@ -25,7 +26,11 @@ class IssueLoanBookFlow(
     override fun call(): StateAndRef<LoanBook> {
 
         val owningKey = accountToMineInto?.let {
-            subFlow(RequestKeyForAccount(it.state.data)).owningKey
+            if (accountToMineInto.state.data.host == ourIdentity) {
+                subFlow(CreateKeyForAccount(accountToMineInto.state.data)).owningKey
+            } else {
+                subFlow(RequestKeyForAccount(accountToMineInto?.state?.data!!)).owningKey
+            }
         }
 
         val transactionBuilder = TransactionBuilder()

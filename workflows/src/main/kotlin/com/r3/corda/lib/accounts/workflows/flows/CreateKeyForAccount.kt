@@ -8,7 +8,7 @@ import java.security.PublicKey
 
 /**
  * This flow should be used when you want to generate a new [PublicKey] for an account that owned by the node running
- * the flow.
+ * the flow. If the account is owned by a different node, then [RequestKeyForAccountFlow] should be used instead.
  */
 class CreateKeyForAccount(
         private val accountInfo: AccountInfo
