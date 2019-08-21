@@ -16,7 +16,7 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertFailsWith
 
-class CreateAccountTests {
+class CreateAccountFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode

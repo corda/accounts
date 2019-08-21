@@ -15,7 +15,7 @@ import org.junit.Before
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class ShareAccountTests {
+class ShareAccountFlowTests {
 
     lateinit var network: MockNetwork
     lateinit var nodeA: StartedMockNode
