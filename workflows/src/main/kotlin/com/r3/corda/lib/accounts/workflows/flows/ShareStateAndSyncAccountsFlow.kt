@@ -5,11 +5,12 @@ import com.r3.corda.lib.accounts.workflows.accountService
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
 import net.corda.node.services.keys.PublicKeyHashToExternalId
+import java.security.PublicKey
 
 /**
  * This flow shares all of the [AccountInfo]s for a [StateAndRef], as well as the [StateAndRef] itself with a specified
@@ -28,8 +29,11 @@ class ShareStateAndSyncAccountsFlow(
                 ?: throw IllegalStateException("Transaction: ${state.ref.txhash} was not found on this node")
         val accountsInvolvedWithState = state.state.data.participants.map { participant ->
             val accountInfo = accountService.accountInfo(participant.owningKey)
-            val partyAndCertificate = serviceHub.identityService.certificateFromKey(participant.owningKey)
-            if (accountInfo != null && partyAndCertificate != null) accountInfo to partyAndCertificate else null
+            val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(participant.owningKey))
+            if (accountInfo != null && party != null) {
+                // Map the participant key to the well known party resolved by this node
+                accountInfo to mapOf(participant.owningKey to party)
+            } else null
         }.filterNotNull()
         if (accountsInvolvedWithState.isNotEmpty()) {
             sessionToShareWith.send(accountsInvolvedWithState.size)
@@ -51,10 +55,12 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
         val numberOfAccounts = otherSideSession.receive<Int>().unwrap { it }
         for (it in 0 until numberOfAccounts) {
             val accountInfo = subFlow(ShareAccountInfoHandlerFlow(otherSideSession))
-            val certPath = otherSideSession.receive<PartyAndCertificate>().unwrap { it }
-            serviceHub.identityService.verifyAndRegisterIdentity(certPath)
+            val keyToParty = otherSideSession.receive<Map<PublicKey, Party>>().unwrap { it }
+            val key = keyToParty.keys.first()
+            val party = keyToParty.values.first()
+            serviceHub.identityService.registerKeyToParty(key, party)
             serviceHub.withEntityManager {
-                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, certPath.owningKey))
+                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, key))
             }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
@@ -62,7 +68,6 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
 }
 
 // Initiating versions of the above flows.
-
 /**
  * Initiating and startable by service and RPC version of [ShareStateAndSyncAccountsFlow].
  *

@@ -19,7 +19,7 @@ apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
-jar.baseName = "accounts-flows"
+jar.baseName = "accounts-workflows"
 
 cordapp {
     targetPlatformVersion 4
@@ -50,10 +50,14 @@ dependencies {
     //contracts and states dependency.
     cordapp project(":contracts")
 
+    // Confidential Identities flows
+    cordaCompile "$confidential_id_release_group:workflows:$confidential_id_release_version"
+
     // Testing.
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
+    testCompile("$confidential_id_release_group:workflows:$confidential_id_release_version")
 }
 
 sourceSets {

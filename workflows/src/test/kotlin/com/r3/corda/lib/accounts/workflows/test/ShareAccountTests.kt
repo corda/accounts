@@ -4,13 +4,16 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.CreateKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.ci.registerKeyToParty
 import net.corda.core.contracts.*
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.AbstractParty
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
@@ -34,7 +37,10 @@ class ShareAccountTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                cordappPackages = listOf("com.r3.corda.lib.accounts.contracts", "com.r3.corda.lib.accounts.workflows"),
+                cordappPackages = listOf(
+                    "com.r3.corda.lib.accounts.contracts",
+                    "com.r3.corda.lib.accounts.workflows",
+                    "com.r3.corda.lib.ci"),
                 defaultParameters = MockNetworkParameters(networkParameters = testNetworkParameters(minimumPlatformVersion = 4))
         )
         a = network.createPartyNode()
@@ -91,7 +97,6 @@ class ShareAccountTests {
             it.getOrThrow()
         }
 
-
         val accountServiceOnA = a.accountService()
 
         accountServiceOnA.shareStateAndSyncAccounts(ownedByAccountState, b.identity()).let {
@@ -100,7 +105,6 @@ class ShareAccountTests {
         }
 
         val accountServiceOnB = b.accountService()
-
         b.transaction {
             Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
             Assert.assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
@@ -130,9 +134,15 @@ class IssueFlow(private val owningAccount: UUID) : FlowLogic<StateAndRef<TestSta
     @Suspendable
     override fun call(): StateAndRef<TestState> {
         val accountInfo = accountService.accountInfo(owningAccount) ?: throw IllegalStateException()
-        val keyToUse = subFlow(RequestKeyForAccount(accountInfo.state.data))
+        val anonParty = if (accountInfo.state.data.host == ourIdentity) {
+            subFlow(CreateKeyForAccount(accountInfo.state.data))
+        } else {
+            subFlow(RequestKeyForAccount(accountInfo.state.data))
+        }
+        val testState = TestState(anonParty, ourIdentity)
+        testState.participants.forEach { println(it.owningKey) }
         val transactionBuilder = TransactionBuilder(serviceHub.networkMapCache.notaryIdentities.first())
-                .addOutputState(TestState(keyToUse, ourIdentity))
+                .addOutputState(testState)
                 .addCommand(ISSUE, ourIdentity.owningKey)
         val signedTx = serviceHub.signInitialTransaction(transactionBuilder, ourIdentity.owningKey)
         val finalTx = subFlow(FinalityFlow(signedTx, emptyList()))
