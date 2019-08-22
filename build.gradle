@@ -1,7 +1,7 @@
 buildscript {
     ext {
         corda_release_group = 'net.corda'
-        corda_release_version = '5.0-SNAPSHOT-WILLH'
+        corda_release_version = '5.0-SNAPSHOT-CI'
         tokens_release_group = 'com.r3.corda.lib.tokens'
         tokens_release_version = '1.0-RC04'
         accounts_release_group = 'com.r3.corda.lib.accounts'
@@ -14,7 +14,7 @@ buildscript {
         quasar_version = '0.7.10'
         log4j_version = '2.9.1'
         confidential_id_release_group = "com.r3.corda.lib.ci"
-        confidential_id_release_version = "1.0-SNAPSHOT"
+        confidential_id_release_version = "1.1-SNAPSHOT"
     }
 
     repositories {

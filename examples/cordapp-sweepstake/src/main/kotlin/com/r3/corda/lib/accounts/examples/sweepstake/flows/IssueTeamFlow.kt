@@ -4,11 +4,9 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.TournamentContract
 import com.r3.corda.lib.accounts.examples.sweepstake.states.TeamState
-import com.r3.corda.lib.accounts.workflows.flows.CreateKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.ci.registerKeyToParty
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import net.corda.core.contracts.StateAndRef
-import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.FlowSession
@@ -23,7 +21,7 @@ class IssueTeamFlow(
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
         val keyToUse = if (accountInfo.state.data.host == ourIdentity) {
-            subFlow(CreateKeyForAccount(accountInfo.state.data)).owningKey
+            createKeyForAccount(accountInfo.state.data, serviceHub).owningKey
         } else {
             subFlow(RequestKeyForAccount(accountInfo.state.data)).owningKey
         }

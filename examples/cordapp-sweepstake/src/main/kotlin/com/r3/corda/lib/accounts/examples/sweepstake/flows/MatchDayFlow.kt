@@ -4,12 +4,11 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.TournamentContract
 import com.r3.corda.lib.accounts.examples.sweepstake.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
-import com.r3.corda.lib.ci.registerKeyToParty
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.*
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
@@ -40,12 +39,10 @@ class MatchDayFlow(
         val winningAccount = accountService.accountInfo(winningTeam.state.data.owningKey!!)
             ?: throw FlowException("Could not find account with public key: ${winningTeam.state.data.owningKey!!.toStringShort()}")
 
-        val newOwner = if (winningAccount!!.state.data.host == ourIdentity) {
-            val newKey = serviceHub.keyManagementService.freshKey(winningAccount.state.data.identifier.id)
-            registerKeyToParty(newKey, ourIdentity, serviceHub)
-            AnonymousParty(newKey)
+        val newOwner = if (winningAccount.state.data.host == ourIdentity) {
+            createKeyForAccount(winningAccount.state.data, serviceHub)
         } else {
-            subFlow(RequestKeyForAccount(winningAccount!!.state.data))
+            subFlow(RequestKeyForAccount(winningAccount.state.data))
         }
 
         val signingAccounts = listOfNotNull(accountForTeamA, accountForTeamB)

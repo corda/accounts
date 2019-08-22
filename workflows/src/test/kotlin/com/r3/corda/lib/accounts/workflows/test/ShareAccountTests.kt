@@ -4,16 +4,14 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
-import com.r3.corda.lib.accounts.workflows.flows.CreateKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
-import com.r3.corda.lib.ci.registerKeyToParty
 import net.corda.core.contracts.*
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.AbstractParty
-import net.corda.core.identity.AnonymousParty
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.core.utilities.getOrThrow
@@ -135,7 +133,7 @@ class IssueFlow(private val owningAccount: UUID) : FlowLogic<StateAndRef<TestSta
     override fun call(): StateAndRef<TestState> {
         val accountInfo = accountService.accountInfo(owningAccount) ?: throw IllegalStateException()
         val anonParty = if (accountInfo.state.data.host == ourIdentity) {
-            subFlow(CreateKeyForAccount(accountInfo.state.data))
+            createKeyForAccount(accountInfo.state.data, serviceHub)
         } else {
             subFlow(RequestKeyForAccount(accountInfo.state.data))
         }

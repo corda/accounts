@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
@@ -40,11 +41,10 @@ class MoveLoanBookToNewAccount(
         } else if ((currentHoldingAccount == null && loanBook.state.data.owningAccount != null) && (loanBook.state.data.owningAccount?.equals(ourIdentity.owningKey) == false))
             throw IllegalStateException("Attempting to move a loan book from an account we do not know about")
         else {
-            if (accountInfoToMoveTo.state.data.host == ourIdentity) {
-                keyToMoveTo = serviceHub.keyManagementService.freshKey(accountInfoToMoveTo.state.data.identifier.id)
-                serviceHub.identityService.registerKeyToParty(keyToMoveTo, ourIdentity)
+            keyToMoveTo = if (accountInfoToMoveTo.state.data.host == ourIdentity) {
+                createKeyForAccount(accountInfoToMoveTo.state.data, serviceHub).owningKey
             } else {
-                keyToMoveTo = subFlow(RequestKeyForAccount(accountInfoToMoveTo.state.data)).owningKey
+                subFlow(RequestKeyForAccount(accountInfoToMoveTo.state.data)).owningKey
             }
             val transactionBuilder = TransactionBuilder(loanBook.state.notary)
                     .addInputState(loanBook)
