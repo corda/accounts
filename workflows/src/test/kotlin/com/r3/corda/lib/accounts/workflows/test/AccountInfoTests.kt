@@ -1,6 +1,7 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByName
 import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByUUID
 
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
@@ -83,4 +84,16 @@ class AccountInfoTests {
         Assert.assertNull(accountInfoCfromA)
     }
 
+    @Test
+    fun `Get accounts by Name`() {
+        val accountInfoAfromA = nodeA.startFlow(AccountInfoByName(accountOnNodeA.state.data.name)).runAndGet(network)
+        val accountInfoBfromA = nodeA.startFlow(AccountInfoByName(accountOnNodeB.state.data.name)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromA)
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromA)
+
+        val accountInfoAfromB = nodeB.startFlow(AccountInfoByName(accountOnNodeA.state.data.name)).runAndGet(network)
+        val accountInfoBfromB = nodeB.startFlow(AccountInfoByName(accountOnNodeB.state.data.name)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromB)
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromB)
+    }
 }
