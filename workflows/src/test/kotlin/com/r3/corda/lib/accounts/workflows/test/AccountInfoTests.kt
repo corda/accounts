@@ -1,0 +1,71 @@
+package com.r3.corda.lib.accounts.workflows.test
+
+import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByUUID
+
+import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
+import net.corda.core.contracts.StateAndRef
+import net.corda.testing.common.internal.testNetworkParameters
+import net.corda.testing.node.MockNetwork
+import net.corda.testing.node.MockNetworkParameters
+import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
+import org.junit.After
+import org.junit.Assert
+import org.junit.Before
+import org.junit.Test
+
+class AccountInfoTests {
+
+    private lateinit var network: MockNetwork
+    private lateinit var nodeA: StartedMockNode
+    private lateinit var nodeB: StartedMockNode
+    private lateinit var accountOnNodeA: StateAndRef<AccountInfo>
+    private lateinit var accountOnNodeB: StateAndRef<AccountInfo>
+
+    @Before
+    fun setup() {
+        network = MockNetwork(
+            MockNetworkParameters(
+                networkParameters = testNetworkParameters(minimumPlatformVersion = 4),
+                cordappsForAllNodes = listOf(
+                    TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
+                    TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
+                )
+            )
+        )
+        nodeA = network.createPartyNode()
+        nodeB = network.createPartyNode()
+
+        network.runNetwork()
+
+        accountOnNodeA = nodeA.startFlow(CreateAccount("Account_On_A")).runAndGet(network)
+        accountOnNodeB = nodeB.startFlow(CreateAccount("Account_On_B")).runAndGet(network)
+
+        //Node A will share the created account with Node B
+        nodeA.startFlow(ShareAccountInfo(accountOnNodeA, listOf(nodeB.identity()))).runAndGet(network)
+
+        //Node B will share the created account with Node A
+        nodeB.startFlow(ShareAccountInfo(accountOnNodeB, listOf(nodeA.identity()))).runAndGet(network)
+    }
+
+    @After
+    fun tearDown() {
+        network.stopNodes()
+    }
+
+    @Test
+    fun `Get accounts by UUID`() {
+        val accountInfoAfromA = nodeA.startFlow(AccountInfoByUUID(accountOnNodeA.uuid)).runAndGet(network)
+        val accountInfoBfromA = nodeA.startFlow(AccountInfoByUUID(accountOnNodeB.uuid)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromA)
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromA)
+
+        val accountInfoAfromB = nodeB.startFlow(AccountInfoByUUID(accountOnNodeA.uuid)).runAndGet(network)
+        val accountInfoBfromB = nodeB.startFlow(AccountInfoByUUID(accountOnNodeB.uuid)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromB)
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromB)
+    }
+
+}
