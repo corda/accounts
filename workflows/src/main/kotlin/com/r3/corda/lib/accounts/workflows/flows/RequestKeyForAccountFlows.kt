@@ -9,7 +9,7 @@ import com.r3.corda.lib.ci.RequestKeyFlow
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.keys.PublicKeyHashToExternalId
+import net.corda.node.services.persistence.PublicKeyHashToExternalId
 import java.security.PublicKey
 import java.util.*
 
@@ -33,7 +33,7 @@ class RequestKeyForAccountFlow(
                         "(${accountInfo.name}) responded with a not found status - contact them for assistance")
             }
             AccountSearchStatus.FOUND -> {
-                newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).publicKey
+                newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
                 // Store a local mapping of the account ID to the public key we've just received from the host.
                 // This allows us to look up the account which the PublicKey is linked to in the future.
                 serviceHub.withEntityManager { persist(PublicKeyHashToExternalId(accountId = accountInfo.linearId.id, publicKey = newKey)) }

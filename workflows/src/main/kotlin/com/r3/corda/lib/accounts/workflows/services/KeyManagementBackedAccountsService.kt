@@ -16,12 +16,17 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
+import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
+import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.SingletonSerializeAsToken
+import net.corda.node.services.identity.PersistentIdentityService
+import net.corda.node.services.persistence.PublicKeyHashToExternalId
+import net.corda.nodeapi.internal.crypto.X509CertificateFactory
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -77,33 +82,21 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         // TODO once the join column is introduced - use the following
 //        return services.withEntityManager {
 //            val query = createQuery(
-//                    "select a.${PersistentIdentityService.PersistentIdentity::identity.name} from \n" +
-//                            "${PersistentIdentityService.PersistentIdentity::class.java.name} a, ${PublicKeyHashToExternalId::class.java.name} b \n" +
+//                    "select a.${PersistentIdentityService.PersistentPublicKeyHashToCertificate::identity.name} from \n" +
+//                            "${PersistentIdentityService.PersistentPublicKeyHashToCertificate::class.java.name} a, ${PublicKeyHashToExternalId::class.java.name} b \n" +
 //                            "where \n" +
 //                            "   b.${PublicKeyHashToExternalId::externalId.name} = :uuid \n" +
 //                            " and \n" +
-//                            "   b.${PublicKeyHashToExternalId::publicKeyHash.name} = a.${PersistentIdentityService.PersistentIdentity::publicKeyHash.name}", ByteArray::class.java)
+//                            "   b.${PublicKeyHashToExternalId::publicKeyHash.name} = a.${PersistentIdentityService.PersistentPublicKeyHashToCertificate::publicKeyHash.name}", ByteArray::class.java)
 //
-//            query.setParameter("uuid", accountId)
+//            query.setParameter("uuid", id)
 //            query.resultList.map { PartyAndCertificate(X509CertificateFactory().delegate.generateCertPath(it.inputStream())) }.map { it.owningKey }
 //        }
     }
 
     @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
-        val uuid = services.withEntityManager {
-            val query = createQuery(
-                    """
-                        select $publicKeyHashToExternalId_externalId
-                        from $publicKeyHashToExternalId
-                        where $publicKeyHashToExternalId_publicKeyHash = :hash
-                    """,
-                    UUID::class.java
-            )
-            query.setParameter("hash", owningKey.toStringShort())
-            query.resultList
-        }
-        return uuid.singleOrNull()?.let { accountInfo(it) }
+        return lookupAccountId(owningKey, services)?.let { accountInfo(it) }
     }
 
     @Suspendable
@@ -128,6 +121,23 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
                 it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
             }.asCordaFuture()
         }
+    }
+
+    @Suspendable
+    fun lookupAccountId(owningKey: PublicKey, services: ServiceHub): UUID? {
+        val uuid = services.withEntityManager {
+            val query = createQuery(
+                    """
+                        select $publicKeyHashToExternalId_externalId
+                        from $publicKeyHashToExternalId
+                        where $publicKeyHashToExternalId_publicKeyHash = :hash
+                    """,
+                    UUID::class.java
+            )
+            query.setParameter("hash", owningKey.toStringShort())
+            query.resultList
+        }
+        return uuid.singleOrNull()
     }
 
     @Suspendable

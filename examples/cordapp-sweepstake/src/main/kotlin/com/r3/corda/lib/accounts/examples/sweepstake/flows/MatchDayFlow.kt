@@ -63,8 +63,8 @@ class MatchDayFlow(
                 .addInputState(teamB)
                 .addOutputState(winningTeam.state.data.copy(owningKey = newOwner.owningKey, isStillPlaying = true))
                 .addCommand(TournamentContract.MATCH_WON, requiredSigners)
-                .addReferenceState(accountForTeamA!!.referenced())
-                .addReferenceState(accountForTeamB!!.referenced())
+                .addReferenceState(accountForTeamA.referenced())
+                .addReferenceState(accountForTeamB.referenced())
 
         val locallySignedTx = serviceHub.signInitialTransaction(
                 transactionBuilder,

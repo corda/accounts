@@ -1,5 +1,6 @@
 package com.r3.corda.lib.accounts.workflows.test
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
@@ -7,6 +8,8 @@ import com.r3.corda.lib.accounts.workflows.internal.*
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.Crypto
+import net.corda.core.crypto.toStringShort
+import net.corda.core.node.ServiceHub
 import net.corda.core.utilities.getOrThrow
 import net.corda.nodeapi.internal.persistence.currentDBSession
 import net.corda.testing.common.internal.testNetworkParameters
@@ -14,6 +17,7 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
+import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.junit.After
@@ -21,6 +25,7 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.security.PublicKey
+import java.util.*
 
 class AccountKeysTests {
 
@@ -137,7 +142,28 @@ class AccountKeysTests {
             Assert.assertThat(accountService.accountInfo(keyToUse1.owningKey), `is`(account1))
             Assert.assertThat(accountService.accountInfo(keyToUse2.owningKey), `is`(account2))
         }
-
     }
 
+    @Test
+    fun `verify keys can be looked up on both nodes involved in the key generation`() {
+        val account1 = a.startFlow(CreateAccount("Stefano_Account1")).let {
+            network.runNetwork()
+            it.getOrThrow()
+        }
+
+        val newKey = b.startFlow(RequestKeyForAccount(account1.state.data)).let {
+            network.runNetwork()
+            it.getOrThrow()
+        }.owningKey
+
+        val accountId = account1.uuid
+
+        a.transaction {
+            assertThat(a.services.cordaService(KeyManagementBackedAccountService::class.java).lookupAccountId(newKey, a.services)).isEqualTo(accountId)
+        }
+
+        b.transaction {
+            assertThat(b.services.cordaService(KeyManagementBackedAccountService::class.java).lookupAccountId(newKey, b.services)).isEqualTo(accountId)
+        }
+    }
 }

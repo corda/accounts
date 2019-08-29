@@ -117,7 +117,8 @@ class MatchDayFlowTests {
     @Test
     fun `run multiple match day flows`() {
         val accountOwningService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val tournamentService = aliceNode.services.cordaService(TournamentService::class.java)
+        val tournamentServiceA = aliceNode.services.cordaService(TournamentService::class.java)
+        val tournamentServiceC = charlieNode.services.cordaService(TournamentService::class.java)
         createAccountsForNode(accountOwningService)
         val accounts = accountOwningService.allAccounts()
 
@@ -129,13 +130,15 @@ class MatchDayFlowTests {
         }
 
         accounts.zip(teams).forEach {
-            charlieNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
+           val teamState = charlieNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
                 mockNet.runNetwork()
                 it.getOrThrow()
             }
         }
 
-        val teams = tournamentService.getTeamStates()
+        val teams = charlieNode.transaction {
+            tournamentServiceC.getTeamStates()
+        }
 
         for (i in 1..teams.size step 2) {
             val teamA = teams[i - 1]
@@ -147,7 +150,10 @@ class MatchDayFlowTests {
             }
         }
 
-        val winningTeams = tournamentService.getWinningTeamStates()
+        val winningTeams = charlieNode.transaction {
+            tournamentServiceC.getWinningTeamStates()
+        }
+
         Assert.assertThat(winningTeams.size, `is`(4))
 
         for (i in 1..winningTeams.size step 2) {
@@ -160,7 +166,7 @@ class MatchDayFlowTests {
             }
         }
 
-        val result = tournamentService.getWinningTeamStates()
+        val result = tournamentServiceA.getWinningTeamStates()
         Assert.assertThat(result.size, `is`(2))
     }
 }

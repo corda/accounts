@@ -9,7 +9,7 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.keys.PublicKeyHashToExternalId
+import net.corda.node.services.persistence.PublicKeyHashToExternalId
 import java.security.PublicKey
 
 /**

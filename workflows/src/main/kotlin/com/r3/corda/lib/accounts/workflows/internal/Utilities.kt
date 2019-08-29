@@ -1,7 +1,7 @@
 package com.r3.corda.lib.accounts.workflows.internal
 
 import net.corda.node.services.keys.BasicHSMKeyManagementService
-import net.corda.node.services.keys.PublicKeyHashToExternalId
+import net.corda.node.services.persistence.PublicKeyHashToExternalId
 
 // For writing less messy HQL.
 
