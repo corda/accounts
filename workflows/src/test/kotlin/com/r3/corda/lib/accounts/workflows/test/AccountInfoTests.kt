@@ -21,8 +21,10 @@ class AccountInfoTests {
     private lateinit var network: MockNetwork
     private lateinit var nodeA: StartedMockNode
     private lateinit var nodeB: StartedMockNode
+    private lateinit var nodeC: StartedMockNode
     private lateinit var accountOnNodeA: StateAndRef<AccountInfo>
     private lateinit var accountOnNodeB: StateAndRef<AccountInfo>
+    private lateinit var accountOnNodeC: StateAndRef<AccountInfo>
 
     @Before
     fun setup() {
@@ -37,11 +39,13 @@ class AccountInfoTests {
         )
         nodeA = network.createPartyNode()
         nodeB = network.createPartyNode()
+        nodeC = network.createPartyNode()
 
         network.runNetwork()
 
         accountOnNodeA = nodeA.startFlow(CreateAccount("Account_On_A")).runAndGet(network)
         accountOnNodeB = nodeB.startFlow(CreateAccount("Account_On_B")).runAndGet(network)
+        accountOnNodeC = nodeC.startFlow(CreateAccount("Account_On_C")).runAndGet(network)
 
         //Node A will share the created account with Node B
         nodeA.startFlow(ShareAccountInfo(accountOnNodeA, listOf(nodeB.identity()))).runAndGet(network)
@@ -66,6 +70,17 @@ class AccountInfoTests {
         val accountInfoBfromB = nodeB.startFlow(AccountInfoByUUID(accountOnNodeB.uuid)).runAndGet(network)
         Assert.assertEquals(accountOnNodeA, accountInfoAfromB)
         Assert.assertEquals(accountOnNodeB, accountInfoBfromB)
+    }
+
+    @Test
+    fun `Accounts not shared are not found`() {
+        //Validate that the account on C exists first
+        val accountInfoCfromC = nodeC.startFlow(AccountInfoByUUID(accountOnNodeC.uuid)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeC, accountInfoCfromC)
+
+        //Verify that we get null when looking for AccountC on a node we haven't shared it with
+        val accountInfoCfromA = nodeA.startFlow(AccountInfoByUUID(accountOnNodeC.uuid)).runAndGet(network)
+        Assert.assertNull(accountInfoCfromA)
     }
 
 }
