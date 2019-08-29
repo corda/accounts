@@ -1,10 +1,12 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByKey
 import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByName
 import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByUUID
 
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import net.corda.core.contracts.StateAndRef
 import net.corda.testing.common.internal.testNetworkParameters
@@ -96,4 +98,18 @@ class AccountInfoTests {
         Assert.assertEquals(accountOnNodeA, accountInfoAfromB)
         Assert.assertEquals(accountOnNodeB, accountInfoBfromB)
     }
+
+    @Test
+    fun `Get accounts by PublicKey`() {
+        val keyA = nodeA.startFlow(RequestKeyForAccount(accountOnNodeA.state.data)).runAndGet(network).owningKey
+
+        val accountInfoOnA = nodeA.startFlow(AccountInfoByKey(keyA)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeA, accountInfoOnA)
+
+        //Note that we deliberately get the key from node A then do the lookup on Node B
+        val keyB = nodeA.startFlow(RequestKeyForAccount(accountOnNodeB.state.data)).runAndGet(network).owningKey
+        val accountInfoOnB = nodeB.startFlow(AccountInfoByKey(keyB)).runAndGet(network)
+        Assert.assertEquals(accountOnNodeB, accountInfoOnB)
+    }
+
 }
