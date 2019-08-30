@@ -17,21 +17,20 @@ import java.util.*
 /**
  * This flow should be used when you want to generate a new [PublicKey] for an account that is not owned by the node running
  * the flow. [RequestKeyFlow] is called which which requests a new key-pair from the counter-party.
+ *
+ * @property accountInfo the account to request a new key for
+ * @property hostSession the session for the node which hosts the supplied [AccountInfo]
  */
 class RequestKeyForAccountFlow(
         private val accountInfo: AccountInfo,
         private val hostSession: FlowSession
 ) : FlowLogic<AnonymousParty>() {
-
-    private lateinit var newKey: PublicKey
-
     @Suspendable
     override fun call(): AnonymousParty {
         // Make sure we are contacting the correct host.
         require(hostSession.counterparty == accountInfo.host) {
             "The session counterparty must be the same as the account info host."
         }
-
         // The account is hosted on the initiating node. So we can generate a key and register it with the identity
         // service locally.
         return if (hostSession.counterparty == ourIdentity) {
@@ -45,25 +44,25 @@ class RequestKeyForAccountFlow(
                             "(${accountInfo.name}) responded with a not found status - contact them for assistance")
                 }
                 AccountSearchStatus.FOUND -> {
-                    newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
+                    val newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
                     // Store a local mapping of the account ID to the public key we've just received from the host.
                     // This allows us to look up the account which the PublicKey is linked to in the future.
                     // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
                     // assumption being that keys are not moved with the account. If keys DO move with accounts then
                     // a new API must be added to the identity service to REPLACE KEY -> PARTY mappings.
                     serviceHub.withEntityManager {
-                        persist(PublicKeyHashToExternalId(
-                                accountId = accountInfo.linearId.id,
-                                publicKey = newKey
-                        ))
+                        persist(PublicKeyHashToExternalId(accountId = accountInfo.linearId.id, publicKey = newKey))
                     }
+                    AnonymousParty(newKey)
                 }
             }
-            AnonymousParty(newKey)
         }
     }
 }
 
+/**
+ * Responder flow for [RequestKeyForAccountFlow].
+ */
 class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {

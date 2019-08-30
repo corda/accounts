@@ -134,7 +134,7 @@ class MatchDayFlowTests {
         }
 
         accounts.zip(teams).forEach {
-           val teamState = charlieNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
+            charlieNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
                 mockNet.runNetwork()
                 it.getOrThrow()
             }

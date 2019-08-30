@@ -13,8 +13,8 @@ import net.corda.node.services.persistence.PublicKeyHashToExternalId
 import java.security.PublicKey
 
 /**
- * This flow shares all of the [AccountInfo]s for a [StateAndRef], as well as the [StateAndRef] itself with a specified
- * party.
+ * This flow shares all of the [AccountInfo]s associated with the participant keys for a [StateAndRef], as well as the
+ * [StateAndRef] itself with a specified party.
  *
  * @property state the state to share
  * @property sessionToShareWith existing session with a receiving [Party]
@@ -68,6 +68,7 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
 }
 
 // Initiating versions of the above flows.
+
 /**
  * Initiating and startable by service and RPC version of [ShareStateAndSyncAccountsFlow].
  *
