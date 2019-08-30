@@ -2,6 +2,7 @@ package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.flows.RequestAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
@@ -16,6 +17,8 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.util.*
+import kotlin.test.assertEquals
 
 class GetAccountsFlowTests {
 
@@ -97,6 +100,26 @@ class GetAccountsFlowTests {
             val foundAccount = accountService.accountInfo(result.uuid)
             Assert.assertThat(foundAccount, `is`(storedAccount))
         }
+    }
+
+    @Test
+    fun `should be able to request account from other node, if it has it`() {
+        val futureOne = a.startFlow(CreateAccount("Stefano_Account"))
+        network.runNetwork()
+        val result = futureOne.getOrThrow()
+
+        // Successfully get back the requested account info.
+        val accountId = result.state.data.identifier.id
+        val futureTwo = b.startFlow(RequestAccountInfo(accountId, a.identity()))
+        network.runNetwork()
+        val resultTwo = futureTwo.getOrThrow()
+        assertEquals(result.state.data, resultTwo)
+
+        // B doesn't know this UUID, so return null.
+        val futureThree = b.startFlow(RequestAccountInfo(UUID.randomUUID(), a.identity()))
+        network.runNetwork()
+        val resultThree = futureThree.getOrThrow()
+        assertEquals(null, resultThree)
     }
 }
 
