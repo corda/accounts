@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.ci.ProvideKeyFlow
 import com.r3.corda.lib.ci.RequestKeyFlow
 import net.corda.core.flows.*
@@ -26,26 +27,50 @@ class RequestKeyForAccountFlow(
 
     @Suspendable
     override fun call(): AnonymousParty {
-        val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
-        when (accountSearchStatus) {
-            AccountSearchStatus.NOT_FOUND -> {
-                throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.identifier} " +
-                        "(${accountInfo.name}) responded with a not found status - contact them for assistance")
-            }
-            AccountSearchStatus.FOUND -> {
-                newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
-                // Store a local mapping of the account ID to the public key we've just received from the host.
-                // This allows us to look up the account which the PublicKey is linked to in the future.
-                serviceHub.withEntityManager { persist(PublicKeyHashToExternalId(accountId = accountInfo.linearId.id, publicKey = newKey)) }
-            }
+        // Make sure we are contacting the correct host.
+        require(hostSession.counterparty == accountInfo.host) {
+            "The session counterparty must be the same as the account info host."
         }
-        return AnonymousParty(newKey)
+
+        // The account is hosted on the initiating node. So we can generate a key and register it with the identity
+        // service locally.
+        return if (hostSession.counterparty == ourIdentity) {
+            createKeyForAccount(accountInfo, serviceHub)
+        } else {
+            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
+            when (accountSearchStatus) {
+                // Maybe the account WAS hosted at this node but has since moved.
+                AccountSearchStatus.NOT_FOUND -> {
+                    throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.identifier} " +
+                            "(${accountInfo.name}) responded with a not found status - contact them for assistance")
+                }
+                AccountSearchStatus.FOUND -> {
+                    newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
+                    // Store a local mapping of the account ID to the public key we've just received from the host.
+                    // This allows us to look up the account which the PublicKey is linked to in the future.
+                    // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
+                    // assumption being that keys are not moved with the account. If keys DO move with accounts then
+                    // a new API must be added to the identity service to REPLACE KEY -> PARTY mappings.
+                    serviceHub.withEntityManager {
+                        persist(PublicKeyHashToExternalId(
+                                accountId = accountInfo.linearId.id,
+                                publicKey = newKey
+                        ))
+                    }
+                }
+            }
+            AnonymousParty(newKey)
+        }
     }
 }
 
 class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
+        // No need to do anything if the initiating node is us. We can generate a key locally.
+        if (otherSide.counterparty == ourIdentity) {
+            return
+        }
         val requestedAccountForKey = otherSide.receive(UUID::class.java).unwrap { it }
         val existingAccountInfo = accountService.accountInfo(requestedAccountForKey)
         if (existingAccountInfo == null) {

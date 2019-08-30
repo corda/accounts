@@ -16,7 +16,6 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
@@ -24,9 +23,6 @@ import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.SingletonSerializeAsToken
-import net.corda.node.services.identity.PersistentIdentityService
-import net.corda.node.services.persistence.PublicKeyHashToExternalId
-import net.corda.nodeapi.internal.crypto.X509CertificateFactory
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -125,6 +121,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     fun lookupAccountId(owningKey: PublicKey, services: ServiceHub): UUID? {
+        // TODO: Replace this code with new "externalIdForKey" API on IdentityService.
         val uuid = services.withEntityManager {
             val query = createQuery(
                     """

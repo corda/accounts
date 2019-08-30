@@ -9,14 +9,12 @@ import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.*
-import com.r3.corda.lib.tokens.money.FiatCurrency
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.FungibleState
-import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.SecureHash
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.CordaX500Name
@@ -121,7 +119,7 @@ class IntegrationTest {
             val tokens = 100 of GBP issuedBy I.legalIdentity() heldBy rogerAnonymousParty
             val issuanceResult = I.rpc.startFlow(
                     ::IssueTokens,
-                    tokens,
+                    listOf(tokens),
                     emptyList()
             ).returnValue.getOrThrow()
 
@@ -153,10 +151,10 @@ class IntegrationTest {
             log.info(moveTokensTransaction.tx.toString())
 
             val rogerQuery = A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(rogerAccount.state.data.identifier.id)), FungibleToken::class.java)
-            assertEquals(50.GBP, (rogerQuery.states as List<StateAndRef<FungibleToken<FiatCurrency>>>).sumTokenStateAndRefs().withoutIssuer())
+            assertEquals(50.GBP, (rogerQuery.states).sumTokenStateAndRefs().withoutIssuer())
 
             val kasiaQuery = A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(kasiaAccount.state.data.identifier.id)), FungibleToken::class.java)
-            assertEquals(50.GBP, (kasiaQuery.states as List<StateAndRef<FungibleToken<FiatCurrency>>>).sumTokenStateAndRefs().withoutIssuer())
+            assertEquals(50.GBP, (kasiaQuery.states).sumTokenStateAndRefs().withoutIssuer())
         }
     }
 }

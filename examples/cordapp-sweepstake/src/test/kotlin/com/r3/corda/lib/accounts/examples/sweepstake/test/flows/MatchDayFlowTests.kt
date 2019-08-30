@@ -116,9 +116,13 @@ class MatchDayFlowTests {
 
     @Test
     fun `run multiple match day flows`() {
+        // Note from Roger on 30/09/2019.
+        // Not sure what Charlie node does here. None of the states are relevant for it as the keys are generated on the
+        // Alice node, therefore the test would always fail. Not sure how the change from Corda 4.1 to 4.3 effected this
+        // but the current behaviour is expected, in that the Team states are relevant to ALICE but not CHARLIE, therefore
+        // CHARLIE can't actually do anything... As such, I've changed the test so that all the flows are run from ALICE.
         val accountOwningService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
         val tournamentServiceA = aliceNode.services.cordaService(TournamentService::class.java)
-        val tournamentServiceC = charlieNode.services.cordaService(TournamentService::class.java)
         createAccountsForNode(accountOwningService)
         val accounts = accountOwningService.allAccounts()
 
@@ -136,22 +140,22 @@ class MatchDayFlowTests {
             }
         }
 
-        val teams = charlieNode.transaction {
-            tournamentServiceC.getTeamStates()
+        val teams = aliceNode.transaction {
+            tournamentServiceA.getTeamStates()
         }
 
         for (i in 1..teams.size step 2) {
             val teamA = teams[i - 1]
             val teamB = teams[i]
 
-            charlieNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
+            aliceNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
                 mockNet.runNetwork()
                 getOrThrow()
             }
         }
 
-        val winningTeams = charlieNode.transaction {
-            tournamentServiceC.getWinningTeamStates()
+        val winningTeams = aliceNode.transaction {
+            tournamentServiceA.getWinningTeamStates()
         }
 
         Assert.assertThat(winningTeams.size, `is`(4))
@@ -160,7 +164,7 @@ class MatchDayFlowTests {
             val teamA = winningTeams[i - 1]
             val teamB = winningTeams[i]
 
-            charlieNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
+            aliceNode.startFlow(MatchDayFlow(generateQuickWinner(teamA, teamB), teamA, teamB)).run {
                 mockNet.runNetwork()
                 getOrThrow()
             }
