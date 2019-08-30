@@ -31,7 +31,10 @@ class CreateAccount(
 
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
-        require(accountService.accountInfo(name) == null) {
+        // There might be another account on this node with the same name... That's OK as long as the host is another
+        // node. This can happen because another node shared that account with us. However, there cannot be two accounts
+        // with the same name with the same host node.
+        require(accountService.accountInfo(name).none { it.state.data.host == ourIdentity }) {
             "There is already an account registered with the specified name $name."
         }
         require(accountService.accountInfo(identifier) == null) {

@@ -23,12 +23,17 @@ import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.SingletonSerializeAsToken
+import net.corda.core.utilities.contextLogger
 import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.CompletableFuture
 
 @CordaService
 class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountService, SingletonSerializeAsToken() {
+
+    companion object {
+        val logger = contextLogger()
+    }
 
     @Suspendable
     override fun accountsForHost(host: Party): List<StateAndRef<AccountInfo>> {
@@ -52,9 +57,20 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     @Suspendable
-    override fun accountInfo(name: String): StateAndRef<AccountInfo>? {
+    override fun accountInfo(name: String): List<StateAndRef<AccountInfo>> {
         val nameCriteria = accountNameCriteria(name)
-        return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(nameCriteria)).states.singleOrNull()
+        val results = services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(nameCriteria)).states
+        return when (results.size) {
+            0 -> emptyList()
+            1 -> listOf(results.single())
+            else -> {
+                logger.warn("WARNING: Querying for account by name returned more than one account, this is likely " +
+                        "because another node shared an account with this node that has the same name as an " +
+                        "account already created on this node. Filtering the results by host will allow you to access" +
+                        "the AccountInfo you need.")
+                results
+            }
+        }
     }
 
     @Suspendable

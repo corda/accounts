@@ -80,14 +80,16 @@ interface AccountService : SerializeAsToken {
     fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
 
     /**
-     * Returns the [AccountInfo] for an accountInfo specified by [name]. The assumption here is that Account names are
+     * Returns the [AccountInfo]s for an accounts specified by [name]. The assumption here is that Account names are
      * unique at the node level but are not guaranteed to be unique at the network level. The host [Party], stored in
      * the [AccountInfo] can be used to de-duplicate accountInfo names at the network level. Also, the accountInfo ID is
      * unique at the network level.
      *
-     * @param name the accountInfo name to return an [AccountInfo] for.
+     * This method may return more than one [AccountInfo].
+     *
+     * @param name the account name to return [AccountInfo]s for.
      */
-    fun accountInfo(name: String): StateAndRef<AccountInfo>?
+    fun accountInfo(name: String): List<StateAndRef<AccountInfo>>?
 
     /**
      * Shares an [AccountInfo] [StateAndRef] with the specified [Party]. The [AccountInfo]is always stored by the
