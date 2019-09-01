@@ -30,6 +30,7 @@ class ShareStateAndSyncAccountsFlow(
         val accountsInvolvedWithState = state.state.data.participants.map { participant ->
             val accountInfo = accountService.accountInfo(participant.owningKey)
             val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(participant.owningKey))
+            // If we have a record of the account AND the key mapped for that account then we can share it.
             if (accountInfo != null && party != null) {
                 // Map the participant key to the well known party resolved by this node
                 accountInfo to mapOf(participant.owningKey to party)
@@ -48,7 +49,9 @@ class ShareStateAndSyncAccountsFlow(
     }
 }
 
-/** Responder flow for [ShareStateAndSyncAccountsFlow]. */
+/**
+ * Responder flow for [ShareStateAndSyncAccountsFlow].
+ */
 class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
@@ -58,8 +61,10 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
             val keyToParty = otherSideSession.receive<Map<PublicKey, Party>>().unwrap { it }
             val key = keyToParty.keys.first()
             val party = keyToParty.values.first()
+            // TODO: Check that there are not already records for this key.
             serviceHub.identityService.registerKeyToParty(key, party)
             serviceHub.withEntityManager {
+                // TODO: This requires a dependency on corda-node which should be removed.
                 persist(PublicKeyHashToExternalId(accountInfo.linearId.id, key))
             }
         }

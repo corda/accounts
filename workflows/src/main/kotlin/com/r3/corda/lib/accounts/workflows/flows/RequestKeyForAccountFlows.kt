@@ -50,6 +50,7 @@ class RequestKeyForAccountFlow(
                     // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
                     // assumption being that keys are not moved with the account. If keys DO move with accounts then
                     // a new API must be added to the identity service to REPLACE KEY -> PARTY mappings.
+                    // TODO: This requires a dependency on corda-node which should be removed.
                     serviceHub.withEntityManager {
                         persist(PublicKeyHashToExternalId(accountId = accountInfo.linearId.id, publicKey = newKey))
                     }

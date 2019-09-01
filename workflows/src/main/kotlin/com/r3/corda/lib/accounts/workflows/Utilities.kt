@@ -59,6 +59,7 @@ fun accountUUIDCriteria(id: UUID): QueryCriteria {
 
 /** To query [ContractState]s by which account the participant keys are linked to. */
 fun externalIdCriteria(accountIds: List<UUID>): QueryCriteria {
+    // TODO: This requires a dependency on corda-node which should be removed.
     return builder {
         val externalIdSelector = VaultSchemaV1.StateToExternalId::externalId.`in`(accountIds)
         QueryCriteria.VaultCustomQueryCriteria(externalIdSelector)
@@ -79,8 +80,10 @@ fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
  * no rows, then the resultant query returns no rows, when some should be returned. This will be fixed in Corda 5.
  *
  * The workaround, for now, is to perform queries for states observed by an account, separate to queries for states
- * owned by an account. Some temporary utilities have been povifded to help you with this. See: [accountObservedQueryBy]
+ * owned by an account. Some temporary utilities have been provided to help you with this. See: [accountObservedQueryBy]
  * and [accountObservedTrackBy].
+ *
+ * TODO: Check status of CORDA-3038 (https://r3-cev.atlassian.net/browse/CORDA-3038).
  */
 fun accountQueryCriteria(accountIds: List<UUID>): QueryCriteria {
     return allowedToSeeCriteria(accountIds).or(externalIdCriteria(accountIds))

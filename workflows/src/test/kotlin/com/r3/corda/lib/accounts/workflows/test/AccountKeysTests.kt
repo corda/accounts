@@ -26,6 +26,7 @@ import org.junit.Before
 import org.junit.Test
 import java.security.PublicKey
 import java.util.*
+import kotlin.test.assertEquals
 
 class AccountKeysTests {
 
@@ -85,32 +86,17 @@ class AccountKeysTests {
             it.getOrThrow()
         }
 
+        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+
         val foundKeysForAccount1 = a.transaction {
-            findKeysForAccount(account1)
+            accountService.accountKeys(account1.state.data.identifier.id)
         }
 
         val foundKeysForAccount2 = a.transaction {
-            findKeysForAccount(account2)
+            accountService.accountKeys(account2.state.data.identifier.id)
         }
         Assert.assertThat(foundKeysForAccount1, containsInAnyOrder(keyToUse1.owningKey, keyToUse2.owningKey))
         Assert.assertThat(foundKeysForAccount2, containsInAnyOrder(keyToUse3.owningKey))
-    }
-
-    private fun findKeysForAccount(account2: StateAndRef<AccountInfo>): List<PublicKey>? {
-        val em = currentDBSession().entityManagerFactory.createEntityManager()
-        return em?.let {
-            val query = em.createQuery(
-                    """
-                            select a.$persistentKey_publicKey
-                            from $persistentKey a, $publicKeyHashToExternalId b
-                            where b.$publicKeyHashToExternalId_externalId = :uuid
-                                and b.$publicKeyHashToExternalId_publicKeyHash = a.$persistentKey_publicKeyHash
-                        """,
-                    ByteArray::class.java
-            )
-            query.setParameter("uuid", account2.state.data.identifier.id)
-            query.resultList.map { Crypto.decodePublicKey(it) }
-        }
     }
 
     @Test
@@ -159,11 +145,34 @@ class AccountKeysTests {
         val accountId = account1.uuid
 
         a.transaction {
-            assertThat(a.services.cordaService(KeyManagementBackedAccountService::class.java).lookupAccountId(newKey, a.services)).isEqualTo(accountId)
+            assertThat(a.services.keyManagementService.externalIdForPublicKey(newKey)).isEqualTo(accountId)
         }
 
         b.transaction {
-            assertThat(b.services.cordaService(KeyManagementBackedAccountService::class.java).lookupAccountId(newKey, b.services)).isEqualTo(accountId)
+            assertThat(b.services.keyManagementService.externalIdForPublicKey(newKey)).isEqualTo(accountId)
+        }
+    }
+
+    @Test
+    fun `should be able to get all keys for an account`() {
+        val futureA = a.startFlow(CreateAccount("Foo")).toCompletableFuture()
+        network.runNetwork()
+        val aFoo = futureA.getOrThrow()
+        val aId = aFoo.state.data.linearId.id
+        val notAId = UUID.randomUUID()
+
+        val keyOne = a.services.keyManagementService.freshKey(aId)
+        val keyTwo = a.services.keyManagementService.freshKey(aId)
+        val keyThree = a.services.keyManagementService.freshKey(notAId)
+        a.services.keyManagementService.freshKey() // Never returned.
+
+        // TODO: Can remove this transaction block when we use the new API on KMS.
+        a.transaction {
+            val aKeys = a.services.cordaService(KeyManagementBackedAccountService::class.java).accountKeys(aId)
+            assertEquals(setOf(keyOne, keyTwo), aKeys.toSet())
+
+            val notAKeys = a.services.cordaService(KeyManagementBackedAccountService::class.java).accountKeys(notAId)
+            assertEquals(setOf(keyThree), notAKeys.toSet())
         }
     }
 }

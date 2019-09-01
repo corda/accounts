@@ -49,7 +49,8 @@ class ShareStateWithAccountFlow<T : ContractState>(
     @Suspendable
     override fun call() {
         val transaction = serviceHub.validatedTransactions.getTransaction(state.ref.txhash)
-        subFlow(SendTransactionFlow(hostSession, transaction!!))
+                ?: throw FlowException("Can't find transaction with hash ${state.ref.txhash}")
+        subFlow(SendTransactionFlow(hostSession, transaction))
         hostSession.send(state.ref)
         hostSession.send(accountInfo)
         val result = hostSession.receive<ResultOfPermissioning>().unwrap { it }
@@ -59,7 +60,9 @@ class ShareStateWithAccountFlow<T : ContractState>(
     }
 }
 
-/** Responder flow for [ShareStateWithAccountFlow]. */
+/**
+ * Responder flow for [ShareStateWithAccountFlow].
+ */
 class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {

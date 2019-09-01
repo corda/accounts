@@ -7,15 +7,17 @@ import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount
+import com.r3.corda.lib.accounts.workflows.internal.*
+import com.r3.corda.lib.accounts.workflows.internal.persistentKey
 import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId
-import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId_externalId
-import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId_publicKeyHash
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
+import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
@@ -89,26 +91,24 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
-        throw UnsupportedOperationException("It is not possible to lookup existing keys for an account on Corda 4 " +
-                "please upgrade to Corda 5 or perform the query in SQL using ServiceHub.jdbcConnection.")
-        // TODO once the join column is introduced - use the following
-//        return services.withEntityManager {
-//            val query = createQuery(
-//                    "select a.${PersistentIdentityService.PersistentPublicKeyHashToCertificate::identity.name} from \n" +
-//                            "${PersistentIdentityService.PersistentPublicKeyHashToCertificate::class.java.name} a, ${PublicKeyHashToExternalId::class.java.name} b \n" +
-//                            "where \n" +
-//                            "   b.${PublicKeyHashToExternalId::externalId.name} = :uuid \n" +
-//                            " and \n" +
-//                            "   b.${PublicKeyHashToExternalId::publicKeyHash.name} = a.${PersistentIdentityService.PersistentPublicKeyHashToCertificate::publicKeyHash.name}", ByteArray::class.java)
-//
-//            query.setParameter("uuid", id)
-//            query.resultList.map { PartyAndCertificate(X509CertificateFactory().delegate.generateCertPath(it.inputStream())) }.map { it.owningKey }
-//        }
+        return services.withEntityManager {
+            val query = createQuery(
+                    """
+                        select a.publicKey
+                        from $persistentKey a, $publicKeyHashToExternalId b
+                        where b.externalId = :uuid
+                            and b.publicKeyHash = a.publicKeyHash
+                    """,
+                    ByteArray::class.java
+            )
+            query.setParameter("uuid", id)
+            query.resultList.map { Crypto.decodePublicKey(it) }
+        }
     }
 
     @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
-        return lookupAccountId(owningKey, services)?.let { accountInfo(it) }
+        return services.keyManagementService.externalIdForPublicKey(owningKey)?.let { accountInfo(it) }
     }
 
     @Suspendable
@@ -133,24 +133,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
                 it.completeExceptionally(IllegalStateException("Account: $accountId was not found on this node"))
             }.asCordaFuture()
         }
-    }
-
-    @Suspendable
-    fun lookupAccountId(owningKey: PublicKey, services: ServiceHub): UUID? {
-        // TODO: Replace this code with new "externalIdForKey" API on IdentityService.
-        val uuid = services.withEntityManager {
-            val query = createQuery(
-                    """
-                        select $publicKeyHashToExternalId_externalId
-                        from $publicKeyHashToExternalId
-                        where $publicKeyHashToExternalId_publicKeyHash = :hash
-                    """,
-                    UUID::class.java
-            )
-            query.setParameter("hash", owningKey.toStringShort())
-            query.resultList
-        }
-        return uuid.singleOrNull()
     }
 
     @Suspendable
