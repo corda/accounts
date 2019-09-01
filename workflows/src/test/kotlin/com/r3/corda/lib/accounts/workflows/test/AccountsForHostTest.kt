@@ -1,9 +1,9 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.AccountsForHost
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
-import com.r3.corda.lib.accounts.workflows.flows.AccountsForHost
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
@@ -17,6 +17,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class AccountsForHostTest {
 
@@ -181,7 +182,7 @@ class AccountsForHostTest {
 
         //Checking if it is possible to look-up the account info using name and again checking if that account info is of accountA
         nodeA.transaction {
-            Assert.assertThat(accountService.accountInfo("Test_AccountA"), `is`(accountA))
+            assertEquals(accountA, accountService.accountInfo("Test_AccountA").single())
         }
     }
 

@@ -1,13 +1,7 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByKey
-import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByName
-import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByUUID
-
-import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.*
 import net.corda.core.contracts.StateAndRef
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -90,13 +84,13 @@ class AccountInfoTests {
     fun `Get accounts by Name`() {
         val accountInfoAfromA = nodeA.startFlow(AccountInfoByName(accountOnNodeA.state.data.name)).runAndGet(network)
         val accountInfoBfromA = nodeA.startFlow(AccountInfoByName(accountOnNodeB.state.data.name)).runAndGet(network)
-        Assert.assertEquals(accountOnNodeA, accountInfoAfromA)
-        Assert.assertEquals(accountOnNodeB, accountInfoBfromA)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromA.single())
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromA.single())
 
         val accountInfoAfromB = nodeB.startFlow(AccountInfoByName(accountOnNodeA.state.data.name)).runAndGet(network)
         val accountInfoBfromB = nodeB.startFlow(AccountInfoByName(accountOnNodeB.state.data.name)).runAndGet(network)
-        Assert.assertEquals(accountOnNodeA, accountInfoAfromB)
-        Assert.assertEquals(accountOnNodeB, accountInfoBfromB)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromB.single())
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromB.single())
     }
 
     @Test
