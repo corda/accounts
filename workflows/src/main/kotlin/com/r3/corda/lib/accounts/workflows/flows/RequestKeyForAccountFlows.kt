@@ -50,10 +50,11 @@ class RequestKeyForAccountFlow(
                     // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
                     // assumption being that keys are not moved with the account. If keys DO move with accounts then
                     // a new API must be added to the identity service to REPLACE KEY -> PARTY mappings.
-                    // TODO: This requires a dependency on corda-node which should be removed.
-                    serviceHub.withEntityManager {
-                        persist(PublicKeyHashToExternalId(accountId = accountInfo.linearId.id, publicKey = newKey))
-                    }
+                    // TODO: This requires a dependency on corda-node which should be removed, if possible.
+                    // The PublicKeyHashToExternalId table has a primary key constraint over PublicKey, therefore a key
+                    // can only ever be stored once. If you try to store a key twice, then an exception will be thrown
+                    // in respect of the primary key constraint violation.
+                    serviceHub.withEntityManager { persist(PublicKeyHashToExternalId(accountInfo.linearId.id, newKey)) }
                     AnonymousParty(newKey)
                 }
             }

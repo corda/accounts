@@ -61,12 +61,19 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
             val keyToParty = otherSideSession.receive<Map<PublicKey, Party>>().unwrap { it }
             val key = keyToParty.keys.first()
             val party = keyToParty.values.first()
-            // TODO: Check that there are not already records for this key.
+            // If the entry already exists then this method call is idempotent. If the key was already registered to a
+            // different Party then an exception will be thrown. For now, it is not caught here. It will be up to
+            // consumers of the accounts SDK to figure out how to handle it.
             serviceHub.identityService.registerKeyToParty(key, party)
-            serviceHub.withEntityManager {
-                // TODO: This requires a dependency on corda-node which should be removed.
-                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, key))
-            }
+            // TODO: This requires a dependency on corda-node which should be removed, if possible.
+            // Store a local mapping of the account ID to the public key we've just received from the host. This allows
+            // us to look up the account which the PublicKey is linked to in the future. Note that this mapping of
+            // KEY -> PARTY persists even when an account moves to another node, the assumption being that keys are not
+            // moved with the account. If keys DO move with accounts then a new API must be added to the identity
+            // service to REPLACE KEY -> PARTY mappings. The PublicKeyHashToExternalId table has a primary key
+            // constraint over PublicKey, therefore a key can only ever be stored once. If you try to store a key twice,
+            // then an exception will be thrown in respect of the primary key constraint violation.
+            serviceHub.withEntityManager { persist(PublicKeyHashToExternalId(accountInfo.linearId.id, key)) }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
     }
