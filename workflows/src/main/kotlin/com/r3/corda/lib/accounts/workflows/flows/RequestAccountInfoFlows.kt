@@ -34,6 +34,7 @@ class RequestAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<U
         if (response == null) {
             otherSession.send(false)
         } else {
+            otherSession.send(true)
             subFlow(ShareAccountInfoFlow(response, listOf(otherSession)))
         }
     }

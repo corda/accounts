@@ -34,9 +34,7 @@ learning curve for new CorDapp developers.
 
 ## How to use the library?
 
-### Using the accounts template.
-
-By far the easiest way to get started with the tokens SDK is to use the tokens-template 
+By far the easiest way to get started with the accounts SDK is to use the "tokens template"
 which is a branch on the kotlin version of the "CorDapp template". You can obtain 
 it with the following commands:
 
@@ -46,6 +44,14 @@ it with the following commands:
 
 Once you have cloned the repository, you should open it with IntelliJ. This will give 
 you a template repo with tokens and accounts dependencies already included.
+
+### Example Account Projects
+
+There are three projects demonstrating how to use accounts in the examples sub-directory:
+
+* [Sweepstake](examples/cordapp-sweepstake)
+* [Gold Trading](examples/gold-trading)
+* [Tokens](examples/tokens-integration-test) - using tokens with accounts
 
 ### Adding accounts dependencies to an existing CorDapp
 
@@ -92,7 +98,25 @@ These should also be added to the `deployNodes` task with the following syntax:
         cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
     }
 
-### Installing the accounts library
+### Modifying An Existing CorDapp to Use Accounts
+
+States should use `PublicKey` instead of `Party` as a Party refers to a node and the PublicKey can refer to an account.
+
+In order to create your state you need to request the PublicKey with a flow. e.g.
+
+    val lenderKey = subFlow(RequestKeyForAccount(lenderAccountInfo.state.data)).owningKey
+
+Once you have keys you need to have logic to determine who signs.
+
+If your accounts are on the same node that you are running the flow on then they can all be on the `signInitialTransaction`, however, if one is on another node you need to use a `CollectSignatureFlow` 
+
+When calling the `FinalityFlow` you will need different sessions depending on if all the accounts are on one node or on different nodes.
+ 
+If accounts are on different nodes you need to `shareAccountInfoWithParty` before you can transact between accounts otherwise the nodes running the flows wont be aware of the accounts on the other nodes.
+
+Currently, if accounts are on different nodes you also need to run `shareStateAndSyncAccounts` after the flow to make sure that you can use all methods to look up accountInfo.
+
+## Installing the accounts library
 
 If you wish to build the accounts library from source then do the following to
 publish binaries to your local maven repository:
@@ -107,4 +131,4 @@ TODO
 
 ## Other useful links
 
-TODO
+[Contributing](CONTRIBUTING.md)
