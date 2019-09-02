@@ -7,8 +7,8 @@ import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount
-import com.r3.corda.lib.accounts.workflows.internal.*
 import com.r3.corda.lib.accounts.workflows.internal.persistentKey
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToAccountId
 import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToExternalId
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
@@ -17,11 +17,9 @@ import net.corda.core.crypto.Crypto
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.internal.concurrent.asCordaFuture
 import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
-import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
 import net.corda.core.serialization.SingletonSerializeAsToken
@@ -91,13 +89,25 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
 
     @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
+        // TODO: Temporary solution for now. See if we can use the identity service to store PUB KEY -> EXT ID mapping.
         return services.withEntityManager {
             val query = createQuery(
                     """
                         select a.publicKey
                         from $persistentKey a, $publicKeyHashToExternalId b
                         where b.externalId = :uuid
-                            and b.publicKeyHash = a.publicKeyHash
+                        and b.publicKeyHash = a.publicKeyHash
+                    """,
+                    ByteArray::class.java
+            )
+            query.setParameter("uuid", id)
+            query.resultList.map { Crypto.decodePublicKey(it) }
+        } + services.withEntityManager {
+            val query = createQuery(
+                    """
+                        select c.publicKey
+                        from $publicKeyHashToAccountId c
+                        where c.externalId = :uuid
                     """,
                     ByteArray::class.java
             )
@@ -107,8 +117,29 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     @Suspendable
+    override fun accountIdForKey(owningKey: PublicKey): UUID? {
+        // 1. Check the KMS for our keys.
+        // 2. Check the accounts service for other node's keys.
+        // 3. Return null if no results from 1 and 2.
+        return services.keyManagementService.externalIdForPublicKey(owningKey)?.let {
+            it
+        } ?: services.withEntityManager {
+            val query = createQuery(
+                    """
+                        select a.externalId
+                        from $publicKeyHashToAccountId a
+                        where a.publicKeyHash = :publicKeyHash
+                    """,
+                    UUID::class.java
+            )
+            query.setParameter("publicKeyHash", owningKey.toStringShort())
+            query.resultList.firstOrNull()
+        }
+    }
+
+    @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
-        return services.keyManagementService.externalIdForPublicKey(owningKey)?.let { accountInfo(it) }
+        return accountIdForKey(owningKey)?.let { accountInfo(it) }
     }
 
     @Suspendable

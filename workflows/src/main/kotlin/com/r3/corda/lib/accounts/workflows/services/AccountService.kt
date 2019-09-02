@@ -55,11 +55,20 @@ interface AccountService : SerializeAsToken {
 
     /**
      * Returns all the keys associated with a specified account. These keys are [AnonymousParty]s which have been mapped
-     * to a [Party] and [AccountInfo] via [IdentityService.registerKeyToMapping].
+     * to a [Party] and [AccountInfo] via [IdentityService.registerKeyToMapping]. This API will only return keys which
+     * have been generated on the calling node.
      *
      * @param id the [AccountInfo] to return a list of keys for.
      */
     fun accountKeys(id: UUID): List<PublicKey>
+
+    /**
+     * Returns the account ID associated with the specified [PublicKey] or null if the key is not mapped or known by
+     * the node.
+     *
+     * @param owningKey the [PublicKey] to look-up
+     */
+    fun accountIdForKey(owningKey: PublicKey): UUID?
 
     /**
      * Returns the [AccountInfo] for an account specified by [id]. This method will return accounts created on other

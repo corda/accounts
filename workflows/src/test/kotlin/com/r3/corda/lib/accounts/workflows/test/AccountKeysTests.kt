@@ -1,17 +1,10 @@
 package com.r3.corda.lib.accounts.workflows.test
 
-import co.paralleluniverse.fibers.Suspendable
-import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.accounts.workflows.internal.*
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
-import net.corda.core.contracts.StateAndRef
-import net.corda.core.crypto.Crypto
-import net.corda.core.crypto.toStringShort
-import net.corda.core.node.ServiceHub
 import net.corda.core.utilities.getOrThrow
-import net.corda.nodeapi.internal.persistence.currentDBSession
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
@@ -24,7 +17,6 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.security.PublicKey
 import java.util.*
 import kotlin.test.assertEquals
 
@@ -145,11 +137,13 @@ class AccountKeysTests {
         val accountId = account1.uuid
 
         a.transaction {
+            // THis is A's key so we can use the KMS to look-up it's account.
             assertThat(a.services.keyManagementService.externalIdForPublicKey(newKey)).isEqualTo(accountId)
         }
 
         b.transaction {
-            assertThat(b.services.keyManagementService.externalIdForPublicKey(newKey)).isEqualTo(accountId)
+            // Keys from other nodes cannot be looked-up using the KMS but we can use the accounts service.
+            assertThat(b.services.accountService.accountIdForKey(newKey)).isEqualTo(accountId)
         }
     }
 

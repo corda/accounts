@@ -2,6 +2,7 @@ package com.r3.corda.lib.accounts.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.workflows.accountService
+import com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
@@ -9,7 +10,6 @@ import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.persistence.PublicKeyHashToExternalId
 import java.security.PublicKey
 
 /**
@@ -65,15 +65,18 @@ class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession)
             // different Party then an exception will be thrown. For now, it is not caught here. It will be up to
             // consumers of the accounts SDK to figure out how to handle it.
             serviceHub.identityService.registerKeyToParty(key, party)
-            // TODO: This requires a dependency on corda-node which should be removed, if possible.
-            // Store a local mapping of the account ID to the public key we've just received from the host. This allows
-            // us to look up the account which the PublicKey is linked to in the future. Note that this mapping of
-            // KEY -> PARTY persists even when an account moves to another node, the assumption being that keys are not
-            // moved with the account. If keys DO move with accounts then a new API must be added to the identity
-            // service to REPLACE KEY -> PARTY mappings. The PublicKeyHashToExternalId table has a primary key
-            // constraint over PublicKey, therefore a key can only ever be stored once. If you try to store a key twice,
-            // then an exception will be thrown in respect of the primary key constraint violation.
-            serviceHub.withEntityManager { persist(PublicKeyHashToExternalId(accountInfo.linearId.id, key)) }
+            // Store a local mapping of the account ID to the public key we've just received from the host.
+            // This allows us to look up the account which the PublicKey is linked to in the future.
+            // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
+            // assumption being that keys are not moved with the account. If keys DO move with accounts then
+            // a new API must be added to REPLACE KEY -> PARTY mappings.
+            //
+            // The PublicKeyHashToAccountIdMapping table has a primary key constraint over PublicKey, therefore
+            // a key can only ever be stored once. If you try to store a key twice, then an exception will be
+            // thrown in respect of the primary key constraint violation.
+            serviceHub.withEntityManager {
+                persist(PublicKeyHashToAccountIdMapping(key, accountInfo.linearId.id))
+            }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))
     }

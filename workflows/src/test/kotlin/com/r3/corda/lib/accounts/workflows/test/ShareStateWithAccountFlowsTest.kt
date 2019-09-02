@@ -1,42 +1,20 @@
 package com.r3.corda.lib.accounts.workflows.test
 
-import co.paralleluniverse.fibers.Suspendable
-import com.natpryce.hamkrest.assertion.assertThat
-import com.natpryce.hamkrest.contains
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
-import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateWithAccount
-import com.r3.corda.lib.accounts.workflows.accountService
-import com.r3.corda.lib.accounts.workflows.flows.*
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
-import net.corda.core.concurrent.CordaFuture
-import net.corda.core.contracts.*
-import net.corda.core.flows.FinalityFlow
-import net.corda.core.flows.FlowLogic
-import net.corda.core.identity.AbstractParty
 import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.transactions.LedgerTransaction
-import net.corda.core.transactions.TransactionBuilder
-import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
-import org.hamcrest.CoreMatchers.*
-import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
-import org.hamcrest.core.IsEqual
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
-import java.lang.AssertionError
-import java.util.*
-import java.util.concurrent.CompletableFuture
-import kotlin.test.assertEquals
 
 
 class ShareStateWithAccountFlowsTest {
@@ -121,7 +99,7 @@ class ShareStateWithAccountFlowsTest {
         val testAccountB2 = nodeB.startFlow(CreateAccount("Test_AccountB2")).runAndGet(network)
 
         //create another account on node A
-        val testAccountToShare=nodeA.startFlow(CreateAccount("Test_Account_To_Share")).runAndGet(network)
+        val testAccountToShare = nodeA.startFlow(CreateAccount("Test_Account_To_Share")).runAndGet(network)
 
         //share a state of an account with testAccount1
         nodeA.startFlow(ShareStateWithAccount(testAccountB1.state.data, testAccountA1)).runAndGet(network)

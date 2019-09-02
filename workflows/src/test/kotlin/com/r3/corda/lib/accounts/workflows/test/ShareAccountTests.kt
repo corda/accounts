@@ -82,7 +82,6 @@ class ShareAccountTests {
         Assert.assertThat(accountOnB, `is`(storedAccount))
     }
 
-
     @Test
     fun `should share a state and all required account info to party`() {
         val result = a.startFlow(CreateAccount("Stefano_Account")).let {
@@ -106,7 +105,7 @@ class ShareAccountTests {
         b.transaction {
             Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
             Assert.assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
-            //now check that nodeB knows who the account key really is
+//            // now check that nodeB knows who the account key really is
             Assert.assertThat(b.services.identityService.wellKnownPartyFromAnonymous(ownedByAccountState.state.data.owner), `is`(a.identity()))
         }
     }
