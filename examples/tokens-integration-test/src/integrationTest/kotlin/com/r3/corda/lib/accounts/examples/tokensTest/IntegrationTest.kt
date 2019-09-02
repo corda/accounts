@@ -2,7 +2,6 @@ package com.r3.corda.lib.accounts.examples.tokensTest
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.examples.flows.NewKeyForAccount
-import com.r3.corda.lib.accounts.workflows.externalIdCriteria
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
@@ -23,6 +22,7 @@ import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.internal.concurrent.transpose
 import net.corda.core.messaging.CordaRPCOps
 import net.corda.core.messaging.startFlow
+import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.toFuture
 import net.corda.core.transactions.SignedTransaction
 import net.corda.core.utilities.contextLogger
@@ -126,7 +126,7 @@ class IntegrationTest {
             A.rpc.watchForTransaction(issuanceResult).getOrThrow()
             // Check that the tokens are assigned to Roger's account on node A.
             val rogerTokensIssueQuery = A.rpc.vaultQueryByCriteria(
-                    externalIdCriteria(accountIds = listOf(rogerAccount.state.data.identifier.id)),
+                    QueryCriteria.VaultQueryCriteria(externalIds = listOf(rogerAccount.state.data.identifier.id)),
                     FungibleState::class.java
             ).states.single()
             assertEquals(tokens, rogerTokensIssueQuery.state.data)
@@ -149,11 +149,16 @@ class IntegrationTest {
             A.rpc.watchForTransaction(moveTokensTransaction).getOrThrow()
 
             log.info(moveTokensTransaction.tx.toString())
-
-            val rogerQuery = A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(rogerAccount.state.data.identifier.id)), FungibleToken::class.java)
+            val rogerQuery = A.rpc.vaultQueryByCriteria(
+                    QueryCriteria.VaultQueryCriteria(externalIds = listOf(rogerAccount.state.data.identifier.id)),
+                    FungibleToken::class.java
+            )
             assertEquals(50.GBP, (rogerQuery.states).sumTokenStateAndRefs().withoutIssuer())
 
-            val kasiaQuery = A.rpc.vaultQueryByCriteria(externalIdCriteria(listOf(kasiaAccount.state.data.identifier.id)), FungibleToken::class.java)
+            val kasiaQuery = A.rpc.vaultQueryByCriteria(
+                    QueryCriteria.VaultQueryCriteria(externalIds = listOf(kasiaAccount.state.data.identifier.id)),
+                    FungibleToken::class.java
+            )
             assertEquals(50.GBP, (kasiaQuery.states).sumTokenStateAndRefs().withoutIssuer())
         }
     }
