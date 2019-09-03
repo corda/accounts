@@ -3,9 +3,9 @@ package net.corda.gold.test
 import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
-import com.r3.corda.lib.accounts.workflows.services.queryBy
 import net.corda.core.internal.sumByLong
 import net.corda.core.node.services.Vault
+import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.utilities.getOrThrow
 import net.corda.gold.trading.contracts.states.LoanBook
@@ -245,7 +245,8 @@ class LoanBookTradingTests {
 
 
         val loansInAccount1 = a.transaction {
-            a.services.vaultService.queryBy<LoanBook>(listOf(account1Created.state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account1Created.state.data.identifier.id))
+            a.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
 
 
@@ -260,7 +261,8 @@ class LoanBookTradingTests {
 
 
         val loansInAccount1AfterMove = a.transaction {
-            a.services.vaultService.queryBy<LoanBook>(listOf(account1Created.state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account1Created.state.data.identifier.id))
+            a.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
 
         //THERE SHOULD NOW BE 2 LOAN BOOKS
@@ -268,12 +270,10 @@ class LoanBookTradingTests {
         //WITH VALUE 100 + 101
         Assert.assertThat(loansInAccount1AfterMove.sumByLong { it.state.data.valueInUSD }, `is`(201L))
 
-
         val account3States = a.transaction {
-            a.services.vaultService.queryBy<LoanBook>(listOf(account3Future.get().state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account3Future.get().state.data.identifier.id))
+            a.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
-
-
 
         Assert.assertThat(account3States.size, `is`(1))
         Assert.assertThat(account3States.first().state.data.valueInUSD, `is`(102L))
@@ -330,7 +330,8 @@ class LoanBookTradingTests {
         moveToAccount1Future.getOrThrow()
 
         val loansInAccount1AfterMove = a.transaction {
-            a.services.vaultService.queryBy<LoanBook>(listOf(account1OnAFuture.get().state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account1OnAFuture.get().state.data.identifier.id))
+            a.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
 
         //THERE SHOULD NOW BE 2 LOAN BOOKS
@@ -340,11 +341,13 @@ class LoanBookTradingTests {
 
 
         val account2States = b.transaction {
-            b.services.vaultService.queryBy<LoanBook>(listOf(account2OnAFuture.get().state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account2OnAFuture.get().state.data.identifier.id))
+            b.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
 
         val account3States = b.transaction {
-            b.services.vaultService.queryBy<LoanBook>(listOf(account3OnAFuture.get().state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account3OnAFuture.get().state.data.identifier.id))
+            b.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
 
         Assert.assertThat(account2States.size, `is`(0))
@@ -380,7 +383,8 @@ class LoanBookTradingTests {
 
         //the holding account should now know about the fact that there are two loans one 49 and one 51
         val loansInDefaultAccount1OnB = a.transaction {
-            a.services.vaultService.queryBy<LoanBook>(listOf(account1Future.get().state.data.identifier.id))
+            val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account1Future.get().state.data.identifier.id))
+            a.services.vaultService.queryBy<LoanBook>(criteria)
         }.states
 
 

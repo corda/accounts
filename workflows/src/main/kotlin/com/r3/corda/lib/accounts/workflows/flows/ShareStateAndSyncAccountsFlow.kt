@@ -2,18 +2,19 @@ package com.r3.corda.lib.accounts.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.workflows.accountService
+import com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
+import net.corda.core.identity.AnonymousParty
 import net.corda.core.identity.Party
-import net.corda.core.identity.PartyAndCertificate
 import net.corda.core.node.StatesToRecord
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.keys.PublicKeyHashToExternalId
+import java.security.PublicKey
 
 /**
- * This flow shares all of the [AccountInfo]s for a [StateAndRef], as well as the [StateAndRef] itself with a specified
- * party.
+ * This flow shares all of the [AccountInfo]s associated with the participant keys for a [StateAndRef], as well as the
+ * [StateAndRef] itself with a specified party.
  *
  * @property state the state to share
  * @property sessionToShareWith existing session with a receiving [Party]
@@ -28,8 +29,12 @@ class ShareStateAndSyncAccountsFlow(
                 ?: throw IllegalStateException("Transaction: ${state.ref.txhash} was not found on this node")
         val accountsInvolvedWithState = state.state.data.participants.map { participant ->
             val accountInfo = accountService.accountInfo(participant.owningKey)
-            val partyAndCertificate = serviceHub.identityService.certificateFromKey(participant.owningKey)
-            if (accountInfo != null && partyAndCertificate != null) accountInfo to partyAndCertificate else null
+            val party = serviceHub.identityService.wellKnownPartyFromAnonymous(AnonymousParty(participant.owningKey))
+            // If we have a record of the account AND the key mapped for that account then we can share it.
+            if (accountInfo != null && party != null) {
+                // Map the participant key to the well known party resolved by this node
+                accountInfo to mapOf(participant.owningKey to party)
+            } else null
         }.filterNotNull()
         if (accountsInvolvedWithState.isNotEmpty()) {
             sessionToShareWith.send(accountsInvolvedWithState.size)
@@ -44,17 +49,33 @@ class ShareStateAndSyncAccountsFlow(
     }
 }
 
-/** Responder flow for [ShareStateAndSyncAccountsFlow]. */
+/**
+ * Responder flow for [ShareStateAndSyncAccountsFlow].
+ */
 class ReceiveStateAndSyncAccountsFlow(private val otherSideSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
         val numberOfAccounts = otherSideSession.receive<Int>().unwrap { it }
         for (it in 0 until numberOfAccounts) {
             val accountInfo = subFlow(ShareAccountInfoHandlerFlow(otherSideSession))
-            val certPath = otherSideSession.receive<PartyAndCertificate>().unwrap { it }
-            serviceHub.identityService.verifyAndRegisterIdentity(certPath)
+            val keyToParty = otherSideSession.receive<Map<PublicKey, Party>>().unwrap { it }
+            val key = keyToParty.keys.first()
+            val party = keyToParty.values.first()
+            // If the entry already exists then this method call is idempotent. If the key was already registered to a
+            // different Party then an exception will be thrown. For now, it is not caught here. It will be up to
+            // consumers of the accounts SDK to figure out how to handle it.
+            serviceHub.identityService.registerKeyToParty(key, party)
+            // Store a local mapping of the account ID to the public key we've just received from the host.
+            // This allows us to look up the account which the PublicKey is linked to in the future.
+            // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
+            // assumption being that keys are not moved with the account. If keys DO move with accounts then
+            // a new API must be added to REPLACE KEY -> PARTY mappings.
+            //
+            // The PublicKeyHashToAccountIdMapping table has a primary key constraint over PublicKey, therefore
+            // a key can only ever be stored once. If you try to store a key twice, then an exception will be
+            // thrown in respect of the primary key constraint violation.
             serviceHub.withEntityManager {
-                persist(PublicKeyHashToExternalId(accountInfo.linearId.id, certPath.owningKey))
+                persist(PublicKeyHashToAccountIdMapping(key, accountInfo.linearId.id))
             }
         }
         subFlow(ReceiveTransactionFlow(otherSideSession, statesToRecord = StatesToRecord.ALL_VISIBLE))

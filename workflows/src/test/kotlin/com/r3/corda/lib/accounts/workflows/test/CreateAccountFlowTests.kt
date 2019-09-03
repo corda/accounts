@@ -14,6 +14,7 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class CreateAccountFlowTests {
@@ -107,7 +108,7 @@ class CreateAccountFlowTests {
 
     //Should return null if the account name to search is wrong, when searching by account name
     @Test
-    fun `should return null if account name is wrong when searching by account name`() {
+    fun `should return empty list if account name is wrong when searching by account name`() {
 
         //Create two accounts in node A
         val accountA1 = nodeA.startFlow(CreateAccount("Test_AccountA1"))
@@ -121,7 +122,7 @@ class CreateAccountFlowTests {
             //Pass wrong account name as argument to get the account info
             val foundAccount = accountService.accountInfo("TestAccountA1")
             //Checking if foundAccount is null since account name was wrongly entered
-            Assert.assertEquals(foundAccount, null)
+            assertEquals(foundAccount, emptyList())
         }
     }
 

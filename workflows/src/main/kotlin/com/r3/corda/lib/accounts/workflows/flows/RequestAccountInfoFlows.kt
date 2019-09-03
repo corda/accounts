@@ -26,7 +26,9 @@ class RequestAccountInfoFlow(val id: UUID, val host: FlowSession) : FlowLogic<Ac
     }
 }
 
-/** Responder flow for [RequestAccountInfoFlow]. */
+/**
+ * Responder flow for [RequestAccountInfoFlow].
+ */
 class RequestAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
@@ -60,6 +62,9 @@ class RequestAccountInfo(val id: UUID, val host: Party) : FlowLogic<AccountInfo?
     }
 }
 
+/**
+ * Responder flow for [RequestAccountInfo].
+ */
 @InitiatedBy(RequestAccountInfo::class)
 class RequestAccountInfoHandler(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable

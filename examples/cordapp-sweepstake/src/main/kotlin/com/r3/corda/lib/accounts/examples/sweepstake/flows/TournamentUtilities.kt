@@ -155,7 +155,7 @@ class GetPrizeWinners : FlowLogic<List<AbstractParty>>() {
     @Suspendable
     override fun call(): List<AbstractParty> {
         val issuerCriteria = tokenAmountWithIssuerCriteria(GBP, serviceHub.myInfo.legalIdentities.first())
-        val tokens = serviceHub.vaultService.queryBy<FungibleToken<*>>(issuerCriteria).states
+        val tokens = serviceHub.vaultService.queryBy<FungibleToken>(issuerCriteria).states
         return tokens.map {
             it.state.data.holder
         }

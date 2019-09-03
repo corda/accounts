@@ -7,6 +7,9 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FlowLogic
 import net.corda.core.flows.StartableByRPC
 
+/**
+ * Returns all [AccountInfo]s known by this node.
+ */
 @StartableByRPC
 class AllAccounts : FlowLogic<List<StateAndRef<AccountInfo>>>() {
     @Suspendable

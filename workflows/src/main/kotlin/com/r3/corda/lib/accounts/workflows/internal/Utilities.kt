@@ -1,18 +1,19 @@
 package com.r3.corda.lib.accounts.workflows.internal
 
-import net.corda.node.services.keys.BasicHSMKeyManagementService
-import net.corda.node.services.keys.PublicKeyHashToExternalId
+import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import net.corda.core.internal.VisibleForTesting
+import net.corda.core.node.ServiceHub
 
 // For writing less messy HQL.
 
 /** Table names. */
 
-internal val publicKeyHashToExternalId = PublicKeyHashToExternalId::class.java.name
-internal val persistentKey = BasicHSMKeyManagementService.PersistentKey::class.java.name
+internal val publicKeyHashToExternalId = "net.corda.node.services.persistence.PublicKeyHashToExternalId"
+internal val persistentKey = "net.corda.node.services.keys.BasicHSMKeyManagementService\$PersistentKey"
 
-/** Column names. */
+internal val publicKeyHashToAccountId = "com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping"
 
-internal val publicKeyHashToExternalId_externalId = PublicKeyHashToExternalId::externalId.name
-internal val publicKeyHashToExternalId_publicKeyHash = PublicKeyHashToExternalId::publicKeyHash.name
-internal val persistentKey_publicKeyHash = BasicHSMKeyManagementService.PersistentKey::publicKeyHash.name
-internal val persistentKey_publicKey = BasicHSMKeyManagementService.PersistentKey::publicKey.name
+/** Helper for obtaining a [KeyManagementBackedAccountService]. */
+@VisibleForTesting
+val ServiceHub.accountService
+    get() = cordaService(KeyManagementBackedAccountService::class.java)

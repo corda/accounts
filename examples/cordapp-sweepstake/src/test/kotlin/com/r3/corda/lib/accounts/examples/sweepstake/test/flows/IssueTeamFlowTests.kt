@@ -10,13 +10,11 @@ import com.r3.corda.lib.accounts.examples.sweepstake.test.flows.TestUtils.Compan
 import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import net.corda.core.crypto.toStringShort
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
-import net.corda.testing.core.ALICE_NAME
-import net.corda.testing.core.BOB_NAME
-import net.corda.testing.core.CHARLIE_NAME
-import net.corda.testing.core.singleIdentity
+import net.corda.testing.core.*
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
@@ -75,16 +73,20 @@ class IssueTeamFlowTests {
     }
 
     @Test
-    fun `issue a team to an account`() {
-        val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val testAccount = aliceAccountService.createAccount("TEST_ACCOUNT").getOrThrow()
-        val future = aliceNode.startFlow(IssueTeamWrapper(testAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
+    fun `issue a team to an account that is owned by same node`() {
+        val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aliceAccount = aliceService.createAccount("TEST_ACCOUNT").getOrThrow()
 
-        Assert.assertThat(future.state.data, `is`(notNullValue(TeamState::class.java)))
-        Assert.assertThat(future.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
+        //Share alice's account with bob
+        aliceService.shareAccountInfoWithParty(aliceAccount.state.data.identifier.id, bobNode.info.singleIdentity())
+        val teamState = aliceNode.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
+
+        Assert.assertThat(teamState.state.data, `is`(notNullValue(TeamState::class.java)))
+        Assert.assertThat(teamState.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
 
         aliceNode.transaction {
-            Assert.assertThat(testAccount, `is`(IsEqual.equalTo(aliceAccountService.accountInfo(future.state.data.owningKey!!))))
+            val owningAccount = aliceService.accountInfo(teamState.state.data.owningKey!!)
+            Assert.assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
         }
     }
 
@@ -95,17 +97,17 @@ class IssueTeamFlowTests {
 
         //Share alice's account with bob
         aliceService.shareAccountInfoWithParty(aliceAccount.state.data.identifier.id, bobNode.info.singleIdentity())
-        val future = bobNode.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
+        val teamState = bobNode.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
 
         val aliceAccounts = aliceNode.startFlow(OurAccounts()).getOrThrow()
         val bobAccounts = bobNode.startFlow(AllAccounts()).getOrThrow()
         Assert.assertThat(bobAccounts, `is`(IsEqual.equalTo(aliceAccounts)))
 
-        Assert.assertThat(future.state.data, `is`(notNullValue(TeamState::class.java)))
-        Assert.assertThat(future.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
+        Assert.assertThat(teamState.state.data, `is`(notNullValue(TeamState::class.java)))
+        Assert.assertThat(teamState.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
 
         aliceNode.transaction {
-            val owningAccount = aliceService.accountInfo(future.state.data.owningKey!!)
+            val owningAccount = aliceService.accountInfo(teamState.state.data.owningKey!!)
             Assert.assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
         }
     }

@@ -22,6 +22,9 @@ import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.CompletableFuture
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNotEquals
 
 class AccountsFlowTests {
 
@@ -58,9 +61,33 @@ class AccountsFlowTests {
     }
 
     @Test
+    fun `should be able to store two accounts with the same name on a node as long as they have different hosts`() {
+        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+
+        // Create accounts on node A.
+        val futureA = a.startFlow(CreateAccount("Foo")).toCompletableFuture()
+        val futureB = b.startFlow(CreateAccount("Foo")).toCompletableFuture()
+        network.runNetwork()
+        val aFoo = futureA.getOrThrow()
+        val bFoo = futureB.getOrThrow()
+
+        // Shouldn't be able to create another account on A called Foo.
+        val fail = a.startFlow(CreateAccount("Foo")).toCompletableFuture()
+        network.runNetwork()
+        assertFailsWith(IllegalArgumentException::class) { fail.getOrThrow() }
+
+        // Share account with the same name with A.
+        b.startFlow(ShareAccountInfo(bFoo, listOf(a.identity()))).toCompletableFuture()
+        network.runNetwork()
+
+        // A should return two accounts with the same name (they have different hosts).
+        assertEquals(setOf(aFoo, bFoo), accountServiceOnA.accountInfo("Foo").toSet())
+        assertNotEquals(aFoo.state.data.host, bFoo.state.data.host)
+    }
+
+    @Test
     fun `should share state with only specified account`() {
         val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
 
         // Create accounts on node A.
         val futureA1 = a.startFlow(CreateAccount("A_Account1")).toCompletableFuture()

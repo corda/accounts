@@ -4,8 +4,10 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.TournamentContract
 import com.r3.corda.lib.accounts.examples.sweepstake.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
 import net.corda.core.transactions.SignedTransaction
@@ -30,12 +32,20 @@ class MatchDayFlow(
         val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
         val accountForTeamA = accountService.accountInfo(teamA.state.data.owningKey!!)
+            ?: throw FlowException("Could not find account with public key: ${teamA.state.data.owningKey!!.toStringShort()}")
         val accountForTeamB = accountService.accountInfo(teamB.state.data.owningKey!!)
+            ?: throw FlowException("Could not find account with public key: ${teamB.state.data.owningKey!!.toStringShort()}")
+
+        val winningAccount = accountService.accountInfo(winningTeam.state.data.owningKey!!)
+            ?: throw FlowException("Could not find account with public key: ${winningTeam.state.data.owningKey!!.toStringShort()}")
+
+        val newOwner = if (winningAccount.state.data.host == ourIdentity) {
+            createKeyForAccount(winningAccount.state.data, serviceHub)
+        } else {
+            subFlow(RequestKeyForAccount(winningAccount.state.data))
+        }
 
         val signingAccounts = listOfNotNull(accountForTeamA, accountForTeamB)
-        val winningAccount = accountService.accountInfo(winningTeam.state.data.owningKey!!)
-
-        val newOwner = subFlow(RequestKeyForAccount(winningAccount!!.state.data))
         val requiredSigners =
                 signingAccounts.map { it.state.data.host.owningKey } + listOfNotNull(
                         teamA.state.data.owningKey, teamB.state.data.owningKey, newOwner.owningKey, ourIdentity.owningKey
@@ -53,8 +63,8 @@ class MatchDayFlow(
                 .addInputState(teamB)
                 .addOutputState(winningTeam.state.data.copy(owningKey = newOwner.owningKey, isStillPlaying = true))
                 .addCommand(TournamentContract.MATCH_WON, requiredSigners)
-                .addReferenceState(accountForTeamA!!.referenced())
-                .addReferenceState(accountForTeamB!!.referenced())
+                .addReferenceState(accountForTeamA.referenced())
+                .addReferenceState(accountForTeamB.referenced())
 
         val locallySignedTx = serviceHub.signInitialTransaction(
                 transactionBuilder,
@@ -63,20 +73,16 @@ class MatchDayFlow(
                 )
         )
 
-        val sessionForWinner = initiateFlow(winningAccount.state.data.host)
-        val sessionForTeamB = initiateFlow(accountForTeamB.state.data.host)
-        val sessionForTeamA = initiateFlow(accountForTeamA.state.data.host)
+        // Use a set to avoid duplicate flow sessions
+        val accountHosts = setOf(winningAccount.state.data.host, accountForTeamA.state.data.host, accountForTeamB.state.data.host)
+        val sessions = accountHosts.map { initiateFlow(it) }
 
-        val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, listOf(
-                sessionForTeamA,
-                sessionForTeamB,
-                sessionForWinner
-        )))
+        val fullySignedExceptForNotaryTx = subFlow(CollectSignaturesFlow(locallySignedTx, sessions))
 
         val signedTx = subFlow(
                 FinalityFlow(
                         fullySignedExceptForNotaryTx,
-                        listOf(sessionForWinner, sessionForTeamA, sessionForTeamB).filter { sessionForWinner.counterparty != serviceHub.myInfo.legalIdentities.first() })
+                        sessions.filter { winningAccount.state.data.host != serviceHub.myInfo.legalIdentities.first() })
         )
 
         return signedTx.coreTransaction.outRefsOfType(

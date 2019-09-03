@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.node.StatesToRecord
@@ -11,6 +12,7 @@ import net.corda.core.transactions.SignedTransaction
 import net.corda.core.transactions.TransactionBuilder
 import net.corda.gold.trading.contracts.LoanBookContract
 import net.corda.gold.trading.contracts.states.LoanBook
+import java.security.PublicKey
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
@@ -26,17 +28,24 @@ class MoveLoanBookToNewAccount(
 
     constructor(accountId: UUID, loanBook: StateAndRef<LoanBook>) : this(accountId, loanBook, null)
 
+    private lateinit var keyToMoveTo: PublicKey
+
     @Suspendable
     override fun call(): StateAndRef<LoanBook> {
         val currentHoldingAccount = loanBook.state.data.owningAccount?.let { accountService.accountInfo(it) }
         val accountInfoToMoveTo = accountService.accountInfo(accountIdToMoveTo)
 
+
         if (accountInfoToMoveTo == null) {
-            throw IllegalStateException()
+            throw IllegalStateException("An account to move the loan to must be provided")
         } else if ((currentHoldingAccount == null && loanBook.state.data.owningAccount != null) && (loanBook.state.data.owningAccount?.equals(ourIdentity.owningKey) == false))
             throw IllegalStateException("Attempting to move a loan book from an account we do not know about")
         else {
-            val keyToMoveTo = subFlow(RequestKeyForAccount(accountInfoToMoveTo.state.data)).owningKey
+            keyToMoveTo = if (accountInfoToMoveTo.state.data.host == ourIdentity) {
+                createKeyForAccount(accountInfoToMoveTo.state.data, serviceHub).owningKey
+            } else {
+                subFlow(RequestKeyForAccount(accountInfoToMoveTo.state.data)).owningKey
+            }
             val transactionBuilder = TransactionBuilder(loanBook.state.notary)
                     .addInputState(loanBook)
                     .addOutputState(loanBook.state.data.copy(owningAccount = keyToMoveTo))

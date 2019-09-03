@@ -6,6 +6,7 @@ import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedTrackBy
 import com.r3.corda.lib.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import net.corda.core.CordaInternal
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
@@ -13,7 +14,6 @@ import net.corda.core.node.ServiceHub
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
-import net.corda.node.services.vault.VaultSchemaV1
 import java.util.*
 
 /** Helper for obtaining a [KeyManagementBackedAccountService]. */
@@ -54,14 +54,6 @@ fun accountUUIDCriteria(id: UUID): QueryCriteria {
     }
 }
 
-/** To query [ContractState]s by which account the participant keys are linked to. */
-fun externalIdCriteria(accountIds: List<UUID>): QueryCriteria {
-    return builder {
-        val externalIdSelector = VaultSchemaV1.StateToExternalId::externalId.`in`(accountIds)
-        QueryCriteria.VaultCustomQueryCriteria(externalIdSelector)
-    }
-}
-
 /** To query [ContractState]s by which an account has been allowed to see an an observer. */
 fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
     return builder {
@@ -76,9 +68,12 @@ fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
  * no rows, then the resultant query returns no rows, when some should be returned. This will be fixed in Corda 5.
  *
  * The workaround, for now, is to perform queries for states observed by an account, separate to queries for states
- * owned by an account. Some temporary utilities have been povifded to help you with this. See: [accountObservedQueryBy]
+ * owned by an account. Some temporary utilities have been provided to help you with this. See: [accountObservedQueryBy]
  * and [accountObservedTrackBy].
+ *
+ * TODO: Check status of CORDA-3038 (https://r3-cev.atlassian.net/browse/CORDA-3038).
  */
+@CordaInternal
 fun accountQueryCriteria(accountIds: List<UUID>): QueryCriteria {
-    return allowedToSeeCriteria(accountIds).or(externalIdCriteria(accountIds))
+    return allowedToSeeCriteria(accountIds).or(QueryCriteria.VaultQueryCriteria(externalIds = accountIds))
 }

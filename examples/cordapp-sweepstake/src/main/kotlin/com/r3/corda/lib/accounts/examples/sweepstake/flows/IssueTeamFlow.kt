@@ -5,6 +5,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.TournamentContract
 import com.r3.corda.lib.accounts.examples.sweepstake.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -19,9 +20,11 @@ class IssueTeamFlow(
 
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
-        val keyToUse = accountInfo.state.data.let {
-            subFlow(RequestKeyForAccount(accountInfo = it))
-        }.owningKey
+        val keyToUse = if (accountInfo.state.data.host == ourIdentity) {
+            createKeyForAccount(accountInfo.state.data, serviceHub).owningKey
+        } else {
+            subFlow(RequestKeyForAccount(accountInfo.state.data)).owningKey
+        }
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(TournamentContract.ISSUE_TEAM, serviceHub.myInfo.legalIdentities.first().owningKey)
         txBuilder.addOutputState(TeamState(team, true, keyToUse))

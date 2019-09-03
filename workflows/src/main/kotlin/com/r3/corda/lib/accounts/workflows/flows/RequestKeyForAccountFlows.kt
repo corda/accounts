@@ -4,87 +4,89 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
-import com.r3.corda.lib.accounts.workflows.internal.flows.IdentityWithSignature
-import com.r3.corda.lib.accounts.workflows.internal.flows.buildDataToSign
-import com.r3.corda.lib.accounts.workflows.internal.flows.validateAndRegisterIdentity
+import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping
+import com.r3.corda.lib.ci.ProvideKeyFlow
+import com.r3.corda.lib.ci.RequestKeyFlow
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.utilities.unwrap
-import net.corda.node.services.keys.PublicKeyHashToExternalId
+import java.security.PublicKey
 import java.util.*
 
+/**
+ * This flow should be used when you want to generate a new [PublicKey] for an account that is not owned by the node running
+ * the flow. [RequestKeyFlow] is called which which requests a new key-pair from the counter-party.
+ *
+ * @property accountInfo the account to request a new key for
+ * @property hostSession the session for the node which hosts the supplied [AccountInfo]
+ */
 class RequestKeyForAccountFlow(
         private val accountInfo: AccountInfo,
         private val hostSession: FlowSession
 ) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
-        // TODO: Replace use of the old CI API With the new API.
-        // If the host is the node running this flow then generate a new CI locally and return it. Otherwise call out
-        // to the remote host and ask THEM to generate a new CI and send it back. We cannot use the existing CI flows
-        // here because they don't allow us to supply an external ID when the new CI is created.
-        val newKeyAndCert = if (accountInfo.host == ourIdentity) {
-            serviceHub.keyManagementService.freshKeyAndCert(
-                    identity = ourIdentityAndCert,
-                    revocationEnabled = false,
-                    externalId = accountInfo.linearId.id
-            )
+        // Make sure we are contacting the correct host.
+        require(hostSession.counterparty == accountInfo.host) {
+            "The session counterparty must be the same as the account info host."
+        }
+        // The account is hosted on the initiating node. So we can generate a key and register it with the identity
+        // service locally.
+        return if (hostSession.counterparty == ourIdentity) {
+            createKeyForAccount(accountInfo, serviceHub)
         } else {
             val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
             when (accountSearchStatus) {
+                // Maybe the account WAS hosted at this node but has since moved.
                 AccountSearchStatus.NOT_FOUND -> {
                     throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.identifier} " +
                             "(${accountInfo.name}) responded with a not found status - contact them for assistance")
                 }
                 AccountSearchStatus.FOUND -> {
-                    val newKeyAndCert = hostSession.receive<IdentityWithSignature>().unwrap { it }
-                    validateAndRegisterIdentity(
-                            serviceHub = serviceHub,
-                            otherSide = accountInfo.host,
-                            theirAnonymousIdentity = newKeyAndCert.identity,
-                            signature = newKeyAndCert.signature
-                    )
+                    val newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
                     // Store a local mapping of the account ID to the public key we've just received from the host.
                     // This allows us to look up the account which the PublicKey is linked to in the future.
+                    // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
+                    // assumption being that keys are not moved with the account. If keys DO move with accounts then
+                    // a new API must be added to REPLACE KEY -> PARTY mappings.
+                    //
+                    // The PublicKeyHashToAccountIdMapping table has a primary key constraint over PublicKey, therefore
+                    // a key can only ever be stored once. If you try to store a key twice, then an exception will be
+                    // thrown in respect of the primary key constraint violation.
                     serviceHub.withEntityManager {
-                        persist(PublicKeyHashToExternalId(
-                                accountId = accountInfo.linearId.id,
-                                publicKey = newKeyAndCert.identity.owningKey
-                        ))
+                        persist(PublicKeyHashToAccountIdMapping(newKey, accountInfo.linearId.id))
                     }
-                    newKeyAndCert.identity
+                    AnonymousParty(newKey)
                 }
             }
         }
-        return AnonymousParty(newKeyAndCert.owningKey)
     }
 }
 
+/**
+ * Responder flow for [RequestKeyForAccountFlow].
+ */
 class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
+        // No need to do anything if the initiating node is us. We can generate a key locally.
+        if (otherSide.counterparty == ourIdentity) {
+            return
+        }
         val requestedAccountForKey = otherSide.receive(UUID::class.java).unwrap { it }
         val existingAccountInfo = accountService.accountInfo(requestedAccountForKey)
         if (existingAccountInfo == null) {
             otherSide.send(AccountSearchStatus.NOT_FOUND)
         } else {
             otherSide.send(AccountSearchStatus.FOUND)
-            val freshKeyAndCert = serviceHub.keyManagementService.freshKeyAndCert(
-                    identity = ourIdentityAndCert,
-                    revocationEnabled = false,
-                    externalId = requestedAccountForKey
-            )
-            val data: ByteArray = buildDataToSign(freshKeyAndCert)
-            val signature = serviceHub.keyManagementService.sign(data, freshKeyAndCert.owningKey).withoutKey()
-            val keyWithSignature = IdentityWithSignature(freshKeyAndCert, signature)
-            otherSide.send(keyWithSignature)
+            subFlow(ProvideKeyFlow(otherSide))
         }
     }
 }
 
 // Initiating flows which can be started via RPC or a service. Calling these as a sub-flow from an existing flow will
 // result in a new session being created.
-
 @InitiatingFlow
 @StartableByRPC
 @StartableByService

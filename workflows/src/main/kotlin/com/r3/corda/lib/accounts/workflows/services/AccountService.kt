@@ -1,25 +1,42 @@
 package com.r3.corda.lib.accounts.workflows.services
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.externalIdCriteria
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.identity.Party
-import net.corda.core.messaging.DataFeed
 import net.corda.core.node.StatesToRecord
 import net.corda.core.node.services.CordaService
-import net.corda.core.node.services.Vault
-import net.corda.core.node.services.VaultService
-import net.corda.core.node.services.vault.PageSpecification
-import net.corda.core.node.services.vault.QueryCriteria
-import net.corda.core.node.services.vault.Sort
 import net.corda.core.serialization.SerializeAsToken
 import java.security.PublicKey
 import java.util.*
 
 /**
- * The [AccountService] intends to
+ * The [AccountService] provides an API for CorDapp developers to interact with accounts. An account makes no
+ * assumptions about identity - instead, it is just a vault partition. Vault partitions are achieved by firstly
+ * allocating UUIDs to [PublicKey]s (this is done via the [KeyManagementService] when a new key pair is created), then
+ * secondly, when a state is stored in the vault using a [PublicKey] which is already mapped to a [UUID], the state can
+ * be associated with the account identified by the mapped [UUID]. So, accounts are collections of [PublicKey]s mapped
+ * to [UUID]s as well as the [ContractState]s participated in by those [PublicKey]s. Corda nodes act as account "hosts",
+ * so we can say that an account is "hosted" by a particular [Party]. An account can only be hosted by one node at a
+ * time. The [PublicKey]s used by accounts are randomly generated keys with no certificate path linking them to the host
+ * node's legal identity. This means that only [AnonymousParty]s can be used to represent account keys. This also means
+ * that there is no concept of identity for accounts at the network infrastructure level. Instead, CorDapp developers
+ * must add their own identity layer for accounts. Account [UUID]s are unique at the network level where as account
+ * names are unique at the node level. Also, the pair of account host and account name is unique at the network level.
+ * Accounts are represented by a [ContractState] called [AccountInfo] - it contains the account name, account ID and
+ * host. It may contain further information with future versions of the accounts module.
+ *
+ * The [AccountService] currently supports the following features:
+ *
+ * 1. Creating accounts with a specified name. [UUID]s are allocated randomly.
+ * 2. Returning all accounts, our own accounts or accounts for a specific host.
+ * 3. Returning all keys for a specified account ID.
+ * 4. Returning the account ID associated with a specified [PublicKey].
+ * 5. Returning the [AccountInfo] associated with a specified [PublicKey], account name or account ID.
+ * 6. Sharing an [AccountInfo] with another [Party].
+ * 7. Sharding a [StateAndRef] with another [Party] and synchronizing the [AccountInfo]s and [PublicKey]s associated
+ *    with that state.
  */
 @CordaService
 interface AccountService : SerializeAsToken {
@@ -44,22 +61,21 @@ interface AccountService : SerializeAsToken {
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
-     * Creates a new account by calling the [CreateAccount] flow. This method returns a future which completes to return
-     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
-     * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
-     *
-     * @param name the proposed name for this account.
-     * @param id the proposed account ID for this account.
-     */
-    fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>>
-
-    /**
      * Returns all the keys associated with a specified account. These keys are [AnonymousParty]s which have been mapped
-     * to a [Party] and [AccountInfo] via [IdentityService.registerKeyToMapping].
+     * to a [Party] and [AccountInfo] via [IdentityService.registerKeyToMapping]. This API will only return keys which
+     * have been generated on the calling node.
      *
      * @param id the [AccountInfo] to return a list of keys for.
      */
     fun accountKeys(id: UUID): List<PublicKey>
+
+    /**
+     * Returns the account ID associated with the specified [PublicKey] or null if the key is not mapped or known by
+     * the node.
+     *
+     * @param owningKey the [PublicKey] to look-up
+     */
+    fun accountIdForKey(owningKey: PublicKey): UUID?
 
     /**
      * Returns the [AccountInfo] for an account specified by [id]. This method will return accounts created on other
@@ -80,14 +96,16 @@ interface AccountService : SerializeAsToken {
     fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
 
     /**
-     * Returns the [AccountInfo] for an accountInfo specified by [name]. The assumption here is that Account names are
+     * Returns the [AccountInfo]s for an accounts specified by [name]. The assumption here is that Account names are
      * unique at the node level but are not guaranteed to be unique at the network level. The host [Party], stored in
      * the [AccountInfo] can be used to de-duplicate accountInfo names at the network level. Also, the accountInfo ID is
      * unique at the network level.
      *
-     * @param name the accountInfo name to return an [AccountInfo] for.
+     * This method may return more than one [AccountInfo].
+     *
+     * @param name the account name to return [AccountInfo]s for.
      */
-    fun accountInfo(name: String): StateAndRef<AccountInfo>?
+    fun accountInfo(name: String): List<StateAndRef<AccountInfo>>?
 
     /**
      * Shares an [AccountInfo] [StateAndRef] with the specified [Party]. The [AccountInfo]is always stored by the
@@ -109,193 +127,4 @@ interface AccountService : SerializeAsToken {
     fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 
     fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit>
-}
-
-/** Helpers for querying the vault by account. */
-
-fun <T : ContractState> VaultService.queryBy(accountIds: List<UUID>, contractStateType: Class<out T>): Vault.Page<T> {
-    return _queryBy(externalIdCriteria(accountIds), PageSpecification(), Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        paging: PageSpecification
-): Vault.Page<T> {
-    return _queryBy(externalIdCriteria(accountIds), paging, Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria,
-        paging: PageSpecification
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), paging, Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria,
-        sorting: Sort
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), sorting, contractStateType)
-}
-
-fun <T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria,
-        paging: PageSpecification,
-        sorting: Sort
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), paging, sorting, contractStateType)
-}
-
-fun <T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(externalIdCriteria(accountIds), PageSpecification(), Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        paging: PageSpecification
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(externalIdCriteria(accountIds), paging, Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria,
-        paging: PageSpecification
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), paging, Sort(emptySet()), contractStateType)
-}
-
-fun <T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria,
-        sorting: Sort
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), sorting, contractStateType)
-}
-
-fun <T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        contractStateType: Class<out T>,
-        criteria: QueryCriteria,
-        paging: PageSpecification,
-        sorting: Sort
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), paging, sorting, contractStateType)
-}
-
-// Helpers using reified generics which are nicer to use with Kotlin.
-
-inline fun <reified T : ContractState> VaultService.queryBy(accountIds: List<UUID>): Vault.Page<T> {
-    return _queryBy(externalIdCriteria(accountIds), PageSpecification(), Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        paging: PageSpecification
-): Vault.Page<T> {
-    return _queryBy(externalIdCriteria(accountIds), paging, Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria,
-        paging: PageSpecification
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), paging, Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria,
-        sorting: Sort
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), sorting, T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.queryBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria,
-        paging: PageSpecification,
-        sorting: Sort
-): Vault.Page<T> {
-    return _queryBy(criteria.and(externalIdCriteria(accountIds)), paging, sorting, T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.trackBy(accountIds: List<UUID>): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(externalIdCriteria(accountIds), PageSpecification(), Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        paging: PageSpecification
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(externalIdCriteria(accountIds), paging, Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria,
-        paging: PageSpecification
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), paging, Sort(emptySet()), T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria,
-        sorting: Sort
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), PageSpecification(), sorting, T::class.java)
-}
-
-inline fun <reified T : ContractState> VaultService.trackBy(
-        accountIds: List<UUID>,
-        criteria: QueryCriteria,
-        paging: PageSpecification,
-        sorting: Sort
-): DataFeed<Vault.Page<T>, Vault.Update<T>> {
-    return _trackBy(criteria.and(externalIdCriteria(accountIds)), paging, sorting, T::class.java)
 }

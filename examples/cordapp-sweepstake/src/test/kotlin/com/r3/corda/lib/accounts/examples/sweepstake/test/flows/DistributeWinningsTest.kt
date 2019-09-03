@@ -60,23 +60,21 @@ class DistributeWinningsTest {
 
     @Test
     fun `distribute winnings between groups`() {
-
+        // Create 8 accounts on ALICE.
         val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
-
         createAccountsForNode(aliceService)
-
         val accounts = aliceService.ourAccounts()
 
-        // Issue the teams
+        // Issue EIGHT teams on BOB. The creation of each team requires BOB to request a new key from ALICE.
         accounts.zip(TestUtils.teams).forEach {
             bobNode.startFlow(IssueTeamWrapper(it.first, it.second)).also {
                 it.getOrThrow()
             }
         }
 
-        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
-
+        // ALICE now creates two group states.
         val tournamentService = aliceNode.services.cordaService(TournamentService::class.java)
+        tournamentService.assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
 
         // Mock up two winning teams
         val winners = tournamentService.getTeamStates().take(2)
@@ -86,7 +84,7 @@ class DistributeWinningsTest {
         }.getOrThrow()
 
         val issuerCriteria = tokenAmountWithIssuerCriteria(GBP, aliceNode.services.myInfo.legalIdentities.first())
-        val tokens = aliceNode.services.vaultService.queryBy<FungibleToken<*>>(issuerCriteria).states
+        val tokens = aliceNode.services.vaultService.queryBy<FungibleToken>(issuerCriteria).states
         Assert.assertThat(tokens.size, `is`(IsEqual.equalTo(winningParties.size)))
 
         val winningQuantity = 200L/(winningParties.size) * 100

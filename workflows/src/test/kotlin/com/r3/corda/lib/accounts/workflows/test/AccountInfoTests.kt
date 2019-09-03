@@ -1,14 +1,11 @@
 package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByKey
-import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByName
-import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByUUID
-
-import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
-import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
+import com.r3.corda.lib.accounts.workflows.flows.*
+import com.r3.corda.lib.accounts.workflows.internal.publicKeyHashToAccountId
+import com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping
 import net.corda.core.contracts.StateAndRef
+import net.corda.core.crypto.toStringShort
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
@@ -18,6 +15,8 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import java.util.*
+import kotlin.test.assertEquals
 
 class AccountInfoTests {
 
@@ -90,13 +89,13 @@ class AccountInfoTests {
     fun `Get accounts by Name`() {
         val accountInfoAfromA = nodeA.startFlow(AccountInfoByName(accountOnNodeA.state.data.name)).runAndGet(network)
         val accountInfoBfromA = nodeA.startFlow(AccountInfoByName(accountOnNodeB.state.data.name)).runAndGet(network)
-        Assert.assertEquals(accountOnNodeA, accountInfoAfromA)
-        Assert.assertEquals(accountOnNodeB, accountInfoBfromA)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromA.single())
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromA.single())
 
         val accountInfoAfromB = nodeB.startFlow(AccountInfoByName(accountOnNodeA.state.data.name)).runAndGet(network)
         val accountInfoBfromB = nodeB.startFlow(AccountInfoByName(accountOnNodeB.state.data.name)).runAndGet(network)
-        Assert.assertEquals(accountOnNodeA, accountInfoAfromB)
-        Assert.assertEquals(accountOnNodeB, accountInfoBfromB)
+        Assert.assertEquals(accountOnNodeA, accountInfoAfromB.single())
+        Assert.assertEquals(accountOnNodeB, accountInfoBfromB.single())
     }
 
     @Test
@@ -110,6 +109,34 @@ class AccountInfoTests {
         val keyB = nodeA.startFlow(RequestKeyForAccount(accountOnNodeB.state.data)).runAndGet(network).owningKey
         val accountInfoOnB = nodeB.startFlow(AccountInfoByKey(keyB)).runAndGet(network)
         Assert.assertEquals(accountOnNodeB, accountInfoOnB)
+    }
+
+    @Test
+    fun `should retrieve other node's public key to account id mapping via identity service`() {
+        // B generates a new key.
+        val key = nodeB.services.keyManagementService.freshKey()
+        val id = UUID.randomUUID()
+
+        // A maps B's key to an ID.
+        nodeA.services.withEntityManager {
+            persist(PublicKeyHashToAccountIdMapping(key, id))
+        }
+
+        // A can retrieve the ID from the key.
+        val result = nodeA.services.withEntityManager {
+            val query = createQuery(
+                    """
+                        select a.externalId
+                        from $publicKeyHashToAccountId a
+                        where a.publicKeyHash = :publicKeyHash
+                    """,
+                    UUID::class.java
+            )
+            query.setParameter("publicKeyHash", key.toStringShort())
+            query.singleResult
+        }
+
+        assertEquals(id, result)
     }
 
 }

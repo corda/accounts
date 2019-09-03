@@ -30,7 +30,9 @@ class ShareAccountInfoFlow(
     }
 }
 
-/** Responder flow for [ShareAccountInfoFlow]. */
+/**
+ * Responder flow for [ShareAccountInfoFlow].
+ */
 class ShareAccountInfoHandlerFlow(val otherSession: FlowSession) : FlowLogic<AccountInfo>() {
     @Suspendable
     override fun call(): AccountInfo {
@@ -62,7 +64,9 @@ class ShareAccountInfo(val accountInfo: StateAndRef<AccountInfo>, val recipients
     }
 }
 
-/** Responder flow for [ShareAccountInfo]. */
+/**
+ * Responder flow for [ShareAccountInfo].
+ */
 @InitiatedBy(ShareAccountInfo::class)
 class ShareAccountInfoHandler(val otherSession: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
