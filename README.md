@@ -12,9 +12,38 @@ available.
 
 ## What is the accounts library?
 
-TODO
+In the context of Corda, the accounts library allows a Corda node to partition 
+the vault—a collection of state objects—into a number of subsets, where each 
+subset represents an account. In other words, the accounts library allows a 
+Corda node operator to split the vault into multiple "logical" sub-vaults. 
+This is advantageous for a couple of reasons:
+
+* Node operators can reduce costs by hosting multiple entities, as accounts, on 
+  one node
+* Node operators can partition the vault on a per entity basis
+
+Accounts are created by host nodes, which are just regular Corda nodes. Hosts 
+can create accounts for a range of purposes such as customer accounts, balance 
+sheets or P&L accounts, employee accounts, etc.
+
+The accounts library takes the form of a JAR which can be dropped into the 
+CorDapps folder. Use of it is optional. This means that some nodes will support 
+accounts but others will not. This is intentional by design as not all nodes 
+will need to support accounts and the optional nature of accounts reduces the 
+learning curve for new CorDapp developers.
 
 ## How to use the library?
+
+By far the easiest way to get started with the accounts SDK is to use the "tokens template"
+which is a branch on the kotlin version of the "CorDapp template". You can obtain 
+it with the following commands:
+
+    git clone http://github.com/corda/cordapp-template-kotlin
+    cd cordapp-template-kotlin
+    git checkout token-template
+
+Once you have cloned the repository, you should open it with IntelliJ. This will give 
+you a template repo with tokens and accounts dependencies already included.
 
 ### Example Account Projects
 
@@ -22,7 +51,7 @@ There are three projects demonstrating how to use accounts in the examples sub-d
 
 * [Sweepstake](examples/cordapp-sweepstake)
 * [Gold Trading](examples/gold-trading)
-* [Tokens](examples/tokens-integration-test)
+* [Tokens](examples/tokens-integration-test) - using tokens with accounts
 
 ### Build the latest version of Accounts against Corda branch
 
