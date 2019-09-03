@@ -6,6 +6,7 @@ import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedTrackBy
 import com.r3.corda.lib.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import net.corda.core.CordaInternal
 import net.corda.core.contracts.ContractState
 import net.corda.core.flows.FlowLogic
 import net.corda.core.identity.Party
@@ -72,6 +73,7 @@ fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
  *
  * TODO: Check status of CORDA-3038 (https://r3-cev.atlassian.net/browse/CORDA-3038).
  */
+@CordaInternal
 fun accountQueryCriteria(accountIds: List<UUID>): QueryCriteria {
     return allowedToSeeCriteria(accountIds).or(QueryCriteria.VaultQueryCriteria(externalIds = accountIds))
 }

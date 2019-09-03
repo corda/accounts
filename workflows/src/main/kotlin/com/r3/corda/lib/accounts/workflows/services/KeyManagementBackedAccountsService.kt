@@ -78,11 +78,6 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         return flowAwareStartFlow(CreateAccount(name))
     }
 
-    @Suspendable
-    override fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>> {
-        return flowAwareStartFlow(CreateAccount(name, id))
-    }
-
     override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit> {
         return flowAwareStartFlow(ShareStateAndSyncAccounts(state, party))
     }

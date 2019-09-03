@@ -21,7 +21,7 @@ import java.util.*
  */
 @StartableByService
 @StartableByRPC
-class CreateAccount(
+class CreateAccount private constructor(
         private val name: String,
         private val identifier: UUID
 ) : FlowLogic<StateAndRef<AccountInfo>>() {

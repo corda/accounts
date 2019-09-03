@@ -10,7 +10,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.Sort
 import java.util.*
 
-// TODO: Delete these helper methods when the Corda 5 version of accounts is released.
+// TODO: Delete these helper methods when https://r3-cev.atlassian.net/browse/CORDA-3038 is fixed.
 
 fun <T : ContractState> VaultService.accountObservedQueryBy(accountIds: List<UUID>, contractStateType: Class<out T>): Vault.Page<T> {
     return _queryBy(allowedToSeeCriteria(accountIds), PageSpecification(), Sort(emptySet()), contractStateType)

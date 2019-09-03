@@ -12,7 +12,31 @@ import java.security.PublicKey
 import java.util.*
 
 /**
- * The [AccountService] intends to
+ * The [AccountService] provides an API for CorDapp developers to interact with accounts. An account makes no
+ * assumptions about identity - instead, it is just a vault partition. Vault partitions are achieved by firstly
+ * allocating UUIDs to [PublicKey]s (this is done via the [KeyManagementService] when a new key pair is created), then
+ * secondly, when a state is stored in the vault using a [PublicKey] which is already mapped to a [UUID], the state can
+ * be associated with the account identified by the mapped [UUID]. So, accounts are collections of [PublicKey]s mapped
+ * to [UUID]s as well as the [ContractState]s participated in by those [PublicKey]s. Corda nodes act as account "hosts",
+ * so we can say that an account is "hosted" by a particular [Party]. An account can only be hosted by one node at a
+ * time. The [PublicKey]s used by accounts are randomly generated keys with no certificate path linking them to the host
+ * node's legal identity. This means that only [AnonymousParty]s can be used to represent account keys. This also means
+ * that there is no concept of identity for accounts at the network infrastructure level. Instead, CorDapp developers
+ * must add their own identity layer for accounts. Account [UUID]s are unique at the network level where as account
+ * names are unique at the node level. Also, the pair of account host and account name is unique at the network level.
+ * Accounts are represented by a [ContractState] called [AccountInfo] - it contains the account name, account ID and
+ * host. It may contain further information with future versions of the accounts module.
+ *
+ * The [AccountService] currently supports the following features:
+ *
+ * 1. Creating accounts with a specified name. [UUID]s are allocated randomly.
+ * 2. Returning all accounts, our own accounts or accounts for a specific host.
+ * 3. Returning all keys for a specified account ID.
+ * 4. Returning the account ID associated with a specified [PublicKey].
+ * 5. Returning the [AccountInfo] associated with a specified [PublicKey], account name or account ID.
+ * 6. Sharing an [AccountInfo] with another [Party].
+ * 7. Sharding a [StateAndRef] with another [Party] and synchronizing the [AccountInfo]s and [PublicKey]s associated
+ *    with that state.
  */
 @CordaService
 interface AccountService : SerializeAsToken {
@@ -35,16 +59,6 @@ interface AccountService : SerializeAsToken {
      * @param name the proposed name for this account.
      */
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
-
-    /**
-     * Creates a new account by calling the [CreateAccount] flow. This method returns a future which completes to return
-     * a [StateAndRef] when the [CreateAccount] flow finishes. Note that account names must be unique at the host level,
-     * therefore if a duplicate name is specified then the [CreateAccount] flow will throw an exception.
-     *
-     * @param name the proposed name for this account.
-     * @param id the proposed account ID for this account.
-     */
-    fun createAccount(name: String, id: UUID): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
      * Returns all the keys associated with a specified account. These keys are [AnonymousParty]s which have been mapped
