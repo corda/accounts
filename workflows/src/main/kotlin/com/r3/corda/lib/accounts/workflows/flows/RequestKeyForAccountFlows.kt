@@ -5,7 +5,6 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
 import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
-import com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping
 import com.r3.corda.lib.ci.ProvideKeyFlow
 import com.r3.corda.lib.ci.RequestKeyFlow
 import net.corda.core.flows.*
@@ -54,9 +53,6 @@ class RequestKeyForAccountFlow(
                     // The PublicKeyHashToAccountIdMapping table has a primary key constraint over PublicKey, therefore
                     // a key can only ever be stored once. If you try to store a key twice, then an exception will be
                     // thrown in respect of the primary key constraint violation.
-                    serviceHub.withEntityManager {
-                        persist(PublicKeyHashToAccountIdMapping(newKey, accountInfo.linearId.id))
-                    }
                     AnonymousParty(newKey)
                 }
             }

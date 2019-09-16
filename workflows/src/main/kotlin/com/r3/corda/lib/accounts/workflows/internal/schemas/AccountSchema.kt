@@ -7,8 +7,5 @@ object AccountSchema
 object AccountSchemaV1 : MappedSchema(
         schemaFamily = AccountSchema::class.java,
         version = 1,
-        mappedTypes = listOf(
-                AllowedToSeeStateMapping::class.java,
-                PublicKeyHashToAccountIdMapping::class.java
-        )
+        mappedTypes = listOf(AllowedToSeeStateMapping::class.java)
 )
