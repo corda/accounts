@@ -1,8 +1,2 @@
 include 'contracts'
 include 'workflows'
-include 'examples:gold-trading:cordapp'
-include 'examples:gold-trading:agent'
-include 'examples:gold-trading:fund-admin'
-include 'examples:gold-trading:fund-manager'
-
-

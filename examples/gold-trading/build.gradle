@@ -1,0 +1,62 @@
+buildscript {
+    ext {
+        corda_release_group = 'net.corda'
+        corda_release_version = '4.3-SNAPSHOT'
+        corda_gradle_plugins_version = '4.0.42'
+        accounts_release_group = 'com.r3.corda.lib.accounts'
+        accounts_release_version = '1.0-RC02'
+        confidential_id_release_group = "com.r3.corda.lib.ci"
+        confidential_id_release_version = "1.0-RC01"
+        tokens_release_group = 'com.r3.corda.lib.tokens'
+        tokens_release_version = '1.0'
+        quasar_version = '0.7.10'
+        kotlin_version = '1.2.71'
+        junit_version = '4.12'
+    }
+
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
+    }
+
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "net.corda.plugins:cordapp:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:cordformation:$corda_gradle_plugins_version"
+        classpath "net.corda.plugins:quasar-utils:$corda_gradle_plugins_version"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:2.0.5.RELEASE")
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        mavenCentral()
+        maven { url "https://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
+        maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
+        //This is needed until the accounts sdk is official
+        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev" }
+        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
+        //Corda testing node-driver requires gradle-tooling-api
+        maven { url 'https://repo.gradle.org/gradle/libs-releases-local/' }
+        //Crash Shell dependencies are not published correctly in R3 repo
+        maven { url 'https://jitpack.io' }
+    }
+
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+        kotlinOptions {
+            languageVersion = "1.2"
+            apiVersion = "1.2"
+            jvmTarget = "1.8"
+            javaParameters = true   // Useful for reflection.
+        }
+    }
+}
+
+wrapper {
+    gradleVersion = "4.10.2"
+    distributionType = Wrapper.DistributionType.ALL
+}
+

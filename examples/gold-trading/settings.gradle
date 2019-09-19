@@ -1,0 +1,4 @@
+include 'cordapp'
+include 'agent'
+include 'fund-admin'
+include 'fund-manager'
