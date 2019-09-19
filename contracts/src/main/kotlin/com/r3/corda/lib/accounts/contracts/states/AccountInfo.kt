@@ -3,7 +3,6 @@ package com.r3.corda.lib.accounts.contracts.states
 import com.r3.corda.lib.accounts.contracts.AccountInfoContract
 import com.r3.corda.lib.accounts.contracts.internal.schemas.AccountSchema
 import com.r3.corda.lib.accounts.contracts.internal.schemas.PersistentAccountInfo
-import com.r3.corda.lib.accounts.contracts.types.AccountStatus
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.LinearState
 import net.corda.core.contracts.UniqueIdentifier
@@ -25,8 +24,7 @@ import net.corda.core.schemas.QueryableState
 data class AccountInfo(
         val name: String,
         val host: Party,
-        val identifier: UniqueIdentifier,
-        val status: AccountStatus = AccountStatus.ACTIVE
+        val identifier: UniqueIdentifier
 ) : LinearState, QueryableState {
 
     override val linearId: UniqueIdentifier get() = identifier
@@ -38,8 +36,7 @@ data class AccountInfo(
             return PersistentAccountInfo(
                     name = name,
                     host = host,
-                    id = identifier.id,
-                    status = status
+                    id = identifier.id
             )
         } else {
             throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")

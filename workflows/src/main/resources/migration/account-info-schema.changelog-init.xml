@@ -13,36 +13,33 @@
             <column name="host" type="NVARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
-            <column name="status" type="BOOLEAN">
-                <constraints nullable="false"/>
-            </column>
         </createTable>
     </changeSet>
 
-    <changeSet author="R3.Corda" id="accounts_pkey_id">
-        <addPrimaryKey columnNames="id" constraintName="accounts_pkey" tableName="accounts"/>
-    </changeSet>
-
     <changeSet author="R3.Corda" id="accounts_id_idx_id">
-        <createIndex indexName="accounts_id_idx" tableName="accounts">
+        <createIndex indexName="accountId_idx" tableName="accounts">
             <column name="identifier"/>
         </createIndex>
     </changeSet>
 
     <changeSet author="R3.Corda" id="accounts_host_idx_id">
-        <createIndex indexName="accounts_host_idx" tableName="accounts">
+        <createIndex indexName="accountHost_idx" tableName="accounts">
             <column name="host"/>
         </createIndex>
     </changeSet>
 
     <changeSet author="R3.Corda" id="accounts_name_idx_id">
-        <createIndex indexName="accounts_name_idx" tableName="accounts">
+        <createIndex indexName="name_idx" tableName="accounts">
             <column name="name"/>
         </createIndex>
     </changeSet>
 
     <changeSet author="R3.Corda" id="accounts_uniq_name_host_id">
-        <addUniqueConstraint columnNames="host, name" constraintName="uniq_host_name" tableName="accounts"/>
+        <addUniqueConstraint columnNames="host, name" constraintName="host_and_name_constraint" tableName="accounts"/>
+    </changeSet>
+
+    <changeSet author="R3.Corda" id="accounts_uniq_id_id">
+        <addUniqueConstraint columnNames="identifier" constraintName="id_constraint" tableName="accounts"/>
     </changeSet>
 
 </databaseChangeLog>

@@ -25,7 +25,7 @@
     </changeSet>
 
     <changeSet author="R3.Corda" id="account_to_state_refs_idx_id">
-        <createIndex indexName="account_to_state_refs_idx" tableName="account_to_state_refs">
+        <createIndex indexName="external_id_idx" tableName="account_to_state_refs">
             <column name="external_id"/>
         </createIndex>
     </changeSet>
