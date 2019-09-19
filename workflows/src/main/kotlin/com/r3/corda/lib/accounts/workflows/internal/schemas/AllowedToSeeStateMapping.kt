@@ -11,7 +11,7 @@ import javax.persistence.*
 data class AllowedToSeeStateMapping(
         @Id
         @GeneratedValue(strategy = GenerationType.AUTO)
-        var id: Long,
+        var id: Long?,
 
         @Column(name = "external_id", unique = false, nullable = false)
         @Type(type = "uuid-char")
