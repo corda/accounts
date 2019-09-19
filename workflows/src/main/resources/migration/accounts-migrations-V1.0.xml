@@ -3,7 +3,40 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-    <changeSet author="R3.Corda" id="create_allowed_to_see_states_table_id">
+    <changeSet author="R3.Corda" id="accounts-migrations-v1.0">
+
+        <!-- AccountInfo schema -->
+
+        <createTable tableName="accounts">
+            <column name="identifier" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="host" type="NVARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="accountId_idx" tableName="accounts">
+            <column name="identifier"/>
+        </createIndex>
+
+        <createIndex indexName="accountHost_idx" tableName="accounts">
+            <column name="host"/>
+        </createIndex>
+
+        <createIndex indexName="name_idx" tableName="accounts">
+            <column name="name"/>
+        </createIndex>
+
+        <addUniqueConstraint columnNames="host, name" constraintName="host_and_name_constraint" tableName="accounts"/>
+
+        <addUniqueConstraint columnNames="identifier" constraintName="id_constraint" tableName="accounts"/>
+
+        <!-- AllowedToSeeStates schema -->
+
         <createTable tableName="account_to_state_refs">
             <column name="id" type="BIGINT">
                 <constraints nullable="false"/>
@@ -18,16 +51,13 @@
                 <constraints nullable="false"/>
             </column>
         </createTable>
-    </changeSet>
 
-    <changeSet author="R3.Corda" id="account_to_state_refs_pkey_id">
         <addPrimaryKey columnNames="id" constraintName="account_to_state_refs_pkey" tableName="account_to_state_refs"/>
-    </changeSet>
 
-    <changeSet author="R3.Corda" id="account_to_state_refs_idx_id">
         <createIndex indexName="external_id_idx" tableName="account_to_state_refs">
             <column name="external_id"/>
         </createIndex>
+
     </changeSet>
 
 </databaseChangeLog>
