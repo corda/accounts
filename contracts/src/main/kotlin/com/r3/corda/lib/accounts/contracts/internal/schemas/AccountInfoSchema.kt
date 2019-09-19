@@ -6,8 +6,10 @@ import net.corda.core.schemas.PersistentState
 import java.util.*
 import javax.persistence.*
 
-object AccountSchema : MappedSchema(
-        PersistentAccountInfo::class.java,
+object AccountsContractsSchema
+
+object AccountsContractsSchemaV1 : MappedSchema(
+        schemaFamily = AccountsContractsSchema::class.java,
         version = 1,
         mappedTypes = listOf(PersistentAccountInfo::class.java)
 )

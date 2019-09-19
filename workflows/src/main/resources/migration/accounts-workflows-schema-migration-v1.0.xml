@@ -5,38 +5,6 @@
 
     <changeSet author="R3.Corda" id="accounts-migrations-v1.0">
 
-        <!-- AccountInfo schema -->
-
-        <createTable tableName="accounts">
-            <column name="identifier" type="UUID">
-                <constraints nullable="false"/>
-            </column>
-            <column name="name" type="VARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="host" type="NVARCHAR(255)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-
-        <createIndex indexName="accountId_idx" tableName="accounts">
-            <column name="identifier"/>
-        </createIndex>
-
-        <createIndex indexName="accountHost_idx" tableName="accounts">
-            <column name="host"/>
-        </createIndex>
-
-        <createIndex indexName="name_idx" tableName="accounts">
-            <column name="name"/>
-        </createIndex>
-
-        <addUniqueConstraint columnNames="host, name" constraintName="host_and_name_constraint" tableName="accounts"/>
-
-        <addUniqueConstraint columnNames="identifier" constraintName="id_constraint" tableName="accounts"/>
-
-        <!-- AllowedToSeeStates schema -->
-
         <createTable tableName="account_to_state_refs">
             <column name="id" type="BIGINT">
                 <constraints nullable="false"/>

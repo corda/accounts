@@ -1,7 +1,7 @@
 package com.r3.corda.lib.accounts.contracts.states
 
 import com.r3.corda.lib.accounts.contracts.AccountInfoContract
-import com.r3.corda.lib.accounts.contracts.internal.schemas.AccountSchema
+import com.r3.corda.lib.accounts.contracts.internal.schemas.AccountsContractsSchemaV1
 import com.r3.corda.lib.accounts.contracts.internal.schemas.PersistentAccountInfo
 import net.corda.core.contracts.BelongsToContract
 import net.corda.core.contracts.LinearState
@@ -32,7 +32,7 @@ data class AccountInfo(
     override val participants: List<AbstractParty> get() = listOf(host)
 
     override fun generateMappedObject(schema: MappedSchema): PersistentState {
-        if (schema is AccountSchema) {
+        if (schema is AccountsContractsSchemaV1) {
             return PersistentAccountInfo(
                     name = name,
                     host = host,
@@ -44,7 +44,7 @@ data class AccountInfo(
     }
 
     override fun supportedSchemas(): Iterable<MappedSchema> {
-        return listOf(AccountSchema)
+        return listOf(AccountsContractsSchemaV1)
     }
 }
 
