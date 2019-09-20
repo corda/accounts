@@ -3,7 +3,8 @@ killall_jobs()
 pipeline {
     agent {
         docker {
-            image 'amazoncorretto:8'
+            image 'azul/zulu-openjdk-debian:8'
+            args '-u root'
         }
     }
     options { timestamps() }
