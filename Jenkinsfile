@@ -1,7 +1,9 @@
 killall_jobs()
 
 pipeline {
-    agent { label 'k8s' }
+    agent {
+        docker 'gradle:jdk8'
+    }
     options { timestamps() }
 
     environment {
