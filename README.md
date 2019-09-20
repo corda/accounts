@@ -77,11 +77,11 @@ wish to use and set the corda version that should've been installed locally::
 
     buildscript {
         ext {
-            corda_release_version = '4.3-SNAPSHOT'
-            accounts_release_version = '1.0-RC02'
+            corda_release_version = '4.3-RC01'
+            accounts_release_version = '1.0-RC03'
             accounts_release_group = 'com.r3.corda.lib.accounts'
             confidential_id_release_group = "com.r3.corda.lib.ci"
-            confidential_id_release_version = "1.0-RC01"
+            confidential_id_release_version = "1.0-RC02"
         }
     }
 
