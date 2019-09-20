@@ -8,6 +8,12 @@
         <!-- AccountInfo schema -->
 
         <createTable tableName="accounts">
+            <column name="output_index" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+            <column name="transaction_id" type="NVARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
             <column name="identifier" type="UUID">
                 <constraints nullable="false"/>
             </column>

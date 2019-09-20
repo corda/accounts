@@ -3,7 +3,6 @@ package com.r3.corda.lib.accounts.workflows.internal.schemas
 import net.corda.core.schemas.DirectStatePersistable
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentStateRef
-import org.hibernate.annotations.Type
 import java.util.*
 import javax.persistence.*
 
@@ -23,7 +22,6 @@ data class AllowedToSeeStateMapping(
         var id: Long?,
 
         @Column(name = "external_id", unique = false, nullable = false)
-        @Type(type = "uuid-char")
         var externalId: UUID,
 
         @Embedded
