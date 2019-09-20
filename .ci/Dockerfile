@@ -1,2 +1,2 @@
 FROM azul/zulu-openjdk-debian:8
-RUN useradd buildUser
+RUN useradd -m buildUser
