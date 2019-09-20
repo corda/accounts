@@ -138,7 +138,7 @@ class AccountKeysTests {
 
         a.transaction {
             // THis is A's key so we can use the KMS to look-up it's account.
-            assertThat(a.services.keyManagementService.externalIdForPublicKey(newKey)).isEqualTo(accountId)
+            assertThat(a.services.identityService.externalIdForPublicKey(newKey)).isEqualTo(accountId)
         }
 
         b.transaction {

@@ -1,14 +1,15 @@
 package com.r3.corda.lib.accounts.contracts.internal.schemas
 
-import com.r3.corda.lib.accounts.contracts.types.AccountStatus
 import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
 import java.util.*
 import javax.persistence.*
 
-object AccountSchema : MappedSchema(
-        PersistentAccountInfo::class.java,
+object AccountsContractsSchema
+
+object AccountsContractsSchemaV1 : MappedSchema(
+        schemaFamily = AccountsContractsSchema::class.java,
         version = 1,
         mappedTypes = listOf(PersistentAccountInfo::class.java)
 )
@@ -28,7 +29,5 @@ data class PersistentAccountInfo(
         @Column(name = "name", unique = false, nullable = false)
         val name: String,
         @Column(name = "host", unique = false, nullable = false)
-        val host: Party,
-        @Column(name = "status")
-        val status: AccountStatus
+        val host: Party
 ) : PersistentState()
