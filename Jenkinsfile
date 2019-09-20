@@ -2,9 +2,8 @@ killall_jobs()
 
 pipeline {
     agent {
-        docker {
-            image 'azul/zulu-openjdk-debian:8'
-            args '-u ${USER}'
+        dockerfile {
+            filename '.ci/Dockerfile'
         }
     }
     options { timestamps() }
