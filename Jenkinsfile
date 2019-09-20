@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('Unit Tests') {
             steps {
-                sh "./gradlew test --info"
+                sh "./gradlew clean test --info"
             }
             post {
                 always {
