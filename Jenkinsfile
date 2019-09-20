@@ -13,17 +13,7 @@ pipeline {
     stages {
         stage('Unit Tests') {
             steps {
-                sh "./gradlew test"
-            }
-            post {
-                always {
-                    junit '**/build/test-results/**/*.xml'
-                }
-            }
-        }
-        stage('Integration Tests') {
-            steps {
-                sh "./gradlew integrationTest"
+                sh "./gradlew test --info"
             }
             post {
                 always {
