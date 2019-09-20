@@ -4,7 +4,7 @@ pipeline {
     agent {
         docker {
             image 'azul/zulu-openjdk-debian:8'
-            args '-u root'
+            args '-u ${USER}'
         }
     }
     options { timestamps() }
