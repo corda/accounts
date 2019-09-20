@@ -2,7 +2,7 @@ killall_jobs()
 
 pipeline {
     agent {
-        docker 'gradle:jdk8'
+        docker 'azul/zulu-openjdk-debian:8'
     }
     options { timestamps() }
 
@@ -13,7 +13,7 @@ pipeline {
     stages {
         stage('Unit Tests') {
             steps {
-                sh "./gradlew test --info"
+                sh "./gradlew -Duser.home=/tmp test --info"
             }
             post {
                 always {
