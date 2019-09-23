@@ -53,23 +53,6 @@ There are three projects demonstrating how to use accounts in the examples sub-d
 * [Gold Trading](examples/gold-trading)
 * [Tokens](examples/tokens-integration-test) - using tokens with accounts
 
-### Build the latest version of Accounts against Corda branch
-
-In order to use the CorDapp you will need to build against a specific Corda branch until the required changes to the 
-`IdentityService` will be released in the `4.3` version. First, clone the Corda repo
-and checkout the `feature/CID-878-non_party_flow_sessions` branch with the following commands:
-
-    git clone https://github.com/corda/corda
-    git fetch
-    git checkout origin feature/CID-878-non_party_flow_sessions
-
-Navigate to the `constants.properties` file in the root directory and set the following flag:
-
-    cordaVersion=5.0-SNAPSHOT
-   
-Then run a `./gradlew clean install` from the root directory. This will be the `cordaVersion` you will need to build the 
-Accounts CorDapp against. 
-
 ### Adding accounts dependencies to an existing CorDapp
 
 First, add a variable for the accounts release group and the version you 
