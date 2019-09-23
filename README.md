@@ -79,7 +79,7 @@ list of repositories for your project (if it hasn't already been added):
 Now, you can add the accounts dependencies to the `dependencies` block
 in each module of your CorDapp. For contract modules add:
 
-    cordaCompile "accounts_release_group:accounts-contracts:$accounts_release_version"
+    cordaCompile "$accounts_release_group:accounts-contracts:$accounts_release_version"
 
 In your workflow `build.gradle` add:
 
