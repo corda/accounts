@@ -3,10 +3,13 @@ package com.r3.corda.lib.accounts.examples.sweepstake.cordapp.clients
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.examples.sweepstake.cordapp.service.Team
 import com.r3.corda.lib.accounts.examples.sweepstake.cordapp.service.TournamentJsonParser
-import com.r3.corda.lib.accounts.examples.sweepstake.flows.DistributeWinningsFlow
-import com.r3.corda.lib.accounts.examples.sweepstake.flows.MatchDayFlow
+import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.*
+import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.AssignAccountsToGroups
+import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.CreateAccountForPlayer
+import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.GetAccountGroupInfo
+import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueTeamWrapper
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
-import com.r3.corda.lib.accounts.examples.sweepstake.service.*
+import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.*
 import com.r3.corda.lib.tokens.money.GBP
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.messaging.startFlow

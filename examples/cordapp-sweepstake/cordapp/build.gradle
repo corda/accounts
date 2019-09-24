@@ -10,6 +10,9 @@ cordapp {
         targetPlatformVersion 4
         minimumPlatformVersion 4
     }
+    signing {
+        enabled false
+    }
 }
 
 
@@ -30,33 +33,41 @@ configurations {
 
 
 dependencies {
+    // Accounts
     cordapp project(":workflows")
     cordapp project(":contracts")
     cordapp project(":examples:cordapp-sweepstake:states")
     cordapp project(":examples:cordapp-sweepstake:flows")
 
+    // Corda
     cordaRuntime "$corda_release_group:corda:$corda_release_version"
     cordaCompile "$corda_release_group:corda-core:$corda_release_version"
-
-    cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
-    cordaCompile "$tokens_release_group:tokens-workflows:$tokens_release_version"
-    cordaCompile "$tokens_release_group:tokens-money:$tokens_release_version"
-
     cordaCompile "$corda_release_group:corda-rpc:$corda_release_version"
     cordaCompile "$corda_release_group:corda-jackson:$corda_release_version"
+
+    // Tokens
+    cordapp "$tokens_release_group:tokens-contracts:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-workflows:$tokens_release_version"
+    cordapp "$tokens_release_group:tokens-money:$tokens_release_version"
+
+    // Spring
     compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 
+    // JSON parser
     compile "com.beust:klaxon:5.0.1"
+
+    // Kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
 
+    // Testing
     testCompile project(":examples:cordapp-sweepstake:states")
     testCompile project(":examples:cordapp-sweepstake:flows")
+    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
     testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testCompile "junit:junit:$junit_version"
-    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
-    testCompile (group: 'org.springframework.boot', name: 'spring-boot-starter-test', version: '2.0.2.RELEASE') {
+    testCompile ("org.springframework.boot:spring-boot-starter-test:2.0.2.RELEASE") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 }
@@ -116,6 +127,6 @@ task integrationTest(type: Test, dependsOn: []) {
 
 task runTournamentServer(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
-    main = 'com.r3.corda.lib.accounts.examples.sweepstake.clients.WorldCupApplication'
+    main = 'com.r3.corda.lib.accounts.examples.sweepstake.cordapp.clients.WorldCupApplication'
     args '--server.port=8080', '--config.rpc.host=localhost', '--config.rpc.port=10005', '--config.rpc.username=user1', '--config.rpc.password=test'
 }

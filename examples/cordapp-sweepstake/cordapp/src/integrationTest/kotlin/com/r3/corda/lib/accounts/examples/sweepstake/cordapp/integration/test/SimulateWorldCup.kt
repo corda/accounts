@@ -25,6 +25,7 @@ import net.corda.testing.driver.DriverDSL
 import net.corda.testing.driver.DriverParameters
 import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.driver
+import net.corda.testing.node.TestCordapp
 import net.corda.testing.node.User
 import org.assertj.core.api.Assertions
 import org.hamcrest.CoreMatchers.`is`
@@ -178,7 +179,16 @@ class SimulateWorldCup {
             DriverParameters(
                     isDebug = true,
                     startNodesInProcess = true,
-//                    cordappsForAllNodes = REQUIRED_CORDAPP_PACKAGES,
+                    cordappsForAllNodes =  listOf(
+                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.workflows"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.contracts"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.cordapp"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                        TestCordapp.findCordapp("com.r3.corda.lib.ci")),
                     networkParameters = testNetworkParameters(minimumPlatformVersion = 4))
     ) { test() }
 
