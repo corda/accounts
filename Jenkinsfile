@@ -2,7 +2,9 @@ killall_jobs()
 
 pipeline {
     agent {
-        docker 'gradle:jdk8'
+        dockerfile {
+            filename '.ci/Dockerfile'
+        }
     }
     options { timestamps() }
 
@@ -13,13 +15,19 @@ pipeline {
     stages {
         stage('Unit Tests') {
             steps {
-                sh "./gradlew test --info"
+                sh "./gradlew clean test --info"
             }
             post {
                 always {
                     junit '**/build/test-results/**/*.xml'
                 }
             }
+        }
+    }
+
+    post {
+        cleanup {
+            deleteDir() /* clean up our workspace */
         }
     }
 }
