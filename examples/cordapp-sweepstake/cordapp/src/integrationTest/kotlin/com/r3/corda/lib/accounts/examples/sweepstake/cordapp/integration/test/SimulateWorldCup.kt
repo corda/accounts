@@ -182,7 +182,7 @@ class SimulateWorldCup {
                     cordappsForAllNodes =  listOf(
                         TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.workflows"),
                         TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.contracts"),
-                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.cordapp"),
+//                        TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.sweepstake.cordapp"),
                         TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
                         TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
                         TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),

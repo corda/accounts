@@ -23,7 +23,6 @@ cordapp {
 dependencies {
     // Accounts.
     cordapp project(":workflows")
-//    cordapp project(":contracts")
     cordapp project(":examples:cordapp-sweepstake:states")
 
     // Corda.
