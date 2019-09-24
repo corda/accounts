@@ -1,6 +1,8 @@
 include 'contracts'
 include 'workflows'
 include 'examples:cordapp-sweepstake'
+include 'examples:cordapp-sweepstake:cordapp'
+include 'examples:cordapp-sweepstake:states-and-flows'
 include 'examples:gold-trading:cordapp'
 include 'examples:gold-trading:agent'
 include 'examples:gold-trading:fund-admin'
