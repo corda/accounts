@@ -16,6 +16,7 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.*
 import org.junit.After
 import org.junit.Assert
@@ -31,11 +32,17 @@ class LoanBookTradingTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                listOf("net.corda.gold", "com.r3.corda.lib.accounts.workflows", "com.r3.corda.lib.accounts.contracts"), MockNetworkParameters(
-                networkParameters = testNetworkParameters(
-                        minimumPlatformVersion = 4
-                )
-        ))
+            parameters = MockNetworkParameters(
+                cordappsForAllNodes = listOf(
+                    TestCordapp.findCordapp("net.corda.gold"),
+                    TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
+                    TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts")
+                ),
+                networkSendManuallyPumped = false,
+                threadPerNode = true,
+                networkParameters = testNetworkParameters(minimumPlatformVersion = 4)
+            )
+        )
         a = network.createPartyNode()
         b = network.createPartyNode()
 
