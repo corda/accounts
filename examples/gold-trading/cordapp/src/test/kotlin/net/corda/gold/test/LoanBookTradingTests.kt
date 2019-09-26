@@ -39,7 +39,6 @@ class LoanBookTradingTests {
         a = network.createPartyNode()
         b = network.createPartyNode()
 
-
         a.registerInitiatedFlow(ReceiveStateForAccount::class.java)
         b.registerInitiatedFlow(ReceiveStateForAccount::class.java)
         network.runNetwork()

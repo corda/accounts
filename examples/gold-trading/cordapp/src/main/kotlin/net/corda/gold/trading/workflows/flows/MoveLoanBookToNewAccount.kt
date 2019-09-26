@@ -42,7 +42,7 @@ class MoveLoanBookToNewAccount(
             throw IllegalStateException("Attempting to move a loan book from an account we do not know about")
         else {
             keyToMoveTo = if (accountInfoToMoveTo.state.data.host == ourIdentity) {
-                createKeyForAccount(accountInfoToMoveTo.state.data, serviceHub).owningKey
+                serviceHub.createKeyForAccount(accountInfoToMoveTo.state.data).owningKey
             } else {
                 subFlow(RequestKeyForAccount(accountInfoToMoveTo.state.data)).owningKey
             }
