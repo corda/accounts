@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>World Cup Sweepstake</title>
+    <link href="sweepstake.css" rel="stylesheet">
+    <script type="text/javascript" src="sweepstake.js"></script>
+</head>
+<body>
+
+
+<h1>World Cup Sweepstake</h1>
+<div>
+    <button id="playerBtn" class="button" onclick="importPlayers()">Import players</button>
+    <button id="accountBtn" class="button" onclick="createAccountsAndIssueTeams()">Create accounts and issue teams</button>
+    <button id="groupBtn" class="button" onclick="assignGroups()">Create groups</button>
+    <button id="playMatchesBtn" class="button" onclick="playMatches()">Play matches</button>
+    <button disabled id="distWinningsBtn" class="button" onclick="distributeWinnings()">Enter prize</button>
+</div>
+<div class="b">
+    <p> </p>
+</div>
+<div>
+    <table id="headers">
+        <th class ="firstCol">Player name</th>
+        <th class ="secondCol">Team</th>
+        <th class ="thirdCol">Account ID</th>
+        <th class ="fourthCol">Prize Money</th>
+    </table>
+</div>
+<div id="playersHolder">
+</div>
+<div id="matches" class="b"></div>
+<div class="b">
+    <p> </p>
+</div>
+</div>
+
+</body>
+</html>

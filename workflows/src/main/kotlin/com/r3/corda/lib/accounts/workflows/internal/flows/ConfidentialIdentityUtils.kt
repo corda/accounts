@@ -13,7 +13,7 @@ internal enum class AccountSearchStatus {
 }
 
 @CordaInternal
-fun createKeyForAccount(accountInfo: AccountInfo, serviceHub: ServiceHub) : AnonymousParty {
-    val newKey = serviceHub.keyManagementService.freshKey(accountInfo.identifier.id)
+fun ServiceHub.createKeyForAccount(accountInfo: AccountInfo) : AnonymousParty {
+    val newKey = this.keyManagementService.freshKey(accountInfo.identifier.id)
     return AnonymousParty(newKey)
 }

@@ -105,7 +105,7 @@ class ShareAccountTests {
         b.transaction {
             Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
             Assert.assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
-//            // now check that nodeB knows who the account key really is
+            // now check that nodeB knows who the account key really is
             Assert.assertThat(b.services.identityService.wellKnownPartyFromAnonymous(ownedByAccountState.state.data.owner), `is`(a.identity()))
         }
     }
@@ -132,7 +132,7 @@ class IssueFlow(private val owningAccount: UUID) : FlowLogic<StateAndRef<TestSta
     override fun call(): StateAndRef<TestState> {
         val accountInfo = accountService.accountInfo(owningAccount) ?: throw IllegalStateException()
         val anonParty = if (accountInfo.state.data.host == ourIdentity) {
-            createKeyForAccount(accountInfo.state.data, serviceHub)
+            serviceHub.createKeyForAccount(accountInfo.state.data)
         } else {
             subFlow(RequestKeyForAccount(accountInfo.state.data))
         }

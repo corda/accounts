@@ -33,7 +33,7 @@ class RequestKeyForAccountFlow(
         // The account is hosted on the initiating node. So we can generate a key and register it with the identity
         // service locally.
         return if (hostSession.counterparty == ourIdentity) {
-            createKeyForAccount(accountInfo, serviceHub)
+            serviceHub.createKeyForAccount(accountInfo)
         } else {
             val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
             when (accountSearchStatus) {

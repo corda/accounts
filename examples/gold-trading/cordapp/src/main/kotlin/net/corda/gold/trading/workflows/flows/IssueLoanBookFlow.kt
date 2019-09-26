@@ -27,7 +27,7 @@ class IssueLoanBookFlow(
 
         val owningKey = accountToMineInto?.let {
             if (accountToMineInto.state.data.host == ourIdentity) {
-                createKeyForAccount(accountToMineInto.state.data, serviceHub).owningKey
+                serviceHub.createKeyForAccount(accountToMineInto.state.data).owningKey
             } else {
                 subFlow(RequestKeyForAccount(accountToMineInto?.state?.data!!)).owningKey
             }
