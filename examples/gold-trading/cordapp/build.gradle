@@ -43,6 +43,10 @@ dependencies {
 
 }
 
+test{
+    forkEvery 1
+}
+
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 
