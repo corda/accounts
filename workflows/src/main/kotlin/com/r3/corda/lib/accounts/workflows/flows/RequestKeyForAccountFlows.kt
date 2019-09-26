@@ -5,8 +5,8 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
 import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
-import com.r3.corda.lib.ci.ProvideKeyFlow
-import com.r3.corda.lib.ci.RequestKeyFlow
+import com.r3.corda.lib.ci.workflows.ProvideKeyFlow
+import com.r3.corda.lib.ci.workflows.RequestKeyFlow
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.utilities.unwrap
