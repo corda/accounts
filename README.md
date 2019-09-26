@@ -53,23 +53,6 @@ There are three projects demonstrating how to use accounts in the examples sub-d
 * [Gold Trading](examples/gold-trading)
 * [Tokens](examples/tokens-integration-test) - using tokens with accounts
 
-### Build the latest version of Accounts against Corda branch
-
-In order to use the CorDapp you will need to build against a specific Corda branch until the required changes to the 
-`IdentityService` will be released in the `4.3` version. First, clone the Corda repo
-and checkout the `feature/CID-878-non_party_flow_sessions` branch with the following commands:
-
-    git clone https://github.com/corda/corda
-    git fetch
-    git checkout origin feature/CID-878-non_party_flow_sessions
-
-Navigate to the `constants.properties` file in the root directory and set the following flag:
-
-    cordaVersion=5.0-SNAPSHOT
-   
-Then run a `./gradlew clean install` from the root directory. This will be the `cordaVersion` you will need to build the 
-Accounts CorDapp against. 
-
 ### Adding accounts dependencies to an existing CorDapp
 
 First, add a variable for the accounts release group and the version you 
@@ -77,9 +60,11 @@ wish to use and set the corda version that should've been installed locally::
 
     buildscript {
         ext {
-            corda_release_version = '5.0-SNAPSHOT'
-            accounts_release_version = '1.0-RC01'
+            corda_release_version = '4.3-RC01'
+            accounts_release_version = '1.0-RC03'
             accounts_release_group = 'com.r3.corda.lib.accounts'
+            confidential_id_release_group = "com.r3.corda.lib.ci"
+            confidential_id_release_version = "1.0-RC02"
         }
     }
 
@@ -94,15 +79,17 @@ list of repositories for your project (if it hasn't already been added):
 Now, you can add the accounts dependencies to the `dependencies` block
 in each module of your CorDapp. For contract modules add:
 
-    cordaCompile "accounts_release_group:accounts-contracts:$accounts_release_version"
+    cordaCompile "$accounts_release_group:accounts-contracts:$accounts_release_version"
 
 In your workflow `build.gradle` add:
 
+    cordaCompile "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
     cordaCompile "$accounts_release_group:accounts-workflows:$accounts_release_version"
 
 If you want to use the `deployNodes` task, you will need to add the
 following dependencies to your root `build.gradle` file:
 
+    cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
     cordapp "$accounts_release_group:accounts-contracts:$accounts_release_version"
     cordapp "$accounts_release_group:accounts-workflows:$accounts_release_version"
 
@@ -112,6 +99,7 @@ These should also be added to the `deployNodes` task with the following syntax:
         projectCordapp {
             deploy = false
         }
+        cordapp("$confidential_id_release_group:ci-workflows:$confidential_id_release_version")
         cordapp("$accounts_release_group:accounts-contracts:$accounts_release_version")
         cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
     }
