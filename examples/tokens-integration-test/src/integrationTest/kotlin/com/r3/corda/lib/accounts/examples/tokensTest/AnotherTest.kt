@@ -18,9 +18,11 @@ import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount
 import net.corda.core.contracts.FungibleState
 import net.corda.core.identity.CordaX500Name
 import net.corda.core.internal.concurrent.transpose
+import net.corda.core.messaging.StateMachineUpdate
 import net.corda.core.messaging.startFlow
 import net.corda.core.messaging.vaultQueryBy
 import net.corda.core.node.services.vault.QueryCriteria
+import net.corda.core.toFuture
 import net.corda.core.utilities.contextLogger
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -175,9 +177,12 @@ class ConfidentialIntegrationTest {
             log.info("Sharing key mapping with node C.")
             assertNull(nodeC.rpc.wellKnownPartyFromAnonymous(moveTxHolder))
 
-            nodeA.rpc.startFlow(::SyncKeyMappingInitiator, nodeC.legalIdentity(), moveTokenTx.tx).returnValue.getOrThrow()
+            nodeA.rpc.startFlow(::SyncKeyMappingInitiator, nodeC.legalIdentity(), moveTokenTx.tx)
 
             log.info("Sharing key mapping with node C completed.")
+
+            // There should only ever be one SMM removal on node C. The Sync key mapping flow responder.
+            nodeC.rpc.stateMachinesFeed().updates.filter { it is StateMachineUpdate.Removed }.toFuture().getOrThrow()
 
             val partyResolvedByNodeC = nodeC.rpc.wellKnownPartyFromAnonymous(moveTxHolder)
             val partyResolvedByNodeA = nodeA.rpc.wellKnownPartyFromAnonymous(moveTxHolder)
