@@ -1,7 +1,6 @@
 package com.r3.corda.lib.accounts.examples.tokensTest
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
-import com.r3.corda.lib.accounts.examples.flows.NewKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
@@ -64,8 +63,7 @@ class IntegrationTest {
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
-            TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"),
-            TestCordapp.findCordapp("com.r3.corda.lib.accounts.examples.flows") // Contains NewKeyForAccount.
+            TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
     )
 
     private val driverParameters = DriverParameters(
@@ -135,8 +133,7 @@ class IntegrationTest {
             val kasiaAccount = aAccountsQuery.single { it.state.data.name == "PartyA - Kasia" }
             val kasiaAnonymousParty = A.rpc.startFlow(::RequestKeyForAccount, kasiaAccount.state.data).returnValue.getOrThrow()
             // Create a new change key for Roger.
-            val newPartyAndCert = A.rpc.startFlow(::NewKeyForAccount, rogerAccount.state.data.identifier.id).returnValue.getOrThrow()
-            val newAnonymousParty = newPartyAndCert.party.anonymise()
+            val newAnonymousParty = A.rpc.startFlow(::RequestKeyForAccount, rogerAccount.state.data).returnValue.getOrThrow()
             // Move tokens.
             val moveTokensTransaction = A.rpc.startFlowDynamic(
                     MoveFungibleTokens::class.java,
