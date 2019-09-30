@@ -1,5 +1,6 @@
 package com.r3.corda.lib.accounts.workflows.internal
 
+import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
@@ -15,5 +16,5 @@ internal val publicKeyHashToAccountId = "com.r3.corda.lib.accounts.workflows.int
 
 /** Helper for obtaining a [KeyManagementBackedAccountService]. */
 @VisibleForTesting
-val ServiceHub.accountService
+val ServiceHub.accountService: AccountService
     get() = cordaService(KeyManagementBackedAccountService::class.java)
