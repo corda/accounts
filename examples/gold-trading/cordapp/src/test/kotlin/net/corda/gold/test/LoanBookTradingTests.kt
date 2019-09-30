@@ -2,6 +2,7 @@ package net.corda.gold.test
 
 import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.internal.sumByLong
 import net.corda.core.node.services.Vault
@@ -62,7 +63,7 @@ class LoanBookTradingTests {
     @Test
     fun `should transfer freshly created loanbook to an account on same node`() {
         val createdAccountFuture =
-                a.services.cordaService(KeyManagementBackedAccountService::class.java).createAccount("TESTING_ACCOUNT")
+                a.services.accountService.createAccount("TESTING_ACCOUNT")
         network.runNetwork()
         val createdAccount = createdAccountFuture.getOrThrow()
 
@@ -79,8 +80,8 @@ class LoanBookTradingTests {
 
     @Test
     fun `should transfer freshly created loanbook to account on different node`() {
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
+        val accountServiceOnB = b.services.accountService
 
         //MINE ON B
         val miningFuture = b.startFlow(IssueLoanBookFlow(100))
@@ -120,7 +121,7 @@ class LoanBookTradingTests {
     @Test
     fun `should transfer already owned loanbook to account on same node`() {
 
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
 
         // MINE ON B
         val miningFuture = b.startFlow(IssueLoanBookFlow(100))
@@ -164,8 +165,8 @@ class LoanBookTradingTests {
     fun `should transfer already owned loanbook to account on different node`() {
         val c = network.createNode()
 
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val accountServiceOnC = c.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
+        val accountServiceOnC = c.services.accountService
 
         //MINE ON B
         val miningFuture = b.startFlow(IssueLoanBookFlow(100))
@@ -224,7 +225,7 @@ class LoanBookTradingTests {
 
     @Test
     fun `it should be possible to query holdings by account on a single node`() {
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
 
         val account1Future = accountServiceOnA.createAccount("ACCOUNT_1")
         val account2Future = accountServiceOnA.createAccount("ACCOUNT_2")
@@ -280,8 +281,8 @@ class LoanBookTradingTests {
 
     @Test
     fun `it should be possible to query holdings on a node which received a carbon copy`() {
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
+        val accountServiceOnB = b.services.accountService
 
         val defaultAccountOnBFuture = accountServiceOnB.createAccount("DEFAULT_ACCOUNT_ON_B")
         network.runNetwork()
@@ -356,8 +357,8 @@ class LoanBookTradingTests {
 
     @Test
     fun `it should be possible to split a loan`() {
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
-        val accountServiceOnB = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
+        val accountServiceOnB = b.services.accountService
 
         //create a default account on B for receiving broadcasts
         val defaultAccountOnBFuture = accountServiceOnB.createAccount("DEFAULT_ACCOUNT_ON_B")

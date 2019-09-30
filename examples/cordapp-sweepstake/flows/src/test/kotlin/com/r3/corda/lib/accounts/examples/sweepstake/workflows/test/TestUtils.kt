@@ -1,6 +1,7 @@
 package com.r3.corda.lib.accounts.examples.sweepstake.workflows.test
 
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.WorldCupTeam
+import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.node.TestCordapp
@@ -42,7 +43,7 @@ class TestUtils {
 
 }
 
-internal fun createAccountsForNode(accountService: KeyManagementBackedAccountService) {
+internal fun createAccountsForNode(accountService: AccountService) {
     accountService.createAccount("TEST_ACCOUNT_1").getOrThrow()
     accountService.createAccount("TEST_ACCOUNT_2").getOrThrow()
     accountService.createAccount("TEST_ACCOUNT_3").getOrThrow()

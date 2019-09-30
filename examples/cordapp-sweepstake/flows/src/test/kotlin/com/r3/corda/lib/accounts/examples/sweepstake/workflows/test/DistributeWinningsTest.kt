@@ -3,6 +3,7 @@ package com.r3.corda.lib.accounts.examples.sweepstake.workflows.test
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.DistributeWinningsFlow
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueTeamWrapper
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.TournamentService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.money.GBP
@@ -61,7 +62,7 @@ class DistributeWinningsTest {
     @Test
     fun `distribute winnings between groups`() {
         // Create 8 accounts on ALICE.
-        val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aliceService = aliceNode.services.accountService
         createAccountsForNode(aliceService)
         val accounts = aliceService.ourAccounts()
 

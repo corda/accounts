@@ -2,6 +2,7 @@ package com.r3.corda.lib.accounts.workflows.test
 
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -117,7 +118,7 @@ class CreateAccountFlowTests {
         accountA1.getOrThrow()
         accountA2.getOrThrow()
 
-        val accountService = nodeA.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = nodeA.services.accountService
         nodeA.transaction {
             //Pass wrong account name as argument to get the account info
             val foundAccount = accountService.accountInfo("TestAccountA1")

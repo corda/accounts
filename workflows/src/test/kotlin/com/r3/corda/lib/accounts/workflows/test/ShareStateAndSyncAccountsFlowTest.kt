@@ -5,6 +5,7 @@ import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.*
@@ -107,7 +108,7 @@ class ShareStateAndSyncAccountsFlowTests {
 }
 
 private fun StartedMockNode.accountService(): AccountService {
-    return this.services.cordaService(KeyManagementBackedAccountService::class.java)
+    return this.services.accountService
 }
 
 

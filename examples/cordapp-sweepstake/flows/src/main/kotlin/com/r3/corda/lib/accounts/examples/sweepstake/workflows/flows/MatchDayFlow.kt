@@ -4,6 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.contracts.TournamentContract
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
@@ -29,7 +30,7 @@ class MatchDayFlow(
     override fun call(): StateAndRef<TeamState> {
         log.info("${teamA.state.data.team.teamName} are playing ${teamB.state.data.team.teamName}.")
 
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = serviceHub.accountService
 
         val accountForTeamA = accountService.accountInfo(teamA.state.data.owningKey!!)
                 ?: throw FlowException("Could not find account with public key: ${teamA.state.data.owningKey!!.toStringShort()}")

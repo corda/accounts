@@ -4,6 +4,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
@@ -62,7 +63,7 @@ class AccountsFlowTests {
 
     @Test
     fun `should be able to store two accounts with the same name on a node as long as they have different hosts`() {
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
 
         // Create accounts on node A.
         val futureA = a.startFlow(CreateAccount("Foo")).toCompletableFuture()
@@ -87,7 +88,7 @@ class AccountsFlowTests {
 
     @Test
     fun `should share state with only specified account`() {
-        val accountServiceOnA = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountServiceOnA = a.services.accountService
 
         // Create accounts on node A.
         val futureA1 = a.startFlow(CreateAccount("A_Account1")).toCompletableFuture()
