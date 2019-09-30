@@ -18,7 +18,8 @@ import net.corda.core.node.services.vault.builder
 import java.util.*
 
 /** Helper for obtaining a [KeyManagementBackedAccountService]. */
-val FlowLogic<*>.accountService get():AccountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+val FlowLogic<*>.accountService: AccountService
+    get() = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
 // TODO: Remove this and replace with a utility in a commons CorDapp.
 val ServiceHub.ourIdentity get() = myInfo.legalIdentities.first()
