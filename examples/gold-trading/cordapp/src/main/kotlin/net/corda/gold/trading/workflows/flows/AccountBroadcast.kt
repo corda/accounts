@@ -3,6 +3,7 @@ package net.corda.gold.trading.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
+import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
@@ -70,7 +71,7 @@ class GetAllInterestedAccountsFlow(val accountId: UUID) : FlowLogic<List<Account
                 ?: listOf()
     }
 
-    private fun getAccountFromAccountId(accountService: KeyManagementBackedAccountService) = { accountId: UUID ->
+    private fun getAccountFromAccountId(accountService: AccountService) = { accountId: UUID ->
         accountService.accountInfo(accountId)?.state?.data
     }
 }

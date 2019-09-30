@@ -105,7 +105,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param name the account name to return [AccountInfo]s for.
      */
-    fun accountInfo(name: String): List<StateAndRef<AccountInfo>>?
+    fun accountInfo(name: String): List<StateAndRef<AccountInfo>>
 
     /**
      * Shares an [AccountInfo] [StateAndRef] with the specified [Party]. The [AccountInfo]is always stored by the
