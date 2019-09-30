@@ -17,8 +17,8 @@ pipeline {
 
     stages {
         stage('Unit Tests') {
-            timeout(20){
-                steps {
+            steps {
+                timeout(20) {
                     sh "./gradlew clean test --info"
                 }
             }
