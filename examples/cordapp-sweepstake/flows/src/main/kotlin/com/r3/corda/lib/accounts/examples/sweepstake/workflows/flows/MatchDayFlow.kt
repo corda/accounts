@@ -6,7 +6,6 @@ import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.TeamState
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.StateAndRef
 import net.corda.core.crypto.toStringShort
 import net.corda.core.flows.*

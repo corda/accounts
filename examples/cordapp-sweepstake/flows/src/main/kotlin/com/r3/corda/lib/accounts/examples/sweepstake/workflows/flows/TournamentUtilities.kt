@@ -9,7 +9,6 @@ import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.WorldCupTe
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.Participant
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.TournamentService
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.utilities.tokenAmountWithIssuerCriteria

@@ -11,7 +11,6 @@ import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.Tournamen
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.test.TestUtils.Companion.teams
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters

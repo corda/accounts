@@ -10,7 +10,6 @@ import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueTeamFl
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueTeamHandler
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.UpdateAccountGroupFlow
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.utilities.tokenAmountWithIssuerCriteria

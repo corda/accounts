@@ -5,7 +5,6 @@ import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.TeamState
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.TournamentService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy

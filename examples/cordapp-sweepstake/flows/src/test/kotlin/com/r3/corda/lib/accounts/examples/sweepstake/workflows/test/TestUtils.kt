@@ -2,7 +2,6 @@ package com.r3.corda.lib.accounts.examples.sweepstake.workflows.test
 
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.WorldCupTeam
 import com.r3.corda.lib.accounts.workflows.services.AccountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.node.TestCordapp
 

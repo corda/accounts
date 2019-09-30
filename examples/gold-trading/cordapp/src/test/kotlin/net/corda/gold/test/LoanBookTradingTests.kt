@@ -3,7 +3,6 @@ package net.corda.gold.test
 import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.internal.sumByLong
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
