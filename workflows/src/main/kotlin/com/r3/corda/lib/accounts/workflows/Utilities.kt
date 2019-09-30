@@ -17,7 +17,7 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import java.util.*
 
-/** Helper for obtaining a [KeyManagementBackedAccountService]. */
+/** Helper for obtaining a [AccountService]. */
 val FlowLogic<*>.accountService: AccountService
     get() = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
