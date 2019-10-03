@@ -9,6 +9,7 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.core.IsEqual.equalTo
+import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -31,6 +32,11 @@ class WebPermissionTests {
         )
         a = network.createPartyNode()
 
+    }
+
+    @After
+    fun tearDown() {
+        network.stopNodes()
     }
 
 
