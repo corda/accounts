@@ -32,6 +32,7 @@ import net.corda.testing.driver.NodeParameters
 import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import org.junit.Test
+import java.util.concurrent.CompletableFuture
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
@@ -102,8 +103,10 @@ class ConfidentialIntegrationTest {
 
             log.info("Sharing account info from node A to node I.")
             val sharingAccount = aAccountsQuery.single { it.state.data.name == "TestAccountA1" }
-            nodeA.rpc.startFlow(::ShareAccountInfo, sharingAccount, listOf(nodeI.legalIdentity())).returnValue.getOrThrow()
-            nodeI.rpc.watchForTransaction(sharingAccount.ref.txhash).getOrThrow()
+            CompletableFuture.allOf(
+                    nodeA.rpc.startFlow(::ShareAccountInfo, sharingAccount, listOf(nodeI.legalIdentity())).returnValue.toCompletableFuture(),
+                    nodeI.rpc.watchForTransaction(sharingAccount.ref.txhash).toCompletableFuture()
+            ).getOrThrow()
             // Check that issuer stored the account info.
             val sharingAccountQuery = nodeI.rpc.vaultQuery(AccountInfo::class.java).states.single()
             assertEquals(sharingAccount, sharingAccountQuery)
@@ -139,8 +142,10 @@ class ConfidentialIntegrationTest {
 
             log.info("Share account of node B to node A")
             val sharingAccountToA = bAccountsQuery.single { it.state.data.name == "TestAccountB1" }
-            nodeB.rpc.startFlow(::ShareAccountInfo, sharingAccountToA, listOf(nodeA.legalIdentity())).returnValue.getOrThrow()
-            nodeA.rpc.watchForTransaction(sharingAccountToA.ref.txhash).getOrThrow()
+            CompletableFuture.allOf(
+                    nodeB.rpc.startFlow(::ShareAccountInfo, sharingAccountToA, listOf(nodeA.legalIdentity())).returnValue.toCompletableFuture(),
+                    nodeA.rpc.watchForTransaction(sharingAccountToA.ref.txhash).toCompletableFuture()
+            ).getOrThrow()
             // Check that node A stored the account info shared by node B.
             val shareAccountQuery = nodeA.rpc.vaultQuery(AccountInfo::class.java).states[1]
             println("account info: $shareAccountQuery")
