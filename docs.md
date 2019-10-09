@@ -111,6 +111,38 @@ keys to the account ID they are allocated to.
 ### How do we assign identities to accounts?
 
 This is an application level problem and it's up to you how you solve it. 
+
+### How do nodes become aware of accounts?
+
+Again, this is an application level concern. This version of account doesn't ship with any sort of automatic discovery 
+mechanism. However, there are primitive flows `RequestAccountInfo`/`ShareAccountInfo` for sharing `AccountInfo`s as well
+as `ShareStateAndSyncAccounts` for sharing a state with another node, along with all the `AccountInfo`s and `PublicKey`
+mapping for the accounts involved in that state.
+
+If you are writing an "accounts enabled" CorDapp you'll probably want to write a flow that shares new accounts with all
+the other nodes in your business network that need to be aware of the new accounts.
+
+### How do we mix workflows with accounts and non-accounts?
+
+This is a bit tricky for now. You'll need to update your flows with logic to determine if a state participant/owner is
+an account holder, or not. This can be done using the `AccountService` APIs. If so, then some additional steps should be
+taken to share the required `AccountInfo`s and `PublicKey` mappings with other nodes that need to see them. 
+
+Working with accounts is much like working with confidential identities but with the addition of the `AccountInfo` 
+state. For example, when using confidential identities, a new `PublicKey` would be requested from a counterparty node 
+before creating a transaction with that counterparty. The same workflow is required with accounts - a new `PublicKey` 
+should be requested before creating a state and transaction. The biggest difference is that, in your flow, you must also
+specify from which account the new `PublicKey` should be allocated to. However, of course, this should be known up-front
+by the node invoking the flow.
+
+## Are states for different accounts segregated?
+
+No. They are all stored in the same `VaultService` operated by the host node. States held by different accounts on the 
+same node can be partitioned by their account ID when querying the vault. See below for more info.
+
+## How do we handle permission on a per account basis?
+
+This must be done at the application level for now and can be handled in the RPC client part of your CorDapp.
    
 ## Typical workflows
 
@@ -204,7 +236,7 @@ Code sample for requesting a new key from an account on the same node or remote 
     val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
     val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
             accountInfo = accountInfo,
-            hostSession = accountInfo.state.data.host 
+            hostSession = initiateFlow(accountInfo.state.data.host) 
     ))
 
     // Responder flow.
@@ -214,7 +246,9 @@ Code sample for requesting a new key from an account on the same node or remote 
 
 The `AccountService` provides an API to look-up which account a particular `PublicKey` belongs to. The caveat is that
 the `PublicKey` must have been obtained using `RequestKeyForAccountFlow` and `SendKeyForAccountFlow`, or manually mapped
-to the account host and account ID. To look up the account ID for a `PublicKey` use:
+to the account host and account ID. This API must also perform a look-up of the `AccountInfo` and so will only return a 
+value if the associated `AccountInfo` for that `PublicKey` has also been stored. To look up the account ID for a 
+`PublicKey` use:
 
     fun accountIdForKey(owningKey: PublicKey): UUID?
     
@@ -229,15 +263,92 @@ Code sample:
     val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
     val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
             accountInfo = accountInfo,
-            hostSession = accountInfo.state.data.host 
+            hostSession = initiateFlow(accountInfo.state.data.host) 
     ))     
     val sameAccountInfo: StateAndRef<AccountInfo> = accountService.accountInfo(newKey)
 
-### Looking up a host by `PublicKey`
+There is a startable by RPC version of this method called `AccountInfoByKey`.
+
+### Looking up a host by `PublicKey`/`AnonymousParty`
+
+You can look-up `AbstractParty`s to the host `Party` using an API on the `IdentityService`:
+
+    fun wellKnownPartyFromAnonymous(party: AbstractParty): Party?
+    
+This API doesn't require that the `AccountInfo` associated with the `AnonymousParty`/`PublicKey` has also been stored. 
+
 ### Obtaining a list of accounts
+
+There are three APIs on the `AccountService` for obtaining a list of accounts:
+
+1. `ourAccounts` which returns all the accounts created on the node in question.
+2. `accountsForHost` which returns all the accounts created by a specific host. Clearly, only `AccountInfo`s which have
+   been shared with the node will be returned.
+3. `allAccounts` which returns all `AccountInfo`s regardless of which node is the host.   
+   
+There are accompanying startable by RPC flows so these functions can be invoked via RPC.    
+
 ### Obtaining all the `PublicKey`s for an account
-### Requesting the `AccountInfo` from another node by using the account ID
+
+There is an API on `AccountService` for obtaining all the `PublicKey`s mapped to an account ID. This is useful if you 
+would like to re-use `PublicKey`s instead of requesting a new `PublicKey` from an account for each new transaction with
+that account. In this version of accounts there's no in-built functionality for re-using `PublicKey`s. However, you can
+quite easily create your own flow for doing this, if it is required. To enumerate all `PublicKey`s for an account, use
+this API on `AccountService`:
+
+    fun accountKeys(id: UUID): List<PublicKey>
+    
+If either the account ID is unknown or there are no `PublicKey`s mapped to the account ID, then the method call will
+return an empty list. Otherwise, all the keys mapped to that account will be returned. Note that this method works for
+accounts created on remote nodes providing the `AccountInfo` and `PublicKey` mappings have previously been shared with 
+the calling node.
+
+Example code:    
+
+    // Showing initiator flow only and assuming we already have an AccountInfo from a remote node.
+    val accountHost: Party = someAccountInfo.host
+    val newKeyOne: AnonymousParty = subFlow(RequestKeyForAccountFlow(accountInfo, initiateFlow(accountHost)))   
+    val newKeyTwo: AnonymousParty = subFlow(RequestKeyForAccountFlow(accountInfo, initiateFlow(accountHost)))  
+    // Should return a list _at least_ containing the above two keys.    
+    val keys: List<PublicKey> = accountService.accountKeys(someAccountInfo.identifier.id)
+
+### Requesting and sharing the `AccountInfo` from/to another node by using the account ID/`AccountInfo`
+
+This can be done using the `RequestAccountInfoFlow` and `ShareAccountInfoFlow` which are both in-line flows. There are 
+also initiating versions of these flows which are startable via RPC.
+
+The `RequestAccountInfoFlow` takes an account ID and a `FlowSession` for the host of the account with the specified 
+account ID and returns the `AccountInfo` for the account. If the host is not aware of an account with the specified
+account ID, then the flow returns `null`.
+
+The `ShareAccountInfoFlow` is the opposite of the above flow. A node which already has an `AccountInfo` can share it 
+with another node. The flow takes the `StateAndRef<AccountInfo>` to share and a `FlowSession` for the node to share it
+with.
+
+It is important to make sure that all nodes which need `AccountInfo`s have them before you start transacting between
+accounts, otherwise nodes in your business network will not be able to map account IDs and account hosts to `PublicKey`s 
+for that accounts they are not aware of.
+
 ### Querying the vault by account
+
+It is very important that we can query the vault by account. As such, there is a new property added to 
+`VaultQueryCriteria` in Corda 4.3 and it can be used like so via RPC:
+
+    rpcProxy.vaultQueryByCriteria(
+            QueryCriteria.VaultQueryCriteria(externalIds = listOf(accountId)),
+            StateClass::class.java
+    )
+    
+and inside a flow:
+
+    serviceHub.vaultService.queryBy(
+            QueryCriteria.VaultQueryCriteria(externalIds = listOf(accountId)),
+            StateClass::class.java
+    ) 
+    
+Using this approach, the vault query will only return states which have participation/owning keys which are allocated
+to the specified account ID. If the account ID is unknown to the node or no states are in the vault which are linked
+to the specified account ID, then the query will return an empty list.    
 
 ## Appendix
 
