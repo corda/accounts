@@ -69,6 +69,48 @@ That's all there is to accounts. To re-iterate and summarise:
    
 For further information on how accounts work "under the hood" check out the appendix of this document where there is a 
 video explaining how it all fits together.   
+
+## Common questions
+
+### What's the difference between an account and a node?
+
+**Node**
+
+A node is a process that runs `corda.jar`. Node's have a network identity issued to them by the trust root of the 
+network the node participates in. The node has a vault to store state objects, a transaction store to store transactions
+and a flow state machine manager to run flows. The node is essentially a container for running business logic written in
+CorDapps. Corda nodes have:  
+
+* a "default" `PublicKey` which is associated with the `CordaX500Name` for the node. Both the `PublicKey` and the 
+  `CordaX500Name` are paired with each other inside the `Party` object for the node. 
+* the capability to create new key pairs and allocate them to an "external ID" using the `IdentityService`. These keys 
+  are often called "confidential identities" (`AnonymousParty`s) because they have no `CordaX500Name` associated to them 
+  by default. 
+* the capability, using the `IdentityService`, to allocate `PublicKey`s created by another node to the `CordaX500Name` 
+  of that node and optionally an "external ID" associated with that node. 
+* the capability to look-up the `CordaX500Name` (and therefore the `Party` object) for an `AnonymousParty` 
+  (confidential identity) using the `IentityService`. 
+
+**Account**
+
+* An account is not a node. Instead, accounts are "hosted" on Corda nodes and an account represents a logical subset of 
+  the host node's vault.
+* An account doesn't have a unique identity associated with it. At the network level, the account's "identity" is the 
+  `CordaX500Name` of the host node. However, accounts are _identifiable_ as an identity can be assigned to an account
+  but this must be done at the application level.
+* Unlike a Corda node, an account doesn't have a default `PublicKey` associated with it. To transact with an account, 
+  you must request that the node hosting the account generate a new key pair for the account.
+
+### Do I need to add account IDs to my state objects?
+
+No! The motivation behind the design which uses `PublicKey`s mapped to account IDs is so that the notion of accounts is
+not tightly coupled to state objects. The benefits are that you can use the same state objects for accounts and 
+non-accounts enabled workflows. To find out which account the state belongs to, you can look-up the participation/owning 
+keys to the account ID they are allocated to.
+
+### How do we assign identities to accounts?
+
+This is an application level problem and it's up to you how you solve it. 
    
 ## Typical workflows
 
@@ -85,7 +127,7 @@ created.
 The `CreateAccount` flow does not communicate with any nodes as it performs an internal process only (a notary signature
 is not required for state creation when the creating transaction does not include a `TimeWindow`).
 
-Code samples:
+Code sample:
 
     // Create account by invoking flow via RPC.
     val accountInfo: StateAndRef<AccountInfo> = rpcProxy.startFlow(::CreateAccount, "Roger's account").returnValue.getOrThrow()
@@ -107,7 +149,7 @@ ID using the following methods on `AccountService`:
 These methods will either return the `AccountInfo` linked to the specified account ID or name or return `null` if an
 account cannot be found with the specified account ID or name.     
 
-Code samples:
+Code sample:
 
     // Create account from inside a flow.
     val accountInfo = subFlow(CreateAccount("Roger's account"))
@@ -155,19 +197,10 @@ Accounts CorDapp.
 There are startable by RPC and initiating versions of the aforementioned flows, called `RequestKeyForAccount` and 
 `SendKeyForAccount`.   
 
-Code sample for requesting a key from the same node using inline sub flows:
-
-    // Create an account and then request a new key for that account (on the same node)
-    val accountInfo: StateAndRef<AccountInfo> = subFlow(CreateAccount("Roger's account"))
-    val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
-            accountInfo = accountInfo,
-            hostSession = accountInfo.state.data.host 
-    ))
-    
-Code sample for requesting a key from another node using inline sub flows:    
+Code sample for requesting a new key from an account on the same node or remote node:    
     
     // Requestor flow.
-    // Assumption is that we already have the AccounInfo.
+    // Assumption is that we already have the AccountInfo.
     val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
     val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
             accountInfo = accountInfo,
@@ -178,6 +211,28 @@ Code sample for requesting a key from another node using inline sub flows:
     subFlow(SendKeyForAccountFlow(otherSideSession))
     
 ### Looking up an account by `PublicKey`
+
+The `AccountService` provides an API to look-up which account a particular `PublicKey` belongs to. The caveat is that
+the `PublicKey` must have been obtained using `RequestKeyForAccountFlow` and `SendKeyForAccountFlow`, or manually mapped
+to the account host and account ID. To look up teh account ID for a `PublicKey` use:
+
+    fun accountIdForKey(owningKey: PublicKey): UUID?
+    
+To look up the `AccountInfo` for a `PublicKey` use:
+
+    fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
+    
+Code sample: 
+
+    // Requestor flow.
+    // Assumption is that we already have the AccountInfo.
+    val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
+    val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
+            accountInfo = accountInfo,
+            hostSession = accountInfo.state.data.host 
+    ))     
+    val sameAccountInfo: StateAndRef<AccountInfo> = accountService.accountInfo(newKey)
+
 ### Looking up a host by `PublicKey`
 ### Obtaining a list of accounts
 ### Obtaining all the `PublicKey`s for an account
