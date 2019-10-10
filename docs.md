@@ -110,7 +110,7 @@ keys to the account ID they are allocated to.
 
 ### How do we assign identities to accounts?
 
-This is an application level problem and it's up to you how you solve it. 
+This is an application level concern and it's up to you how you solve it. 
 
 ### How do nodes become aware of accounts?
 
@@ -124,6 +124,12 @@ the other nodes in your business network that need to be aware of the new accoun
 
 ### How do we mix workflows with accounts and non-accounts?
 
+For now, in the interests of simplicity, we would suggest that if you need to use accounts then use accounts on all 
+nodes on your business network. For a node that doesn't _need_ to use accounts then you can just set up a "default" 
+account for that node.
+
+*Writing your CorDapp if you want to have some nodes not using accounts*
+
 This is a bit tricky for now. You'll need to update your flows with logic to determine if a state participant/owner is
 an account holder, or not. This can be done using the `AccountService` APIs. If so, then some additional steps should be
 taken to share the required `AccountInfo`s and `PublicKey` mappings with other nodes that need to see them. 
@@ -135,12 +141,20 @@ should be requested before creating a state and transaction. The biggest differe
 specify from which account the new `PublicKey` should be allocated to. However, of course, this should be known up-front
 by the node invoking the flow.
 
+*State selection when using accounts and unaccounted states on the same node*
+
+Currently, if accounts and non-accounts workflows are mixed on the same node then you need to be careful with state 
+selection. When selecting states for non-accounts workflows, the state selection code will currently pick states which
+could be assigned to accounts. However, when selecting states for accounts workflows, you will supply the account ID for
+the account you want to select states from, discriminating the states query to only states held by the specified 
+account. The best solution for now is to mandate that a node uses accounts for _all_ states or not at all.
+
 ## Are states for different accounts segregated?
 
 No. They are all stored in the same `VaultService` operated by the host node. States held by different accounts on the 
 same node can be partitioned by their account ID when querying the vault. See below for more info.
 
-## How do we handle permission on a per account basis?
+## How do we handle permissions on a per account basis?
 
 This must be done at the application level for now and can be handled in the RPC client part of your CorDapp.
    
