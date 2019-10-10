@@ -8,6 +8,10 @@ information please watch [this video](https://youtu.be/u_Hr79dvUHk?t=182).
 Not all states stored in a node's vault need to be allocated to an account. Only those states which are held by 
 `PublicKey`s assigned to an account ID are held by accounts.
 
+> for now, care must be taken when using accounts and non-accounts workflows on the same node. The recommendation is if
+> you wish to use accounts, then use accounts in all of your workflows. This means that each node operates at least one
+> account.
+
 ![High level pictorial description of accounts](docs/high-level.png)
 
 ## Accounts and the `AccountInfo` state
@@ -16,7 +20,7 @@ The base building block for the Accounts CorDapp is the `AccountInfo` state. It 
 with other nodes and contains basic information about an account:
 
 * Account host (`Party`) which is used to map `PublicKey`s to a host node
-* Account name (`String`) which is usually a human readable string to identity the account. It must be unique at the 
+* Account name (`String`) which is usually a human readable string to identify the account. It must be unique at the 
   account host level but may not be unique at the network level. The tuple of account host and account name is 
   guaranteed to be unique at the network level.
 * Account ID (`UUID`) which is a 128-bit random ID that *should* be unique at the network level. The account ID is used 
@@ -25,7 +29,8 @@ with other nodes and contains basic information about an account:
 For the time being, unlike regular Corda nodes which have a default key pair, the Accounts CorDapp intentionally doesn't 
 create a new key pair and associate the `PublicKey` as the default key for a new account. Instead, when you wish to 
 transact with an account the `RequestKey` flow should be used to request that an account on a local or remote node 
-generate a new key pair and send back the `PublicKey` for use in a transaction.
+generate a new key pair and send back the `PublicKey` for use in a transaction. Each time you wish to transact with an 
+account, a new `PublicKey` should be requested.
 
 `AccountInfo` states can be shared with other nodes using the `ShareAccountInfoFlow` and requested from other nodes 
 using the `RequestAccountInfoFlow`. These flows will be covered in more detail later on in the documentation.
@@ -76,7 +81,7 @@ video explaining how it all fits together.
 
 **Node**
 
-A node is a process that runs `corda.jar`. Node's have a network identity issued to them by the trust root of the 
+A node is a process that runs `corda.jar`. Nodes have a network identity issued to them by the trust root of the 
 network the node participates in. The node has a vault to store state objects, a transaction store to store transactions
 and a flow state machine manager to run flows. The node is essentially a container for running business logic written in
 CorDapps. Corda nodes have:  
@@ -175,34 +180,40 @@ is not required for state creation when the creating transaction does not includ
 
 Code sample:
 
-    // Create account by invoking flow via RPC.
-    val accountInfo: StateAndRef<AccountInfo> = rpcProxy.startFlow(::CreateAccount, "Roger's account").returnValue.getOrThrow()
-    
-    // Create account by using sub flow (from inside a flow).
-    val accountInfo: StateAndRef<AccountInfo> = subFlow(CreateAccount("Roger's account"))
-    
-    // The AccountService provides access to triggering Account related flows from within a Corda Service.
-    val accountInfo: StateAndRef<AccountInfo> = accountService.createAccount("Roger's account").getOrThrow()
+```kotlin
+// Create account by invoking flow via RPC.
+val accountInfo: StateAndRef<AccountInfo> = rpcProxy.startFlow(::CreateAccount, "Roger's account").returnValue.getOrThrow()
+
+// Create account by using sub flow (from inside a flow).
+val accountInfo: StateAndRef<AccountInfo> = subFlow(CreateAccount("Roger's account"))
+
+// The AccountService provides access to triggering Account related flows from within a Corda Service.
+val accountInfo: StateAndRef<AccountInfo> = accountService.createAccount("Roger's account").getOrThrow()
+```
     
 ### Looking up an account by account ID or account name    
     
 Once you have created a new account, you can use the `AccountService` to obtain the `AccountInfo` by name or by account 
 ID using the following methods on `AccountService`:
 
+```kotlin
     fun accountInfo(id: UUID): StateAndRef<AccountInfo>?
     fun accountInfo(name: String): List<StateAndRef<AccountInfo>>?
-    
+```    
+
 These methods will either return the `AccountInfo` linked to the specified account ID or name or return `null` if an
 account cannot be found with the specified account ID or name.     
 
 Code sample:
 
-    // Create account from inside a flow.
-    val accountInfo = subFlow(CreateAccount("Roger's account"))
-    // Then look up the account by account ID and name.
-    accountService.accountInfo(accountInfo.state.data.name)
-    accountService.accountInfo(accountInfo.state.data.identifier.id)
-    
+```kotlin
+// Create account from inside a flow.
+val accountInfo = subFlow(CreateAccount("Roger's account"))
+// Then look up the account by account ID and name.
+accountService.accountInfo(accountInfo.state.data.name)
+accountService.accountInfo(accountInfo.state.data.identifier.id)
+```
+
 Accounts can also be looked up by name and account ID via RPC using the following flows: `AccountInfoByName` and 
 `AccountInfoByUUID`. These flows are required because `CordaService`s are not accessible directly via RPC.    
     
@@ -244,17 +255,19 @@ There are startable by RPC and initiating versions of the aforementioned flows, 
 `SendKeyForAccount`.   
 
 Code sample for requesting a new key from an account on the same node or remote node:    
-    
-    // Requestor flow.
-    // Assumption is that we already have the AccountInfo.
-    val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
-    val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
-            accountInfo = accountInfo,
-            hostSession = initiateFlow(accountInfo.state.data.host) 
-    ))
 
-    // Responder flow.
-    subFlow(SendKeyForAccountFlow(otherSideSession))
+```kotlin    
+// Requestor flow.
+// Assumption is that we already have the AccountInfo.
+val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
+val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
+        accountInfo = accountInfo,
+        hostSession = initiateFlow(accountInfo.state.data.host) 
+))
+
+// Responder flow.
+subFlow(SendKeyForAccountFlow(otherSideSession))
+```
     
 ### Looking up an account by `PublicKey`
 
@@ -264,22 +277,28 @@ to the account host and account ID. This API must also perform a look-up of the 
 value if the associated `AccountInfo` for that `PublicKey` has also been stored. To look up the account ID for a 
 `PublicKey` use:
 
+```kotlin
     fun accountIdForKey(owningKey: PublicKey): UUID?
+```
     
 To look up the `AccountInfo` for a `PublicKey` use:
 
+```kotlin
     fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
+```
     
 Code sample: 
 
-    // Requestor flow.
-    // Assumption is that we already have the AccountInfo.
-    val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
-    val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
-            accountInfo = accountInfo,
-            hostSession = initiateFlow(accountInfo.state.data.host) 
-    ))     
-    val sameAccountInfo: StateAndRef<AccountInfo> = accountService.accountInfo(newKey)
+```kotlin
+// Requestor flow.
+// Assumption is that we already have the AccountInfo.
+val accountInfo: StateAndRef<AccountInfo> = accountService.accountInfo("Some account name")
+val newKey: AnonymousParty = subFlow(RequestKeyForAccountFlow(
+        accountInfo = accountInfo,
+        hostSession = initiateFlow(accountInfo.state.data.host) 
+))     
+val sameAccountInfo: StateAndRef<AccountInfo> = accountService.accountInfo(newKey)
+```
 
 There is a startable by RPC version of this method called `AccountInfoByKey`.
 
@@ -287,7 +306,9 @@ There is a startable by RPC version of this method called `AccountInfoByKey`.
 
 You can look-up `AbstractParty`s to the host `Party` using an API on the `IdentityService`:
 
+```kotlin
     fun wellKnownPartyFromAnonymous(party: AbstractParty): Party?
+```
     
 This API doesn't require that the `AccountInfo` associated with the `AnonymousParty`/`PublicKey` has also been stored. 
 
@@ -310,8 +331,10 @@ that account. In this version of accounts there's no in-built functionality for 
 quite easily create your own flow for doing this, if it is required. To enumerate all `PublicKey`s for an account, use
 this API on `AccountService`:
 
+```kotlin
     fun accountKeys(id: UUID): List<PublicKey>
-    
+```    
+
 If either the account ID is unknown or there are no `PublicKey`s mapped to the account ID, then the method call will
 return an empty list. Otherwise, all the keys mapped to that account will be returned. Note that this method works for
 accounts created on remote nodes providing the `AccountInfo` and `PublicKey` mappings have previously been shared with 
@@ -319,12 +342,14 @@ the calling node.
 
 Example code:    
 
-    // Showing initiator flow only and assuming we already have an AccountInfo from a remote node.
-    val accountHost: Party = someAccountInfo.host
-    val newKeyOne: AnonymousParty = subFlow(RequestKeyForAccountFlow(accountInfo, initiateFlow(accountHost)))   
-    val newKeyTwo: AnonymousParty = subFlow(RequestKeyForAccountFlow(accountInfo, initiateFlow(accountHost)))  
-    // Should return a list _at least_ containing the above two keys.    
-    val keys: List<PublicKey> = accountService.accountKeys(someAccountInfo.identifier.id)
+```kotlin
+// Showing initiator flow only and assuming we already have an AccountInfo from a remote node.
+val accountHost: Party = someAccountInfo.host
+val newKeyOne: AnonymousParty = subFlow(RequestKeyForAccountFlow(accountInfo, initiateFlow(accountHost)))   
+val newKeyTwo: AnonymousParty = subFlow(RequestKeyForAccountFlow(accountInfo, initiateFlow(accountHost)))  
+// Should return a list _at least_ containing the above two keys.    
+val keys: List<PublicKey> = accountService.accountKeys(someAccountInfo.identifier.id)
+```
 
 ### Requesting and sharing the `AccountInfo` from/to another node by using the account ID/`AccountInfo`
 
@@ -348,17 +373,21 @@ for that accounts they are not aware of.
 It is very important that we can query the vault by account. As such, there is a new property added to 
 `VaultQueryCriteria` in Corda 4.3 and it can be used like so via RPC:
 
-    rpcProxy.vaultQueryByCriteria(
-            QueryCriteria.VaultQueryCriteria(externalIds = listOf(accountId)),
-            StateClass::class.java
-    )
+```kotlin
+rpcProxy.vaultQueryByCriteria(
+        QueryCriteria.VaultQueryCriteria(externalIds = listOf(accountId)),
+        StateClass::class.java
+)
+```
     
 and inside a flow:
 
-    serviceHub.vaultService.queryBy(
-            QueryCriteria.VaultQueryCriteria(externalIds = listOf(accountId)),
-            StateClass::class.java
-    ) 
+```kotlin
+serviceHub.vaultService.queryBy(
+        QueryCriteria.VaultQueryCriteria(externalIds = listOf(accountId)),
+        StateClass::class.java
+) 
+```
     
 Using this approach, the vault query will only return states which have participation/owning keys which are allocated
 to the specified account ID. If the account ID is unknown to the node or no states are in the vault which are linked
@@ -372,8 +401,8 @@ The best way to learn is by looking at existing code. In that light check-out th
 Accounts CorDapp:
 
 * [SupplyChain](https://github.com/peterli-r3/Accounts_SupplyChain) (By Peter Li, R3) 
-* [Sweepstake]() (By Will Hester, R3)
-* [GoldTrading]() (By Stefano Franz, R3)
+* [Sweepstake](https://github.com/corda/accounts/tree/master/examples/cordapp-sweepstake) (By Will Hester, R3)
+* [GoldTrading](https://github.com/corda/accounts/tree/master/examples/gold-trading) (By Stefano Franz, R3)
 
 ### Why use accounts?
 
