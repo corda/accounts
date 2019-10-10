@@ -18,7 +18,6 @@ import net.corda.core.schemas.QueryableState
  * @property name a string name for the account which will be unique at the level of the account host
  * @property host a Corda node, specified by a [Party] which hosts the account
  * @property identifier an UUID which should be unique at the network level
- * @property status indicates whether the account is open/closed/etc.
  */
 @BelongsToContract(AccountInfoContract::class)
 data class AccountInfo(
