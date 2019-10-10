@@ -181,7 +181,7 @@ Code sample:
     // Create account by using sub flow (from inside a flow).
     val accountInfo: StateAndRef<AccountInfo> = subFlow(CreateAccount("Roger's account"))
     
-    // Create account using AccountService (from inside a flow). "accountService" is an extention function on FlowLogic.
+    // The AccountService provides access to triggering Account related flows from within a Corda Service.
     val accountInfo: StateAndRef<AccountInfo> = accountService.createAccount("Roger's account").getOrThrow()
     
 ### Looking up an account by account ID or account name    
