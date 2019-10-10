@@ -1,5 +1,6 @@
 package com.r3.corda.lib.accounts.workflows.services
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
@@ -42,12 +43,15 @@ import java.util.*
 interface AccountService : SerializeAsToken {
 
     /** Performs a vault query which returns all accounts hosted by the calling node. */
+    @Suspendable
     fun ourAccounts(): List<StateAndRef<AccountInfo>>
 
     /** Performs a vault query and returns all the accounts hosted by the specified node. */
+    @Suspendable
     fun accountsForHost(host: Party): List<StateAndRef<AccountInfo>>
 
     /** Performs a vault query and returns all accounts, including those hosted by other nodes. */
+    @Suspendable
     fun allAccounts(): List<StateAndRef<AccountInfo>>
 
     /**
@@ -58,6 +62,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param name the proposed name for this account.
      */
+    @Suspendable
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
@@ -67,6 +72,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param id the [AccountInfo] to return a list of keys for.
      */
+    @Suspendable
     fun accountKeys(id: UUID): List<PublicKey>
 
     /**
@@ -75,6 +81,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param owningKey the [PublicKey] to look-up
      */
+    @Suspendable
     fun accountIdForKey(owningKey: PublicKey): UUID?
 
     /**
@@ -84,6 +91,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param id the account ID to return the [AccountInfo] for.
      */
+    @Suspendable
     fun accountInfo(id: UUID): StateAndRef<AccountInfo>?
 
     /**
@@ -93,6 +101,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param owningKey the public key to return an [AccountInfo] for.
      */
+    @Suspendable
     fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>?
 
     /**
@@ -105,6 +114,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param name the account name to return [AccountInfo]s for.
      */
+    @Suspendable
     fun accountInfo(name: String): List<StateAndRef<AccountInfo>>
 
     /**
@@ -114,6 +124,7 @@ interface AccountService : SerializeAsToken {
      * @param accountId the account ID of the [AccountInfo] to share.
      * @param party the [Party] to share the [AccountInfo] with.
      */
+    @Suspendable
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
     /**
@@ -124,6 +135,7 @@ interface AccountService : SerializeAsToken {
      * @param accountId the account to share the [StateAndRef] with
      * @param state the [StateAndRef] to share
      */
+    @Suspendable
     fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 
     fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit>
