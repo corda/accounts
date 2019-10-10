@@ -30,28 +30,23 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         val logger = contextLogger()
     }
 
-    @Suspendable
     override fun accountsForHost(host: Party): List<StateAndRef<AccountInfo>> {
         return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(accountHostCriteria(host))).states
     }
 
-    @Suspendable
     override fun ourAccounts(): List<StateAndRef<AccountInfo>> {
         return accountsForHost(services.ourIdentity)
     }
 
-    @Suspendable
     override fun allAccounts(): List<StateAndRef<AccountInfo>> {
         return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria).states
     }
 
-    @Suspendable
     override fun accountInfo(id: UUID): StateAndRef<AccountInfo>? {
         val uuidCriteria = accountUUIDCriteria(id)
         return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(uuidCriteria)).states.singleOrNull()
     }
 
-    @Suspendable
     override fun accountInfo(name: String): List<StateAndRef<AccountInfo>> {
         val nameCriteria = accountNameCriteria(name)
         val results = services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(nameCriteria)).states
@@ -73,21 +68,19 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         return flowAwareStartFlow(CreateAccount(name))
     }
 
+    @Suspendable
     override fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit> {
         return flowAwareStartFlow(ShareStateAndSyncAccounts(state, party))
     }
 
-    @Suspendable
     override fun accountKeys(id: UUID): List<PublicKey> {
         return services.identityService.publicKeysForExternalId(id).toList()
     }
 
-    @Suspendable
     override fun accountIdForKey(owningKey: PublicKey): UUID? {
         return services.identityService.externalIdForPublicKey(owningKey)
     }
 
-    @Suspendable
     override fun accountInfo(owningKey: PublicKey): StateAndRef<AccountInfo>? {
         return accountIdForKey(owningKey)?.let { accountInfo(it) }
     }
