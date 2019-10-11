@@ -1,5 +1,6 @@
 package com.r3.corda.lib.accounts.workflows.services
 
+import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.ContractState
@@ -58,6 +59,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param name the proposed name for this account.
      */
+    @Suspendable
     fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>>
 
     /**
@@ -105,7 +107,7 @@ interface AccountService : SerializeAsToken {
      *
      * @param name the account name to return [AccountInfo]s for.
      */
-    fun accountInfo(name: String): List<StateAndRef<AccountInfo>>?
+    fun accountInfo(name: String): List<StateAndRef<AccountInfo>>
 
     /**
      * Shares an [AccountInfo] [StateAndRef] with the specified [Party]. The [AccountInfo]is always stored by the
@@ -114,6 +116,7 @@ interface AccountService : SerializeAsToken {
      * @param accountId the account ID of the [AccountInfo] to share.
      * @param party the [Party] to share the [AccountInfo] with.
      */
+    @Suspendable
     fun shareAccountInfoWithParty(accountId: UUID, party: Party): CordaFuture<Unit>
 
     /**
@@ -124,7 +127,9 @@ interface AccountService : SerializeAsToken {
      * @param accountId the account to share the [StateAndRef] with
      * @param state the [StateAndRef] to share
      */
+    @Suspendable
     fun <T : ContractState> shareStateWithAccount(accountId: UUID, state: StateAndRef<T>): CordaFuture<Unit>
 
+    @Suspendable
     fun <T : StateAndRef<*>> shareStateAndSyncAccounts(state: T, party: Party): CordaFuture<Unit>
 }

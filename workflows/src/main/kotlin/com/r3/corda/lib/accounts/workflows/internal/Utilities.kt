@@ -1,5 +1,6 @@
 package com.r3.corda.lib.accounts.workflows.internal
 
+import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.ServiceHub
@@ -13,7 +14,7 @@ internal val persistentKey = "net.corda.node.services.keys.BasicHSMKeyManagement
 
 internal val publicKeyHashToAccountId = "com.r3.corda.lib.accounts.workflows.internal.schemas.PublicKeyHashToAccountIdMapping"
 
-/** Helper for obtaining a [KeyManagementBackedAccountService]. */
+/** Helper for obtaining a [AccountService]. */
 @VisibleForTesting
-val ServiceHub.accountService
+val ServiceHub.accountService: AccountService
     get() = cordaService(KeyManagementBackedAccountService::class.java)

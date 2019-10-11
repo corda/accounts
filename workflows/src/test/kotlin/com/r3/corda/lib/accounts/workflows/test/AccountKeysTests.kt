@@ -3,7 +3,6 @@ package com.r3.corda.lib.accounts.workflows.test
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -78,7 +77,7 @@ class AccountKeysTests {
             it.getOrThrow()
         }
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = a.services.accountService
 
         val foundKeysForAccount1 = a.transaction {
             accountService.accountKeys(account1.state.data.identifier.id)
@@ -114,7 +113,7 @@ class AccountKeysTests {
             it.getOrThrow()
         }
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = a.services.accountService
 
         a.transaction {
             Assert.assertThat(accountService.accountInfo(keyToUse1.owningKey), `is`(account1))
@@ -162,10 +161,10 @@ class AccountKeysTests {
 
         // TODO: Can remove this transaction block when we use the new API on KMS.
         a.transaction {
-            val aKeys = a.services.cordaService(KeyManagementBackedAccountService::class.java).accountKeys(aId)
+            val aKeys = a.services.accountService.accountKeys(aId)
             assertEquals(setOf(keyOne, keyTwo), aKeys.toSet())
 
-            val notAKeys = a.services.cordaService(KeyManagementBackedAccountService::class.java).accountKeys(notAId)
+            val notAKeys = a.services.accountService.accountKeys(notAId)
             assertEquals(setOf(keyThree), notAKeys.toSet())
         }
     }

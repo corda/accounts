@@ -4,7 +4,7 @@ import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.TeamState
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.TournamentService
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.tokens.contracts.types.TokenType
 import com.r3.corda.lib.tokens.contracts.utilities.heldBy
 import com.r3.corda.lib.tokens.contracts.utilities.issuedBy
@@ -27,7 +27,7 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
         }.toList()
 
         val winningAccountIds = winningKeys.map {
-            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.identifier
+            serviceHub.accountService.accountInfo(it!!)?.state?.data?.identifier
         }.toList()
 
         val tournamentService = serviceHub.cordaService(TournamentService::class.java)
@@ -35,7 +35,7 @@ class DistributeWinningsFlow(private val winningTeams: List<StateAndRef<TeamStat
         val winningAccounts = winningAccountIds.flatMap {
             tournamentService.getAccountIdsForGroup(it?.id!!)
         }.toSet().map {
-            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it)
+            serviceHub.accountService.accountInfo(it)
         }
 
         val parties = winningAccounts.map { account ->

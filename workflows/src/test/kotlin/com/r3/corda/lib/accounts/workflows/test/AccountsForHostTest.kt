@@ -4,7 +4,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.AccountsForHost
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.concurrent.CordaFuture
 import net.corda.core.contracts.StateAndRef
 import net.corda.testing.common.internal.testNetworkParameters
@@ -159,7 +159,7 @@ class AccountsForHostTest {
         val accountA = nodeA.startFlow(CreateAccount("Test_AccountA")).runAndGet(network)
 
         //Create accountService for host A
-        val accountService = nodeA.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = nodeA.services.accountService
 
         //Checking if it is possible to look-up the account info using UUID and again checking if that account info is of accountA
         nodeA.transaction {
@@ -178,7 +178,7 @@ class AccountsForHostTest {
         val accountA = nodeA.startFlow(CreateAccount("Test_AccountA")).runAndGet(network)
 
         //Create accountService for host A
-        val accountService = nodeA.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = nodeA.services.accountService
 
         //Checking if it is possible to look-up the account info using name and again checking if that account info is of accountA
         nodeA.transaction {

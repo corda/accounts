@@ -10,7 +10,7 @@ import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.generateQui
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.TournamentService
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.test.TestUtils.Companion.teams
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -64,14 +64,14 @@ class MatchDayFlowTests {
 
     @Test
     fun `match day outcome across multiple nodes`() {
-        val aliceAccountService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aliceAccountService = aliceNode.services.accountService
         val testAccountA = aliceAccountService.createAccount("TEST_ACCOUNT_A").getOrThrow()
         val teamA = aliceNode.startFlow(IssueTeamWrapper(testAccountA, WorldCupTeam(JAPAN, true))).let {
             mockNet.runNetwork()
             it.getOrThrow()
         }
 
-        val bobAccountService = bobNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val bobAccountService = bobNode.services.accountService
         val testAccountB = bobAccountService.createAccount("TEST_ACCOUNT_B").getOrThrow()
         val teamB = bobNode.startFlow(IssueTeamWrapper(testAccountB, WorldCupTeam(BELGIUM, true))).let {
             mockNet.runNetwork()
@@ -104,7 +104,7 @@ class MatchDayFlowTests {
             getOrThrow()
         }
 
-        val charlieAccountService = charlieNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val charlieAccountService = charlieNode.services.accountService
 
         val accountOfWinner = charlieNode.transaction {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
@@ -121,7 +121,7 @@ class MatchDayFlowTests {
         // Alice node, therefore the test would always fail. Not sure how the change from Corda 4.1 to 4.3 effected this
         // but the current behaviour is expected, in that the Team states are relevant to ALICE but not CHARLIE, therefore
         // CHARLIE can't actually do anything... As such, I've changed the test so that all the flows are run from ALICE.
-        val accountOwningService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountOwningService = aliceNode.services.accountService
         val tournamentServiceA = aliceNode.services.cordaService(TournamentService::class.java)
         createAccountsForNode(accountOwningService)
         val accounts = accountOwningService.allAccounts()

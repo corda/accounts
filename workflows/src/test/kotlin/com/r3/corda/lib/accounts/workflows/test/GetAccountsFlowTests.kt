@@ -4,7 +4,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestAccountInfo
 import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
@@ -57,7 +57,7 @@ class GetAccountsFlowTests {
 
         b.startFlow(ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = a.services.accountService
 
         a.transaction {
             Assert.assertThat(accountService.accountInfo(account4.uuid), `is`(account4))
@@ -76,7 +76,7 @@ class GetAccountsFlowTests {
 
         b.startFlow(ShareAccountInfo(account4, listOf(a.identity()))).runAndGet(network)
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = a.services.accountService
 
         a.transaction {
             Assert.assertThat(accountService.allAccounts(), containsInAnyOrder(account1, account2, account3, account4))
@@ -95,7 +95,7 @@ class GetAccountsFlowTests {
             storedAccountInfo
         }
 
-        val accountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = a.services.accountService
         a.transaction {
             val foundAccount = accountService.accountInfo(result.uuid)
             Assert.assertThat(foundAccount, `is`(storedAccount))

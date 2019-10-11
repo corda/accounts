@@ -9,7 +9,7 @@ import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueAccoun
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueTeamFlow
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.IssueTeamHandler
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows.UpdateAccountGroupFlow
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.money.GBP
 import com.r3.corda.lib.tokens.workflows.utilities.tokenAmountWithIssuerCriteria
@@ -234,7 +234,7 @@ class IssueTeamResponse(private val otherSession: FlowSession) : FlowLogic<Unit>
 class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateAndRef<AccountInfo>>() {
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = serviceHub.accountService
         return accountService.createAccount(player.playerName).getOrThrow()
     }
 }
@@ -243,7 +243,7 @@ class CreateAccountForPlayer(private val player: Participant) : FlowLogic<StateA
 class ShareAccountInfo(private val otherParty: Party) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() {
-        val accountService = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+        val accountService = serviceHub.accountService
         val accounts = accountService.allAccounts()
         accounts.forEach { account ->
             accountService.shareAccountInfoWithParty(account.state.data.identifier.id, otherParty).getOrThrow()
@@ -308,7 +308,7 @@ class GetWinningAccounts(private val winningTeams: List<StateAndRef<TeamState>>)
         }.toList()
 
         val winningAccountIds = winningKeys.map {
-            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it!!)?.state?.data?.identifier?.id
+            serviceHub.accountService.accountInfo(it!!)?.state?.data?.identifier?.id
         }.toList()
 
         val tournamentService = serviceHub.cordaService(TournamentService::class.java)
@@ -316,7 +316,7 @@ class GetWinningAccounts(private val winningTeams: List<StateAndRef<TeamState>>)
         val winningAccounts = winningAccountIds.flatMap {
             tournamentService.getAccountIdsForGroup(it!!)
         }.toSet().map {
-            serviceHub.cordaService(KeyManagementBackedAccountService::class.java).accountInfo(it)!!
+            serviceHub.accountService.accountInfo(it)!!
         }
         return winningAccounts
     }

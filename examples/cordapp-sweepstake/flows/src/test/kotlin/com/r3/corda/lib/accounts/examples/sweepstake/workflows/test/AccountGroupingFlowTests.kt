@@ -2,7 +2,7 @@ package com.r3.corda.lib.accounts.examples.sweepstake.workflows.test
 
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.AccountGroup
 import com.r3.corda.lib.accounts.examples.sweepstake.workflows.service.TournamentService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.identity.Party
 import net.corda.core.node.services.queryBy
 import net.corda.testing.common.internal.testNetworkParameters
@@ -59,13 +59,13 @@ class AccountGroupingFlowTests {
 
     @Test
     fun `assign accounts to groups`() {
-        val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aliceService = aliceNode.services.accountService
 
         createAccountsForNode(aliceService)
 
         val accounts = aliceService.ourAccounts()
 
-        aliceService.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
+        aliceNode.services.cordaService(TournamentService::class.java).assignAccountsToGroups(accounts, 8, bobNode.info.singleIdentity())
 
         val aliceGroupStates = aliceNode.services.vaultService.queryBy<AccountGroup>().states
 

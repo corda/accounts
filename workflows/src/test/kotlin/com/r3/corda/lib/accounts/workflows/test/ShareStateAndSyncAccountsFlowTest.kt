@@ -5,8 +5,8 @@ import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
 import com.r3.corda.lib.accounts.workflows.flows.ShareStateAndSyncAccounts
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.services.AccountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.*
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -18,14 +18,12 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
-import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.*
-import kotlin.test.assertFailsWith
 
 class ShareStateAndSyncAccountsFlowTests {
 
@@ -107,7 +105,7 @@ class ShareStateAndSyncAccountsFlowTests {
 }
 
 private fun StartedMockNode.accountService(): AccountService {
-    return this.services.cordaService(KeyManagementBackedAccountService::class.java)
+    return this.services.accountService
 }
 
 

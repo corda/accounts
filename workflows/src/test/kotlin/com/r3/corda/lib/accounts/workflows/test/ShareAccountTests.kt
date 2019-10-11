@@ -5,9 +5,9 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import com.r3.corda.lib.accounts.workflows.flows.RequestKeyForAccount
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.accounts.workflows.services.AccountService
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.contracts.*
 import net.corda.core.flows.FinalityFlow
 import net.corda.core.flows.FlowLogic
@@ -63,7 +63,7 @@ class ShareAccountTests {
             storedAccountInfo
         }
 
-        val aAccountService = a.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aAccountService = a.services.accountService
         a.transaction {
             val foundAccount = aAccountService.accountInfo(result.uuid)
             Assert.assertThat(foundAccount, `is`(storedAccount))
@@ -74,7 +74,7 @@ class ShareAccountTests {
             it.getOrThrow()
         }
 
-        val bAccountService = b.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val bAccountService = b.services.accountService
 
         val accountOnB = b.transaction {
             bAccountService.accountInfo(result.uuid)
@@ -112,7 +112,7 @@ class ShareAccountTests {
 }
 
 private fun StartedMockNode.accountService(): AccountService {
-    return this.services.cordaService(KeyManagementBackedAccountService::class.java)
+    return this.services.accountService
 }
 
 @BelongsToContract(TestContract::class)

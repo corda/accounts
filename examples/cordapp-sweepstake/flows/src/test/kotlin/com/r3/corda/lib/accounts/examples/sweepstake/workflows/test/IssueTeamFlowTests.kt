@@ -9,7 +9,7 @@ import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.TeamState
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.WorldCupTeam
 import com.r3.corda.lib.accounts.workflows.flows.AllAccounts
 import com.r3.corda.lib.accounts.workflows.flows.OurAccounts
-import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
+import com.r3.corda.lib.accounts.workflows.internal.accountService
 import net.corda.core.identity.Party
 import net.corda.core.utilities.getOrThrow
 import net.corda.testing.common.internal.testNetworkParameters
@@ -73,7 +73,7 @@ class IssueTeamFlowTests {
 
     @Test
     fun `issue a team to an account that is owned by same node`() {
-        val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aliceService = aliceNode.services.accountService
         val aliceAccount = aliceService.createAccount("TEST_ACCOUNT").getOrThrow()
 
         //Share alice's account with bob
@@ -91,7 +91,7 @@ class IssueTeamFlowTests {
 
     @Test
     fun `issue a team to an account that is owned by a different node`() {
-        val aliceService = aliceNode.services.cordaService(KeyManagementBackedAccountService::class.java)
+        val aliceService = aliceNode.services.accountService
         val aliceAccount = aliceService.createAccount("TEST_ACCOUNT").getOrThrow()
 
         //Share alice's account with bob

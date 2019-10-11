@@ -5,6 +5,7 @@ import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedTrackBy
 import com.r3.corda.lib.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
+import com.r3.corda.lib.accounts.workflows.services.AccountService
 import com.r3.corda.lib.accounts.workflows.services.KeyManagementBackedAccountService
 import net.corda.core.CordaInternal
 import net.corda.core.contracts.ContractState
@@ -16,8 +17,9 @@ import net.corda.core.node.services.vault.QueryCriteria
 import net.corda.core.node.services.vault.builder
 import java.util.*
 
-/** Helper for obtaining a [KeyManagementBackedAccountService]. */
-val FlowLogic<*>.accountService get() = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
+/** Helper for obtaining a [AccountService]. */
+val FlowLogic<*>.accountService: AccountService
+    get() = serviceHub.cordaService(KeyManagementBackedAccountService::class.java)
 
 // TODO: Remove this and replace with a utility in a commons CorDapp.
 val ServiceHub.ourIdentity get() = myInfo.legalIdentities.first()
