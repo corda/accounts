@@ -34,6 +34,8 @@ learning curve for new CorDapp developers.
 
 ## How to use the library?
 
+See the docs [here](docs.md) for how to build CorDapps using accounts.
+
 By far the easiest way to get started with the accounts SDK is to use the "tokens template"
 which is a branch on the kotlin version of the "CorDapp template". You can obtain 
 it with the following commands:
@@ -61,10 +63,10 @@ wish to use and set the corda version that should've been installed locally::
     buildscript {
         ext {
             corda_release_version = '4.3-RC01'
-            accounts_release_version = '1.0-RC03'
+            accounts_release_version = '1.0-RC04'
             accounts_release_group = 'com.r3.corda.lib.accounts'
             confidential_id_release_group = "com.r3.corda.lib.ci"
-            confidential_id_release_version = "1.0-RC02"
+            confidential_id_release_version = "1.0-RC03"
         }
     }
 
@@ -106,7 +108,7 @@ These should also be added to the `deployNodes` task with the following syntax:
 
 ### Modifying An Existing CorDapp to Use Accounts
 
-States should use `PublicKey` instead of `Party` as a Party refers to a node and the PublicKey can refer to an account.
+States should use `AnonymousParty` instead of `Party` as a Party refers to a node and the PublicKey can refer to an account.
 
 In order to create your state you need to request the PublicKey with a flow. e.g.
 
@@ -130,10 +132,6 @@ publish binaries to your local maven repository:
     git clone http://github.com/corda/accounts
     cd accounts
     ./gradlew clean install
-
-## Where to go next?
-
-TODO
 
 ## Other useful links
 
