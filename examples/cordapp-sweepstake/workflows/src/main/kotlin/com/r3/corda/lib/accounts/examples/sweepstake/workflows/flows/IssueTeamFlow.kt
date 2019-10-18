@@ -21,11 +21,7 @@ class IssueTeamFlow(
 
     @Suspendable
     override fun call(): StateAndRef<TeamState> {
-        val keyToUse = if (accountInfo.state.data.host == ourIdentity) {
-            serviceHub.createKeyForAccount(accountInfo.state.data).owningKey
-        } else {
-            subFlow(RequestKeyForAccount(accountInfo.state.data)).owningKey
-        }
+        val keyToUse = subFlow(RequestKeyForAccount(accountInfo.state.data)).owningKey
         val txBuilder = TransactionBuilder(notary = serviceHub.networkMapCache.notaryIdentities.first())
         txBuilder.addCommand(TournamentContract.ISSUE_TEAM, serviceHub.myInfo.legalIdentities.first().owningKey)
         txBuilder.addOutputState(TeamState(team, true, keyToUse))

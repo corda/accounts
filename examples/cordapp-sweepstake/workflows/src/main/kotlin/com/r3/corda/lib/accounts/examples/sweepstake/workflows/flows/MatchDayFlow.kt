@@ -39,12 +39,7 @@ class MatchDayFlow(
         val winningAccount = accountService.accountInfo(winningTeam.state.data.owningKey!!)
                 ?: throw FlowException("Could not find account with public key: ${winningTeam.state.data.owningKey!!.toStringShort()}")
 
-        val newOwner = if (winningAccount.state.data.host == ourIdentity) {
-            serviceHub.createKeyForAccount(winningAccount.state.data)
-        } else {
-            subFlow(RequestKeyForAccount(winningAccount.state.data))
-        }
-
+        val newOwner = subFlow(RequestKeyForAccount(winningAccount.state.data))
         val signingAccounts = listOfNotNull(accountForTeamA, accountForTeamB)
         val requiredSigners =
                 signingAccounts.map { it.state.data.host.owningKey } + listOfNotNull(
