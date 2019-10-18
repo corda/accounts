@@ -22,16 +22,15 @@ See https://docs.corda.net/getting-set-up.html.
 
 # Usage
 
-From the root directory run the following commands:
+Build and run the nodes:
 
-* `./gradlew clean deployNodesX`
-* `examples/cordapp-sweepstake/cordapp/build/nodes/runnodes`
+* `./gradlew clean deployNodes`
+* `./build/nodes/runnodes`
 
-Once built, start the spring boot web application `WorldCupApplication` using the following command:
+Start the Spring Boot web application `WorldCupApplication`:
 * `./gradlew runTournamentServer`
 
-Navigate to the server
-`http://localhost:8080/`
+Navigate to the server http://localhost:8080
 
 1. Click the 'Import players' button
 2. Click the 'Create accounts and issue teams' button. Wait for the two columns on the table to be populated
