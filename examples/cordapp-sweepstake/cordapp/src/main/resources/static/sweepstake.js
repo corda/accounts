@@ -190,15 +190,15 @@ function runMatches(teamStates) {
 
         let jsonObj = { teamAId: linearIdForTeamA, teamBId: linearIdForTeamB, winningTeamId: linearIdForWinner }
         let jsonStr = JSON.stringify(jsonObj);
-        // postRequest(jsonStr, "/play-match/")
+        postRequest(jsonStr, "/play-match/")
 
-        (function(index) {
-            setTimeout(function() {
-                let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
-                matches.appendChild(matchResult);
-                matches.appendChild(document.createElement("br"));
-            }, i*500);
-        })(i);
+//        (function(index) {
+//            setTimeout(function() {
+//                let matchResult = document.createTextNode(teamA.team.teamName + " are playing " + teamB.team.teamName + " and the winner is: " + winningTeam.team.teamName);
+//                matches.appendChild(matchResult);
+//                matches.appendChild(document.createElement("br"));
+//            }, i*500);
+//        })(i);
     }
     return winningTeams;
 }
