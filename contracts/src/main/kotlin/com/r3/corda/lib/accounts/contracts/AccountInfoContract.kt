@@ -8,7 +8,7 @@ import net.corda.core.contracts.requireSingleCommand
 import net.corda.core.transactions.LedgerTransaction
 
 /**
- * Contract for [AccountInfo]. For now, it only supports teh creation of new [AccountInfo]s.
+ * Contract for [AccountInfo]. For now, it only supports the creation of new [AccountInfo]s.
  */
 class AccountInfoContract : Contract {
     override fun verify(tx: LedgerTransaction) {
