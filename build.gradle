@@ -22,7 +22,7 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
+        maven { url "http://software.r3.com/artifactory/corda-releases" }
     }
 
     dependencies {
@@ -65,11 +65,17 @@ subprojects {
     repositories {
         jcenter()
         mavenCentral()
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dependencies" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev" }
+        maven { url "https://software.r3.com/artifactory/corda-dev" }
+        maven { url "https://software.r3.com/artifactory/r3-corda-dev"
+            credentials {
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            }
+        }
+        maven { url "https://software.r3.com/artifactory/corda-dependencies" }
+        maven { url "https://software.r3.com/artifactory/corda-releases" }
+        maven { url "https://software.r3.com/artifactory/corda-lib" }
+        maven { url "https://software.r3.com/artifactory/corda-lib-dev" }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
         // Uncomment when required for local testing.
@@ -127,7 +133,7 @@ configure(publishProjects) { subproject ->
 
 artifactory {
     publish {
-        contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
+        contextUrl = 'https://software.r3.com/artifactory'
         repository {
             repoKey = 'corda-lib-dev'
             username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')

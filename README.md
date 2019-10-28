@@ -74,8 +74,8 @@ Second, you must add the accounts artifactory repository to the
 list of repositories for your project (if it hasn't already been added):
 
     repositories {
-        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
-        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
+        maven { url 'http://software.r3.com/artifactory/corda-lib-dev' }
+        maven { url 'http://software.r3.com/artifactory/corda-lib' }
     }
 
 Now, you can add the accounts dependencies to the `dependencies` block
