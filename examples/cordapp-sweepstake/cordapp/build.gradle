@@ -128,5 +128,5 @@ task integrationTest(type: Test, dependsOn: []) {
 task runTournamentServer(type: JavaExec, dependsOn: assemble) {
     classpath = sourceSets.main.runtimeClasspath
     main = 'com.r3.corda.lib.accounts.examples.sweepstake.cordapp.clients.WorldCupApplication'
-    args '--server.port=8080', '--config.rpc.host=localhost', '--config.rpc.port=10005', '--config.rpc.username=user1', '--config.rpc.password=test'
+    args '--server.port=8080', '--config.rpc.host=localhost', '--config.rpc.port=40001', '--config.rpc.username=testuser', '--config.rpc.password=password'
 }
