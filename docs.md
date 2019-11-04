@@ -94,7 +94,7 @@ CorDapps. Corda nodes have:
 * the capability, using the `IdentityService`, to allocate `PublicKey`s created by another node to the `CordaX500Name` 
   of that node and optionally an "external ID" associated with that node. 
 * the capability to look-up the `CordaX500Name` (and therefore the `Party` object) for an `AnonymousParty` 
-  (confidential identity) using the `IentityService`. 
+  (confidential identity) using the `IdentityService`.
 
 **Account**
 
