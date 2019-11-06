@@ -10,6 +10,14 @@ sheets or P&L accounts, employee accounts, etc.
 
 If you wish to explore the sdk in detail [readme](README.md) and [documentation](docs.md) are a good place to start.
 
+We would like to thank our external contributors for PRs and raising issues. Special thanks to:
+Andrew Morgan @opticyclic
+Etaro Ito @kotaro-dr
+Adel Rustum @adelRestom
+@HaoLiu1987
+
+and to our QA from TCS: Rajesh Vijayan - @rajvjn and Gokulnath - @GokulnathViswa
+
 #### Contracts
 
 * Introduced `AccountInfo` state to hold information about host network identity, account name and unique identifier.
@@ -45,4 +53,4 @@ It's sufficient to specify list of `externalIds`: `QueryCriteria.VaultQueryCrite
 
 #### Known issues
 
-* By design accounts don't have default key, to transact key has to be explicitly requested. 
+* By design accounts don't have default key, to transact key has to be explicitly requested.
