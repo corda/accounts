@@ -31,7 +31,7 @@ internal enum class ResultOfPermissioning {
  * correctly handles state level permissioning.
  *
  * Permissioning for "observed" states is required, where as for "held" states it is not because when an account holder
- * holds a state, the public key used to hold that state links back to the account id - the node hold holds a mapping of
+ * holds a state, the public key used to hold that state links back to the account id - the node holds a mapping of
  * account IDs to public keys which can be used when querying the vault by account ID. However, in the case of "observed"
  * states which are not held by an account but can be seen by an account, there is no participant public key inside the
  * state attributable to the account holder, therefore we must store a separate table of information pertaining to the
