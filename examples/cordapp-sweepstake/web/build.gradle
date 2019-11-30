@@ -1,0 +1,52 @@
+apply plugin: 'kotlin'
+
+sourceSets {
+    integrationTest {
+        kotlin {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integrationTest/kotlin')
+        }
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+    compile project(":workflows")
+    compile project(":contracts")
+    compile "$corda_release_group:corda-rpc:$corda_release_version"
+
+    // Spring
+    compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
+
+    // JSON parser
+    compile "com.beust:klaxon:5.0.1"
+
+    // Kotlin
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    // Testing
+    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testCompile "junit:junit:$junit_version"
+    testCompile ("org.springframework.boot:spring-boot-starter-test:2.0.2.RELEASE") {
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
+}
+
+task integrationTest(type: Test, dependsOn: []) {
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+}
+
+task runTournamentServer(type: JavaExec, dependsOn: assemble) {
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.r3.corda.lib.accounts.examples.sweepstake.cordapp.clients.WorldCupApplication'
+    args '--server.port=8080', '--config.rpc.host=localhost', '--config.rpc.port=10005', '--config.rpc.username=user1', '--config.rpc.password=test'
+}
