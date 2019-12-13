@@ -8,6 +8,7 @@ import com.r3.corda.lib.accounts.workflows.flows.ShareAccountInfo
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken
 import com.r3.corda.lib.tokens.contracts.utilities.*
 import com.r3.corda.lib.tokens.money.GBP
+import com.r3.corda.lib.tokens.workflows.flows.rpc.ConfidentialRedeemFungibleTokens
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens
 import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount
@@ -62,6 +63,7 @@ class IntegrationTest {
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
+            TestCordapp.findCordapp("com.r3.corda.lib.ci"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
     )
@@ -157,6 +159,28 @@ class IntegrationTest {
                     FungibleToken::class.java
             )
             assertEquals(50.GBP, (kasiaQuery.states).sumTokenStateAndRefs().withoutIssuer())
+
+            // Redeem.
+
+            // Get a change key.
+            val kasiaChangeKey = A.rpc.startFlow(::RequestKeyForAccount, kasiaAccount.state.data).returnValue.getOrThrow()
+
+            log.info("Redeeming tokens from Kasia's account.")
+            val redeemTokensTransaction = A.rpc.startFlowDynamic(
+                    ConfidentialRedeemFungibleTokens::class.java,
+                    30.GBP,
+                    I.legalIdentity(),
+                    emptyList<Party>(),
+                    QueryCriteria.VaultQueryCriteria(externalIds = listOf(kasiaAccount.state.data.identifier.id)),
+                    kasiaChangeKey
+            )
+            log.info(redeemTokensTransaction.returnValue.getOrThrow().tx.toString())
+
+            val kasiaQueryTwo = A.rpc.vaultQueryByCriteria(
+                    QueryCriteria.VaultQueryCriteria(externalIds = listOf(kasiaAccount.state.data.identifier.id)),
+                    FungibleToken::class.java
+            )
+            assertEquals(20.GBP, (kasiaQueryTwo.states).sumTokenStateAndRefs().withoutIssuer())
         }
     }
 }
