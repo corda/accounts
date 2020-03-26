@@ -7,12 +7,15 @@ pipeline {
     agent {
         dockerfile {
             filename '.ci/Dockerfile'
+            additionalBuildArgs "--build-arg USER=stresstester"
+            args '-v /var/run/docker.sock:/var/run/docker.sock --group-add 999'
         }
     }
     options { timestamps() }
 
     environment {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
+        LOOPBACK_ADDRESS = "host.docker.internal"
     }
 
     stages {
@@ -22,15 +25,21 @@ pipeline {
                     sh "./gradlew clean test --info"
                 }
             }
-            post {
-                always {
-                    junit '**/build/test-results/**/*.xml'
+        }
+
+        stage('Freighter Tests') {
+            steps {
+                timeout(30) {
+                    sh "./gradlew freighterTest --info"
                 }
             }
         }
     }
 
     post {
+        always {
+            junit '**/build/test-results/**/*.xml'
+        }
         cleanup {
             deleteDir() /* clean up our workspace */
         }

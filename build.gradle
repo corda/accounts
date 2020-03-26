@@ -3,9 +3,9 @@ buildscript {
         corda_release_group = 'net.corda'
         corda_release_version = '4.3'
         tokens_release_group = 'com.r3.corda.lib.tokens'
-        tokens_release_version = '1.1-RC06-PRESIGN'
+        tokens_release_version = '1.1'
         accounts_release_group = 'com.r3.corda.lib.accounts'
-        accounts_release_version = '1.0'
+        accounts_release_version = '1.1-SNAPSHOT'
         corda_gradle_plugins_version = '4.0.42'
         mavenVersion = '3.1.0'
         maven_resolver_version = "1.1.1"
@@ -72,7 +72,7 @@ subprojects {
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
         // Uncomment when required for local testing.
-         mavenLocal()
+        mavenLocal()
 
     }
 
@@ -128,7 +128,7 @@ artifactory {
     publish {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
-            repoKey = 'corda-lib'
+            repoKey = 'corda-lib-dev'
             username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
             password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
         }
@@ -141,7 +141,8 @@ artifactory {
     }
 }
 
+
 wrapper {
-    gradleVersion = "4.10.2"
+    gradleVersion = "5.6"
     distributionType = Wrapper.DistributionType.ALL
 }
