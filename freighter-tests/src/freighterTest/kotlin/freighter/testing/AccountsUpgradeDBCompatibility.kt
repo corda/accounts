@@ -1,5 +1,7 @@
 package freighter.testing
 
+import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByUUID
+import com.r3.corda.lib.accounts.workflows.flows.CordappVersionDetector
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import freighter.deployments.DeploymentContext
 import freighter.deployments.NodeBuilder
@@ -8,18 +10,30 @@ import freighter.machine.DeploymentMachineProvider
 import freighter.machine.generateRandomString
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
+import org.hamcrest.MatcherAssert
+import org.hamcrest.Matchers.`is`
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import utility.getOrThrow
 import java.util.concurrent.CompletableFuture
 
-class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
+class AccountsUpgradeDBCompatibility : DockerRemoteMachineBasedTest() {
 
     val accountsV1Contracts =
-        NodeBuilder.DeployedCordapp.fromClassPath("accounts-contracts")
+        NodeBuilder.DeployedCordapp.fromGradleArtifact(
+            group = "com.r3.corda.lib.accounts",
+            artifact = "accounts-contracts",
+            version = "1.0"
+        )
 
     val accountsV1Workflows =
+        NodeBuilder.DeployedCordapp.fromGradleArtifact(
+            group = "com.r3.corda.lib.accounts",
+            artifact = "accounts-workflows",
+            version = "1.0"
+        )
+
+    val accountsCurrentWorkflows =
         NodeBuilder.DeployedCordapp.fromClassPath("accounts-workflows")
 
     val modernCiV1 = NodeBuilder.DeployedCordapp.fromGradleArtifact(
@@ -37,29 +51,18 @@ class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
     }
 
     @Test
-    fun `accounts can be loaded on a node running postgres 9_6`() {
+    fun `upgrade to current does not break postgres 9_6`() {
         runAccountsOnNodeRunningDatabase(DeploymentMachineProvider.DatabaseType.PG_9_6)
     }
 
     @Test
-    fun `accounts can be loaded on a node running postgres 10_10`() {
+    fun `upgrade to current does not break postgres 10_10`() {
         runAccountsOnNodeRunningDatabase(DeploymentMachineProvider.DatabaseType.PG_10_10)
     }
 
     @Test
-    fun `accounts can be loaded on a node running postgres 11_5`() {
+    fun `upgrade to current does not break postgres 11_5`() {
         runAccountsOnNodeRunningDatabase(DeploymentMachineProvider.DatabaseType.PG_11_5)
-    }
-
-    @Test
-    fun `accounts can be loaded on a node running ms_sql`() {
-        runAccountsOnNodeRunningDatabase(DeploymentMachineProvider.DatabaseType.MS_SQL)
-    }
-
-    @Test
-    @OracleTest
-    fun `accounts can be loaded on a node running oracle 12 r2`() {
-        runAccountsOnNodeRunningDatabase(DeploymentMachineProvider.DatabaseType.ORACLE_12_R2)
     }
 
     private fun runAccountsOnNodeRunningDatabase(db: DeploymentMachineProvider.DatabaseType) {
@@ -84,13 +87,32 @@ class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
 
         val nodeMachine = deploymentResult.getOrThrow().nodeMachines.single()
 
-        nodeMachine.rpc {
-            val createdAccount = startFlow(
+        val issuedAccountBeforeUpgrade = nodeMachine.rpc {
+            startFlow(
                 ::CreateAccount,
                 "testAccount"
             ).returnValue.getOrThrow()
-            println("Successfully created account: $createdAccount")
         }
+
+        nodeMachine.stopNode()
+        nodeMachine.upgradeCordapp(accountsV1Workflows, accountsCurrentWorkflows)
+        nodeMachine.startNode()
+
+        val cordappVersionAfterUpgrade = nodeMachine.rpc {
+            startFlow(
+                ::CordappVersionDetector
+            ).returnValue.getOrThrow()
+        }
+
+        MatcherAssert.assertThat(cordappVersionAfterUpgrade, `is`("2"))
+
+        val retrievedAfterUpgrade = nodeMachine.rpc {
+            startFlow(
+                ::AccountInfoByUUID,
+                issuedAccountBeforeUpgrade.state.data.identifier.id
+            ).returnValue.getOrThrow()
+        }
+        MatcherAssert.assertThat(issuedAccountBeforeUpgrade.state.data, `is`(retrievedAfterUpgrade?.state?.data))
     }
 
 }
