@@ -15,7 +15,7 @@ pipeline {
 
     environment {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
-        LOOPBACK_ADDRESS = "host.docker.internal"
+        LOOPBACK_ADDRESS = "172.17.0.1"
         ARTIFACTORY_CREDENTIALS = credentials('artifactory-credentials')
     }
 
