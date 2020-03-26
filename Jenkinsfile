@@ -16,6 +16,7 @@ pipeline {
     environment {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
         LOOPBACK_ADDRESS = "host.docker.internal"
+        ARTIFACTORY_CREDENTIALS = credentials('artifactory-credentials')
     }
 
     stages {
@@ -30,7 +31,11 @@ pipeline {
         stage('Freighter Tests') {
             steps {
                 timeout(30) {
-                    sh "./gradlew freighterTest --info"
+                    sh '''
+                        export ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
+                        export ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
+                        ./gradlew freighterTest --info
+                        '''
                 }
             }
         }
