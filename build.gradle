@@ -62,6 +62,8 @@ subprojects {
         }
     }
 
+    apply plugin: 'kotlin'
+
     repositories {
         jcenter()
         mavenCentral()
@@ -85,7 +87,11 @@ subprojects {
         }
     }
 
-    apply plugin: 'kotlin'
+
+    tasks.withType(Test).all {
+        minHeapSize = "128m"
+        maxHeapSize = "4096m"
+    }
 }
 
 def publishProjects = [project(":contracts"), project(":workflows")]
