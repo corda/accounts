@@ -3,6 +3,7 @@ package com.r3.corda.lib.accounts.workflows.internal.schemas
 import net.corda.core.schemas.DirectStatePersistable
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentStateRef
+import org.hibernate.annotations.Type
 import java.util.*
 import javax.persistence.*
 

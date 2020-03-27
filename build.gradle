@@ -3,10 +3,10 @@ buildscript {
         corda_release_group = 'net.corda'
         corda_release_version = '4.3'
         tokens_release_group = 'com.r3.corda.lib.tokens'
-        tokens_release_version = '1.1-RC06-PRESIGN'
+        tokens_release_version = '1.1'
         accounts_release_group = 'com.r3.corda.lib.accounts'
-        accounts_release_version = '1.0'
-        corda_gradle_plugins_version = '4.0.42'
+        accounts_release_version = '1.1-SNAPSHOT'
+        corda_gradle_plugins_version = '5.0.8'
         mavenVersion = '3.1.0'
         maven_resolver_version = "1.1.1"
         kotlin_version = '1.2.71'
@@ -62,7 +62,10 @@ subprojects {
         }
     }
 
+    apply plugin: 'kotlin'
+
     repositories {
+        mavenLocal()
         jcenter()
         mavenCentral()
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
@@ -71,9 +74,6 @@ subprojects {
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev" }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
-        // Uncomment when required for local testing.
-         mavenLocal()
-
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -85,7 +85,11 @@ subprojects {
         }
     }
 
-    apply plugin: 'kotlin'
+
+    tasks.withType(Test).all {
+        minHeapSize = "128m"
+        maxHeapSize = "4096m"
+    }
 }
 
 def publishProjects = [project(":contracts"), project(":workflows")]
@@ -128,9 +132,9 @@ artifactory {
     publish {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
-            repoKey = 'corda-lib'
-            username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-            password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
+            username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+            password = System.getenv('ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
         }
 
         defaults {
@@ -141,7 +145,8 @@ artifactory {
     }
 }
 
+
 wrapper {
-    gradleVersion = "4.10.2"
+    gradleVersion = "5.6"
     distributionType = Wrapper.DistributionType.ALL
 }

@@ -39,6 +39,20 @@ pipeline {
                 }
             }
         }
+
+        stage('Publish SNAPSHOT') {
+            steps {
+                sh '''#!/bin/bash
+                        export ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
+                        export ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
+                        VERSION="$(./gradlew properties --no-daemon --console=plain -q | grep "^version:" | awk '{printf $2}')"
+                        if [[ $VERSION == *"SNAPSHOT"* ]]; then
+                            echo "Building a SNAPSHOT"
+                           ./gradlew artifactoryPublish -PpublishRepo="corda-lib-dev"
+                        fi
+                    '''
+            }
+        }
     }
 
     post {

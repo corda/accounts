@@ -8,5 +8,6 @@ include 'examples:gold-trading:agent'
 include 'examples:gold-trading:fund-admin'
 include 'examples:gold-trading:fund-manager'
 include 'examples:tokens-integration-test'
+include 'freighter-tests'
 
 

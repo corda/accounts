@@ -3,7 +3,7 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
-    <changeSet author="R3.Corda" id="accounts-contracts-schema-migrations-v1.0" dbms="postgresql">
+    <changeSet author="R3.Corda" id="accounts-contracts-schema-migrations-v1.0" dbms="oracle">
 
         <!-- AccountInfo schema -->
 
@@ -14,10 +14,10 @@
             <column name="transaction_id" type="NVARCHAR(64)">
                 <constraints nullable="false"/>
             </column>
-            <column name="identifier" type="UUID">
+            <column name="identifier" type="RAW(16)">
                 <constraints nullable="false"/>
             </column>
-            <column name="name" type="VARCHAR(255)">
+            <column name="name" type="NVARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
             <column name="host" type="NVARCHAR(255)">
