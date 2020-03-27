@@ -65,6 +65,7 @@ subprojects {
     apply plugin: 'kotlin'
 
     repositories {
+        mavenLocal()
         jcenter()
         mavenCentral()
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
@@ -73,9 +74,6 @@ subprojects {
         maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev" }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
-        // Uncomment when required for local testing.
-        mavenLocal()
-
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
@@ -134,9 +132,9 @@ artifactory {
     publish {
         contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
         repository {
-            repoKey = 'corda-lib-dev'
-            username = System.getenv('CORDA_ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
-            password = System.getenv('CORDA_ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
+            repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
+            username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')
+            password = System.getenv('ARTIFACTORY_PASSWORD') ?: System.getProperty('corda.artifactory.password')
         }
 
         defaults {
