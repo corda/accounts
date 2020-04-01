@@ -9,17 +9,16 @@ import freighter.machine.generateRandomString
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
 import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import utility.getOrThrow
 import java.util.concurrent.CompletableFuture
 
 class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
 
-    val accountsV1Contracts =
+    val accountsContracts =
         NodeBuilder.DeployedCordapp.fromClassPath("accounts-contracts")
 
-    val accountsV1Workflows =
+    val accountsWorkflows =
         NodeBuilder.DeployedCordapp.fromClassPath("accounts-workflows")
 
     val modernCiV1 = NodeBuilder.DeployedCordapp.fromGradleArtifact(
@@ -75,8 +74,8 @@ class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
         val deploymentResult = SingleNodeDeployment(
             NodeBuilder().withX500("O=PartyB, C=GB, L=LONDON, CN=$randomString")
                 .withCordapp(stressTesterCordapp)
-                .withCordapp(accountsV1Contracts)
-                .withCordapp(accountsV1Workflows)
+                .withCordapp(accountsContracts)
+                .withCordapp(accountsWorkflows)
                 .withCordapp(modernCiV1)
                 .withDatabase(machineProvider.requestDatabase(db))
         ).withVersion("4.3")
