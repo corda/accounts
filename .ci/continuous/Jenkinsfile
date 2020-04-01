@@ -17,9 +17,19 @@ pipeline {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
         LOOPBACK_ADDRESS = "172.17.0.1"
         ARTIFACTORY_CREDENTIALS = credentials('artifactory-credentials')
+        DOCKER_CREDENTIALS = credentials('docker-for-oracle-login')
     }
 
     stages {
+
+        stage("Auth Docker for Oracle Images") {
+            steps {
+                sh '''
+                    docker login --username ${DOCKER_CREDENTIALS_USR} --password ${DOCKER_CREDENTIALS_PSW}
+                   '''
+            }
+        }
+
         stage('Unit Tests') {
             steps {
                 timeout(30) {
