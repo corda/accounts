@@ -102,7 +102,7 @@ class IntegrationTest {
             val bAccountsQuery = B.rpc.startFlow(::OurAccounts).returnValue.getOrThrow()
             assertEquals(createAccountsOnB.toSet(), bAccountsQuery.toSet())
 
-            log.info("Sharing account info from node A to node B.")
+            log.info("Sharing account info from node A to Issuer.")
             val rogerAccount = aAccountsQuery.single { it.state.data.name == "PartyA - Roger" }
             A.rpc.startFlow(::ShareAccountInfo, rogerAccount, listOf(I.legalIdentity())).returnValue.getOrThrow()
             I.rpc.watchForTransaction(rogerAccount.ref.txhash).getOrThrow()
