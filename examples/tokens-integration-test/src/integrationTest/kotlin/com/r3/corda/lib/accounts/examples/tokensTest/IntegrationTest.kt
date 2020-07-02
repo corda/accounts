@@ -34,6 +34,9 @@ import net.corda.testing.driver.NodeParameters
 import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
 import org.junit.Test
+import java.time.Instant
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeoutException
 import kotlin.test.assertEquals
 
 class IntegrationTest {
@@ -63,6 +66,7 @@ class IntegrationTest {
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
+            TestCordapp.findCordapp("com.r3.corda.lib.tokens.selection"),
             TestCordapp.findCordapp("com.r3.corda.lib.ci"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows")
@@ -185,20 +189,19 @@ class IntegrationTest {
     }
 }
 
-fun CordaRPCOps.watchForTransaction(tx: SignedTransaction): CordaFuture<SignedTransaction> {
-    val (snapshot, feed) = internalVerifiedTransactionsFeed()
-    return if (tx in snapshot) {
-        doneFuture(tx)
-    } else {
-        feed.filter { it.id == tx.id }.toFuture()
-    }
+fun CordaRPCOps.watchForTransaction(tx: SignedTransaction): CompletableFuture<SignedTransaction> {
+    return watchForTransaction(tx.id)
 }
 
-fun CordaRPCOps.watchForTransaction(txId: SecureHash): CordaFuture<SignedTransaction> {
-    val (snapshot, feed) = internalVerifiedTransactionsFeed()
-    return if (txId in snapshot.map { it.id }) {
-        doneFuture(snapshot.single { txId == it.id })
-    } else {
-        feed.filter { it.id == txId }.toFuture()
+fun CordaRPCOps.watchForTransaction(txId: SecureHash): CompletableFuture<SignedTransaction> {
+    val start = Instant.now()
+    while (internalFindVerifiedTransaction(txId) == null && start.plusSeconds(60) > Instant.now()){
+        Thread.sleep(200)
+    }
+    val foundTx = internalFindVerifiedTransaction(txId)
+    return if (foundTx == null){
+        CompletableFuture<SignedTransaction>().also { it.completeExceptionally(TimeoutException()) }
+    }else{
+        CompletableFuture.completedFuture(foundTx)
     }
 }

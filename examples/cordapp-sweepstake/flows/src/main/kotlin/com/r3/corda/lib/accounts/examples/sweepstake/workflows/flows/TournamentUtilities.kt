@@ -1,7 +1,6 @@
 package com.r3.corda.lib.accounts.examples.sweepstake.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
-import com.google.common.annotations.VisibleForTesting
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.AccountGroup
 import com.r3.corda.lib.accounts.examples.sweepstake.contracts.states.TeamState
@@ -17,6 +16,7 @@ import net.corda.core.contracts.StateAndRef
 import net.corda.core.flows.*
 import net.corda.core.identity.AbstractParty
 import net.corda.core.identity.Party
+import net.corda.core.internal.VisibleForTesting
 import net.corda.core.node.services.queryBy
 import net.corda.core.utilities.getOrThrow
 import java.io.File
