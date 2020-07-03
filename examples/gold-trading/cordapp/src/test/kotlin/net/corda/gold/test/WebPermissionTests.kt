@@ -7,6 +7,7 @@ import net.corda.testing.common.internal.testNetworkParameters
 import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
+import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.core.IsEqual.equalTo
 import org.junit.After
@@ -24,11 +25,12 @@ class WebPermissionTests {
     @Before
     fun setup() {
         network = MockNetwork(
-                listOf("net.corda.gold", "net.corda.accounts.service", "net.corda.accounts.contracts"), MockNetworkParameters(
+            listOf("net.corda.gold.trading", "net.corda.accounts"),
+            MockNetworkParameters(
                 networkParameters = testNetworkParameters(
-                        minimumPlatformVersion = 4
+                    minimumPlatformVersion = 4
                 )
-        )
+            )
         )
         a = network.createPartyNode()
 
@@ -45,7 +47,10 @@ class WebPermissionTests {
         val createFuture = a.startFlow(NewWebAccountFlow("TestAccount")).toCompletableFuture()
         network.runNetwork()
         val createdAccount = (createFuture.getOrThrow())
-        Assert.assertThat(a.startFlow(GetAllWebUsersFlow()).getOrThrow(), `is`(equalTo(listOf(createdAccount.webAccount))))
+        Assert.assertThat(
+            a.startFlow(GetAllWebUsersFlow()).getOrThrow(),
+            `is`(equalTo(listOf(createdAccount.webAccount)))
+        )
     }
 }
 
