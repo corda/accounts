@@ -31,13 +31,18 @@ import net.corda.testing.driver.NodeHandle
 import net.corda.testing.driver.NodeParameters
 import net.corda.testing.driver.driver
 import net.corda.testing.node.TestCordapp
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.Timeout
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class ConfidentialIntegrationTest {
-
+    @Rule
+    @JvmField
+    val globalTimeout: Timeout = Timeout(5, TimeUnit.MINUTES)
     companion object {
         private val log = contextLogger()
     }
