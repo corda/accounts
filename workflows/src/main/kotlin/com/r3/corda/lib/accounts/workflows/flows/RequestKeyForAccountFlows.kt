@@ -3,7 +3,6 @@ package com.r3.corda.lib.accounts.workflows.flows
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
 import com.r3.corda.lib.accounts.workflows.accountService
-import com.r3.corda.lib.accounts.workflows.internal.flows.AccountSearchStatus
 import com.r3.corda.lib.accounts.workflows.internal.flows.createKeyForAccount
 import com.r3.corda.lib.ci.workflows.ProvideKeyFlow
 import com.r3.corda.lib.ci.workflows.RequestKeyFlow
@@ -35,27 +34,18 @@ class RequestKeyForAccountFlow(
         return if (hostSession.counterparty == ourIdentity) {
             serviceHub.createKeyForAccount(accountInfo)
         } else {
-            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
-            when (accountSearchStatus) {
-                // Maybe the account WAS hosted at this node but has since moved.
-                AccountSearchStatus.NOT_FOUND -> {
-                    throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.identifier} " +
-                            "(${accountInfo.name}) responded with a not found status - contact them for assistance")
-                }
-                AccountSearchStatus.FOUND -> {
-                    val newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
-                    // Store a local mapping of the account ID to the public key we've just received from the host.
-                    // This allows us to look up the account which the PublicKey is linked to in the future.
-                    // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
-                    // assumption being that keys are not moved with the account. If keys DO move with accounts then
-                    // a new API must be added to REPLACE KEY -> PARTY mappings.
-                    //
-                    // The PublicKeyHashToAccountIdMapping table has a primary key constraint over PublicKey, therefore
-                    // a key can only ever be stored once. If you try to store a key twice, then an exception will be
-                    // thrown in respect of the primary key constraint violation.
-                    AnonymousParty(newKey)
-                }
-            }
+            hostSession.send(accountInfo.identifier.id)
+            val newKey = subFlow(RequestKeyFlow(hostSession, accountInfo.identifier.id)).owningKey
+            // Store a local mapping of the account ID to the public key we've just received from the host.
+            // This allows us to look up the account which the PublicKey is linked to in the future.
+            // Note that this mapping of KEY -> PARTY persists even when an account moves to another node, the
+            // assumption being that keys are not moved with the account. If keys DO move with accounts then
+            // a new API must be added to REPLACE KEY -> PARTY mappings.
+            //
+            // The PublicKeyHashToAccountIdMapping table has a primary key constraint over PublicKey, therefore
+            // a key can only ever be stored once. If you try to store a key twice, then an exception will be
+            // thrown in respect of the primary key constraint violation.
+            AnonymousParty(newKey)
         }
     }
 }
@@ -63,21 +53,19 @@ class RequestKeyForAccountFlow(
 /**
  * Responder flow for [RequestKeyForAccountFlow].
  */
-class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
+class SendKeyForAccountFlow(private val otherSide: FlowSession) : FlowLogic<AnonymousParty>() {
     @Suspendable
-    override fun call() {
+    override fun call(): AnonymousParty {
         // No need to do anything if the initiating node is us. We can generate a key locally.
         if (otherSide.counterparty == ourIdentity) {
-            return
+            throw FlowException("Should not call on your own")
         }
         val requestedAccountForKey = otherSide.receive(UUID::class.java).unwrap { it }
         val existingAccountInfo = accountService.accountInfo(requestedAccountForKey)
         if (existingAccountInfo == null) {
-            otherSide.send(AccountSearchStatus.NOT_FOUND)
-        } else {
-            otherSide.send(AccountSearchStatus.FOUND)
-            subFlow(ProvideKeyFlow(otherSide))
+            throw FlowException("Account for $requestedAccountForKey not found")
         }
+        return subFlow(ProvideKeyFlow(otherSide))
     }
 }
 
@@ -95,7 +83,7 @@ class RequestKeyForAccount(private val accountInfo: AccountInfo) : FlowLogic<Ano
 }
 
 @InitiatedBy(RequestKeyForAccount::class)
-class SendKeyForAccount(val otherSide: FlowSession) : FlowLogic<Unit>() {
+class SendKeyForAccount(private val otherSide: FlowSession) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call() = subFlow(SendKeyForAccountFlow(otherSide))
 }
