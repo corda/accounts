@@ -5,7 +5,7 @@ buildscript {
         tokens_release_group = 'com.r3.corda.lib.tokens'
         tokens_release_version = '1.1'
         accounts_release_group = 'com.r3.corda.lib.accounts'
-        accounts_release_version = '1.0.1-RC01'
+        accounts_release_version = '1.0.1'
         corda_gradle_plugins_version = '5.0.8'
         mavenVersion = '3.1.0'
         maven_resolver_version = "1.1.1"
