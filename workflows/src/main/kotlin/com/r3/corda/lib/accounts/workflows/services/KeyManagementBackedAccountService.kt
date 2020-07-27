@@ -33,7 +33,8 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     override fun accountsForHost(host: Party): List<StateAndRef<AccountInfo>> {
-        return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(accountHostCriteria(host)), PageSpecification(1, MAX_PAGE_SIZE)).states
+        return services.vaultService
+            .queryBy<AccountInfo>(accountBaseCriteria.and(accountHostCriteria(host)), PageSpecification(1, MAX_PAGE_SIZE)).states
     }
 
     override fun ourAccounts(): List<StateAndRef<AccountInfo>> {

@@ -125,7 +125,8 @@ class GetAccountsFlowTests {
 
         a.transaction {
             assertDoesNotThrow { accountService.allAccounts() }
-            Assert.assertThat(accountService.allAccounts(), containsInAnyOrder(*(listOf(account1, account2, account3) + accountsHostedByB).toTypedArray()))
+            Assert.assertThat(accountService.allAccounts(),
+                              containsInAnyOrder(*(listOf(account1, account2, account3) + accountsHostedByB).toTypedArray()))
         }
     }
 
