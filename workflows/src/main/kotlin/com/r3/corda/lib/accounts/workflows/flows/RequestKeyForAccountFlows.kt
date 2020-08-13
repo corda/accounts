@@ -9,9 +9,14 @@ import com.r3.corda.lib.ci.workflows.ProvideKeyFlow
 import com.r3.corda.lib.ci.workflows.RequestKeyFlow
 import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
+import net.corda.core.node.ServiceHub
 import net.corda.core.utilities.unwrap
+import org.slf4j.LoggerFactory
 import java.security.PublicKey
 import java.util.*
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.function.Supplier
 
 /**
  * This flow should be used when you want to generate a new [PublicKey] for an account that is not owned by the node running
@@ -22,7 +27,8 @@ import java.util.*
  */
 class RequestKeyForAccountFlow(
         private val accountInfo: AccountInfo,
-        private val hostSession: FlowSession
+        private val hostSession: FlowSession,
+        private val haltForExternalRequest: Boolean = false
 ) : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
@@ -33,10 +39,13 @@ class RequestKeyForAccountFlow(
         // The account is hosted on the initiating node. So we can generate a key and register it with the identity
         // service locally.
         return if (hostSession.counterparty == ourIdentity) {
-            serviceHub.createKeyForAccount(accountInfo)
+            if (haltForExternalRequest) {
+                await(CreateKeyForAccountOperation(serviceHub, accountInfo))
+            } else {
+                serviceHub.createKeyForAccount(accountInfo)
+            }
         } else {
-            val accountSearchStatus = hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }
-            when (accountSearchStatus) {
+            when (hostSession.sendAndReceive<AccountSearchStatus>(accountInfo.identifier.id).unwrap { it }) {
                 // Maybe the account WAS hosted at this node but has since moved.
                 AccountSearchStatus.NOT_FOUND -> {
                     throw IllegalStateException("Account Host: ${accountInfo.host} for ${accountInfo.identifier} " +
@@ -86,11 +95,12 @@ class SendKeyForAccountFlow(val otherSide: FlowSession) : FlowLogic<Unit>() {
 @InitiatingFlow
 @StartableByRPC
 @StartableByService
-class RequestKeyForAccount(private val accountInfo: AccountInfo) : FlowLogic<AnonymousParty>() {
+class RequestKeyForAccount(private val accountInfo: AccountInfo, private val haltForExternalRequest: Boolean = false)
+    : FlowLogic<AnonymousParty>() {
     @Suspendable
     override fun call(): AnonymousParty {
         val hostSession = initiateFlow(accountInfo.host)
-        return subFlow(RequestKeyForAccountFlow(accountInfo, hostSession))
+        return subFlow(RequestKeyForAccountFlow(accountInfo, hostSession, haltForExternalRequest))
     }
 }
 
@@ -98,4 +108,17 @@ class RequestKeyForAccount(private val accountInfo: AccountInfo) : FlowLogic<Ano
 class SendKeyForAccount(val otherSide: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() = subFlow(SendKeyForAccountFlow(otherSide))
+}
+
+class CreateKeyForAccountOperation(private val serviceHub: ServiceHub, private val accountInfo: AccountInfo)
+    : FlowExternalAsyncOperation<AnonymousParty> {
+
+    override fun execute(deduplicationId: String): CompletableFuture<AnonymousParty> {
+        return CompletableFuture.supplyAsync(
+                Supplier {
+                    serviceHub.createKeyForAccount(accountInfo)
+                },
+                Executors.newFixedThreadPool(1)
+        )
+    }
 }
