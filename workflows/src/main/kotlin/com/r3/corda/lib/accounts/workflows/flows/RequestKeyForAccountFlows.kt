@@ -11,11 +11,9 @@ import net.corda.core.flows.*
 import net.corda.core.identity.AnonymousParty
 import net.corda.core.node.ServiceHub
 import net.corda.core.utilities.unwrap
-import org.slf4j.LoggerFactory
 import java.security.PublicKey
 import java.util.*
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.Executors
+import java.util.concurrent.*
 import java.util.function.Supplier
 
 /**
@@ -114,11 +112,19 @@ class CreateKeyForAccountOperation(private val serviceHub: ServiceHub, private v
     : FlowExternalAsyncOperation<AnonymousParty> {
 
     override fun execute(deduplicationId: String): CompletableFuture<AnonymousParty> {
+        val executor = Executors.newFixedThreadPool(2)
         return CompletableFuture.supplyAsync(
                 Supplier {
-                    serviceHub.createKeyForAccount(accountInfo)
+                    val future = executor.submit(Callable {
+                        serviceHub.createKeyForAccount(accountInfo)
+                    })
+                    try {
+                        future.get(5, TimeUnit.MINUTES)
+                    } finally {
+                        future.cancel(true)
+                    }
                 },
-                Executors.newFixedThreadPool(1)
+                executor
         )
     }
 }
