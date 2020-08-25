@@ -119,9 +119,10 @@ class CreateKeyForAccountOperation(private val serviceHub: ServiceHub, private v
                         serviceHub.createKeyForAccount(accountInfo)
                     })
                     try {
-                        future.get(5, TimeUnit.MINUTES)
+                        future.get(30, TimeUnit.MINUTES)
                     } finally {
                         future.cancel(true)
+                        executor.shutdown()
                     }
                 },
                 executor
