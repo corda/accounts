@@ -4,6 +4,7 @@ import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import freighter.deployments.DeploymentContext
 import freighter.deployments.NodeBuilder
 import freighter.deployments.SingleNodeDeployment
+import freighter.deployments.UnitOfDeployment
 import freighter.machine.DeploymentMachineProvider
 import freighter.machine.generateRandomString
 import net.corda.core.messaging.startFlow
@@ -27,13 +28,6 @@ class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
         version = "1.0"
     )
     val stressTesterCordapp = NodeBuilder.DeployedCordapp.fromClassPath("freighter-cordapp-flows")
-
-    lateinit var nms: CompletableFuture<DeploymentMachineProvider.NetworkServicesInfo>
-
-    @BeforeEach
-    fun setupNMS() {
-        nms = machineProvider.generateNMSEnvironment()
-    }
 
     @Test
     fun `accounts can be loaded on a node running postgres 9_6`() {
@@ -64,12 +58,7 @@ class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
     private fun runAccountsOnNodeRunningDatabase(db: DeploymentMachineProvider.DatabaseType) {
         val randomString = generateRandomString()
 
-        val userName = System.getenv("ARTIFACTORY_USERNAME")
-            ?: throw IllegalStateException("Please ensure that ARTIFACTORY_USERNAME is defined in the environment")
-        val password = System.getenv("ARTIFACTORY_PASSWORD")
-            ?: throw IllegalStateException("Please ensure that ARTIFACTORY_PASSWORD is defined in the environment")
-
-        val deploymentContext = DeploymentContext(machineProvider, nms, userName, password)
+        val deploymentContext = DeploymentContext(machineProvider, nms, artifactoryUsername, artifactoryPassword)
 
         val deploymentResult = SingleNodeDeployment(
             NodeBuilder().withX500("O=PartyB, C=GB, L=LONDON, CN=$randomString")
@@ -78,7 +67,7 @@ class AccountsDBCompatibility : DockerRemoteMachineBasedTest() {
                 .withCordapp(accountsWorkflows)
                 .withCordapp(modernCiV1)
                 .withDatabase(machineProvider.requestDatabase(db))
-        ).withVersion("4.3")
+        ).withVersion(UnitOfDeployment.CORDA_4_5)
             .deploy(deploymentContext)
 
         val nodeMachine = deploymentResult.getOrThrow().nodeMachines.single()
