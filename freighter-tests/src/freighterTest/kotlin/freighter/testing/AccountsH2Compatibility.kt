@@ -1,17 +1,20 @@
 package freighter.testing
 
+import com.r3.corda.lib.accounts.workflows.flows.AccountInfoByName
 import com.r3.corda.lib.accounts.workflows.flows.CreateAccount
 import freighter.deployments.DeploymentContext
 import freighter.deployments.NodeBuilder
 import freighter.deployments.SingleNodeDeployment
 import freighter.deployments.UnitOfDeployment
-import freighter.installers.corda.CordaDistribution
+import freighter.deployments.UnitOfDeployment.Companion.CORDA_4_6_SNAPSHOT
 import freighter.installers.corda.ENTERPRISE
 import freighter.installers.corda.OPEN_SOURCE
 import freighter.machine.DeploymentMachineProvider
 import freighter.machine.generateRandomString
 import net.corda.core.messaging.startFlow
 import net.corda.core.utilities.getOrThrow
+import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert
 import org.junit.jupiter.api.Test
 import utility.getOrThrow
 
@@ -41,7 +44,7 @@ class AccountsH2Compatibility : DockerRemoteMachineBasedTest() {
                 .withCordapp(accountsWorkflows)
                 .withCordapp(modernCiV1)
                 .withDatabase(machineProvider.requestDatabase(DeploymentMachineProvider.DatabaseType.H2))
-        ).withVersion(UnitOfDeployment.DeploymentVersion("4.6-SNAPSHOT", true))
+        ).withVersion(UnitOfDeployment.CORDA_4_6_SNAPSHOT)
             .withDistribution(OPEN_SOURCE)
             .deploy(deploymentContext)
 
@@ -67,7 +70,7 @@ class AccountsH2Compatibility : DockerRemoteMachineBasedTest() {
                 .withCordapp(accountsWorkflows)
                 .withCordapp(modernCiV1)
                 .withDatabase(machineProvider.requestDatabase(DeploymentMachineProvider.DatabaseType.H2))
-        ).withVersion(UnitOfDeployment.DeploymentVersion("4.6-SNAPSHOT", true))
+        ).withVersion(UnitOfDeployment.CORDA_4_6_SNAPSHOT)
             .withDistribution(ENTERPRISE)
             .deploy(deploymentContext)
 
@@ -79,5 +82,46 @@ class AccountsH2Compatibility : DockerRemoteMachineBasedTest() {
             ).returnValue.getOrThrow()
             println("Successfully created account: $createdAccount")
         }
+    }
+
+    @Test
+    fun `accounts can be loaded on a 4_5 node running H2 on ENT and upgraded to 4_6`() {
+        val randomString = generateRandomString()
+        val deploymentContext = DeploymentContext(machineProvider, nms, artifactoryUsername, artifactoryPassword)
+        val deploymentResult = SingleNodeDeployment(
+            NodeBuilder().withX500("O=PartyB, C=GB, L=LONDON, CN=$randomString")
+                .withCordapp(stressTesterCordapp)
+                .withCordapp(accountsContracts)
+                .withCordapp(accountsWorkflows)
+                .withCordapp(modernCiV1)
+                .withDatabase(machineProvider.requestDatabase(DeploymentMachineProvider.DatabaseType.H2))
+        ).withVersion(UnitOfDeployment.CORDA_4_5_1)
+            .withDistribution(ENTERPRISE)
+            .deploy(deploymentContext)
+
+        val nodeMachine = deploymentResult.getOrThrow().nodeMachine
+        val account45 = nodeMachine.rpc {
+            startFlow(
+                ::CreateAccount,
+                "testAccount"
+            ).returnValue.getOrThrow()
+        }
+
+        nodeMachine.upgradeCorda(CORDA_4_6_SNAPSHOT)
+        val upgradedVersionString = nodeMachine.rpc {
+            nodeDiagnosticInfo().version
+        }
+        MatcherAssert.assertThat(upgradedVersionString, `is`("4.6-SNAPSHOT"))
+        val retrievedAccount = nodeMachine.rpc {
+            startFlow(
+                ::AccountInfoByName,
+                "testAccount"
+            ).returnValue.getOrThrow()
+        }.single()
+
+
+        MatcherAssert.assertThat(account45, `is`(retrievedAccount))
+
+
     }
 }
