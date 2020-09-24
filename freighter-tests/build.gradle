@@ -20,7 +20,7 @@ sourceSets {
 }
 
 task freighterTest(type: Test, dependsOn: []) {
-    maxParallelForks 2
+    maxParallelForks 1
     systemProperty "java.util.concurrent.ForkJoinPool.common.parallelism", "128"
     testClassesDirs = sourceSets.freighterTest.output.classesDirs
     classpath = sourceSets.freighterTest.runtimeClasspath

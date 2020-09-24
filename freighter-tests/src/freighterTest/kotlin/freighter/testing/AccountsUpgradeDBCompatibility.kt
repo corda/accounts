@@ -77,7 +77,7 @@ class AccountsUpgradeDBCompatibility : DockerRemoteMachineBasedTest() {
                 .withCordapp(accountsV1Workflows)
                 .withCordapp(modernCiV1)
                 .withDatabase(machineProvider.requestDatabase(db))
-        ).withVersion(UnitOfDeployment.CORDA_4_3)
+        ).withVersion(UnitOfDeployment.CORDA_4_5_1)
             .deploy(deploymentContext)
 
         val nodeMachine = deploymentResult.getOrThrow().nodeMachines.single()
