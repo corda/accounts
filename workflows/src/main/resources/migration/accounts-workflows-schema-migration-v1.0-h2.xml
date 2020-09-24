@@ -4,7 +4,11 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.5.xsd">
 
     <changeSet author="R3.Corda" id="accounts-migrations-v1.0" dbms="h2">
-
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="account_to_state_refs"/>
+            </not>
+        </preConditions>
         <createTable tableName="account_to_state_refs">
             <column name="id" type="BIGINT">
                 <constraints nullable="false"/>
