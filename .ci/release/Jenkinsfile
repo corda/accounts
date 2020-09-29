@@ -35,7 +35,7 @@ pipeline {
                 sh "./gradlew " +
                         " -Dcorda.artifactory.username=\"\${ARTIFACTORY_CREDENTIALS_USR}\" " +
                         " -Dcorda.artifactory.password=\"\${ARTIFACTORY_CREDENTIALS_PSW}\" " +
-                        " artifactoryPublish -PpublishRepo=\"corda-lib\""
+                        " artifactoryPublish -PpublishRepo=\"corda-lib-dev\""
             }
         }
     }
