@@ -5,4 +5,5 @@
     <include file="migration/accounts-contracts-schema-migration-v1.0.xml"/>
     <include file="migration/accounts-contracts-schema-migration-v1.0-mssql.xml"/>
     <include file="migration/accounts-contracts-schema-migration-v1.0-oracle.xml"/>
+    <include file="migration/accounts-contracts-schema-migration-v1.0-h2.xml"/>
 </databaseChangeLog>

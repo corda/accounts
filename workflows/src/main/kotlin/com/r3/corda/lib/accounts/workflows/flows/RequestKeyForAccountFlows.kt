@@ -95,7 +95,7 @@ class RequestKeyForAccount(private val accountInfo: AccountInfo) : FlowLogic<Ano
 }
 
 @InitiatedBy(RequestKeyForAccount::class)
-class SendKeyForAccount(val otherSide: FlowSession) : FlowLogic<Unit>() {
+open class SendKeyForAccount(val otherSide: FlowSession) : FlowLogic<Unit>() {
     @Suspendable
     override fun call() = subFlow(SendKeyForAccountFlow(otherSide))
 }
