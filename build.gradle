@@ -6,7 +6,7 @@ buildscript {
         tokens_release_version = '1.1'
         accounts_release_group = 'com.r3.corda.lib.accounts'
         accounts_release_version = '1.1-SNAPSHOT'
-        corda_gradle_plugins_version = '5.0.8'
+        corda_gradle_plugins_version = '5.0.12'
         mavenVersion = '3.1.0'
         maven_resolver_version = "1.1.1"
         kotlin_version = '1.2.71'
@@ -22,7 +22,7 @@ buildscript {
     repositories {
         jcenter()
         mavenCentral()
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
+        maven { url "https://software.r3.com/artifactory/corda-releases" }
     }
 
     dependencies {
@@ -68,11 +68,11 @@ subprojects {
         mavenLocal()
         jcenter()
         mavenCentral()
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dev" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-releases" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-dependencies" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib" }
-        maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev" }
+        maven { url "https://software.r3.com/artifactory/corda-dev" }
+        maven { url "https://software.r3.com/artifactory/corda-releases" }
+        maven { url "https://software.r3.com/artifactory/corda-dependencies" }
+        maven { url "https://software.r3.com/artifactory/corda-lib" }
+        maven { url "https://software.r3.com/artifactory/corda-lib-dev" }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
     }
@@ -93,7 +93,9 @@ subprojects {
     }
 }
 
-def publishProjects = [project(":contracts"), project(":workflows")]
+// don't publish accounts-contracts unless explicitly requested.
+//def publishProjects = [project(":contracts"), project(":workflows")]
+def publishProjects = [project(":workflows")]
 
 
 configure(publishProjects) { subproject ->
@@ -132,7 +134,7 @@ configure(publishProjects) { subproject ->
 
 artifactory {
     publish {
-        contextUrl = 'https://ci-artifactory.corda.r3cev.com/artifactory'
+        contextUrl = 'https://software.r3.com/artifactory'
         repository {
             repoKey = project.hasProperty("publishRepo") ? project.property("publishRepo") : ""
             username = System.getenv('ARTIFACTORY_USERNAME') ?: System.getProperty('corda.artifactory.username')

@@ -5,7 +5,8 @@ apply plugin: 'idea'
 
 
 repositories {
-    maven { url "http://ci-artifactory.corda.r3cev.com/artifactory/freighter-dev" }
+    mavenLocal()
+    maven { url "https://software.r3.com/artifactory/freighter-dev" }
 }
 
 sourceSets {
@@ -19,21 +20,13 @@ sourceSets {
 }
 
 task freighterTest(type: Test, dependsOn: []) {
-    maxParallelForks 2
+    maxParallelForks 1
     systemProperty "java.util.concurrent.ForkJoinPool.common.parallelism", "128"
     testClassesDirs = sourceSets.freighterTest.output.classesDirs
     classpath = sourceSets.freighterTest.runtimeClasspath
     useJUnitPlatform {
         includeTags "DOCKER"
-        excludeTags "AZURE"
-        if (Os.isFamily(Os.FAMILY_WINDOWS) || Os.isFamily(Os.FAMILY_MAC)) {
-            //windows + mac cannot run comcast tests and cannot run oracle tests due to credential store issues
-            excludeTags "FULL_LINUX_KERNEL", "ORACLE"
-        }
-
-        if (Os.isFamily(Os.FAMILY_UNIX) && "uname -a".execute().getText().contains("microsoft")) {
-            excludeTags "FULL_LINUX_KERNEL"
-        }
+        excludeTags "AZURE", "ORACLE", "FULL_LINUX_KERNEL"
     }
 }
 
@@ -44,7 +37,7 @@ configurations {
 
 dependencies {
     freighterTestCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    freighterTestCompile "freighter:freighter-testing-core:0.2-SNAPSHOT"
+    freighterTestCompile "freighter:freighter-testing-core-junit5:0.7.1-SNAPSHOT"
 
     freighterTestCompile project(":contracts")
     freighterTestCompile project(":workflows")

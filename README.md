@@ -40,7 +40,7 @@ By far the easiest way to get started with the accounts SDK is to use the "token
 which is a branch on the kotlin version of the "CorDapp template". You can obtain 
 it with the following commands:
 
-    git clone http://github.com/corda/cordapp-template-kotlin
+    git clone https://github.com/corda/cordapp-template-kotlin
     cd cordapp-template-kotlin
     git checkout token-template
 
@@ -74,8 +74,8 @@ Second, you must add the accounts artifactory repository to the
 list of repositories for your project (if it hasn't already been added):
 
     repositories {
-        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
-        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
+        maven { url 'https://software.r3.com/artifactory/corda-lib-dev' }
+        maven { url 'https://software.r3.com/artifactory/corda-lib' }
     }
 
 Now, you can add the accounts dependencies to the `dependencies` block
@@ -129,7 +129,7 @@ Currently, if accounts are on different nodes you also need to run `shareStateAn
 If you wish to build the accounts library from source then do the following to
 publish binaries to your local maven repository:
 
-    git clone http://github.com/corda/accounts
+    git clone https://github.com/corda/accounts
     cd accounts
     ./gradlew clean install
 
