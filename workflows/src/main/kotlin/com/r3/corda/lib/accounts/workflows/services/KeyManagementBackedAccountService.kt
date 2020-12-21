@@ -17,6 +17,8 @@ import net.corda.core.internal.concurrent.doneFuture
 import net.corda.core.node.AppServiceHub
 import net.corda.core.node.services.CordaService
 import net.corda.core.node.services.queryBy
+import net.corda.core.node.services.vault.MAX_PAGE_SIZE
+import net.corda.core.node.services.vault.PageSpecification
 import net.corda.core.serialization.SingletonSerializeAsToken
 import net.corda.core.utilities.contextLogger
 import java.security.PublicKey
@@ -31,7 +33,8 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     override fun accountsForHost(host: Party): List<StateAndRef<AccountInfo>> {
-        return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria.and(accountHostCriteria(host))).states
+        return services.vaultService
+            .queryBy<AccountInfo>(accountBaseCriteria.and(accountHostCriteria(host)), PageSpecification(1, MAX_PAGE_SIZE)).states
     }
 
     override fun ourAccounts(): List<StateAndRef<AccountInfo>> {
@@ -39,7 +42,7 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
     }
 
     override fun allAccounts(): List<StateAndRef<AccountInfo>> {
-        return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria).states
+        return services.vaultService.queryBy<AccountInfo>(accountBaseCriteria, PageSpecification(1, MAX_PAGE_SIZE)).states
     }
 
     override fun accountInfo(id: UUID): StateAndRef<AccountInfo>? {
