@@ -35,7 +35,8 @@ data class AccountInfo(
             return PersistentAccountInfo(
                     name = name,
                     host = host,
-                    id = identifier.id
+                    id = identifier.id,
+                    externalId = identifier.externalId
             )
         } else {
             throw IllegalStateException("Cannot construct instance of ${this.javaClass} from Schema: $schema")

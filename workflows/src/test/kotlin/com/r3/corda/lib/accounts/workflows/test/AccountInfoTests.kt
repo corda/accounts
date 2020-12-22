@@ -72,6 +72,30 @@ class AccountInfoTests {
     }
 
     @Test
+    fun `Create and query accounts by externalId`() {
+        // Create the account with externalId on A
+        val name = "Account_WithExternalId_On_A"
+        val externalId = UUID.randomUUID().toString()
+        val accountInfo = nodeA.startFlow(CreateAccount(name, externalId)).runAndGet(network)
+
+        // Check for expected external ID
+        Assert.assertEquals(externalId, accountInfo.id.externalId)
+
+        // Node A will share the created account with Node B
+        nodeA.startFlow(ShareAccountInfo(accountInfo, listOf(nodeB.identity()))).runAndGet(network)
+        // Node C requests the created account from A
+        nodeC.startFlow(RequestAccountInfo(accountInfo.uuid, nodeA.info.legalIdentities.first())).runAndGet(network)
+
+        // Check query stack by external ID works for all A, B and C
+        val accountInfosA = nodeA.startFlow(AccountInfoByExternalId(externalId)).runAndGet(network)
+        val accountInfosB = nodeB.startFlow(AccountInfoByExternalId(externalId)).runAndGet(network)
+        val accountInfosC = nodeC.startFlow(AccountInfoByExternalId(externalId)).runAndGet(network)
+        Assert.assertEquals(accountInfo, accountInfosA.single())
+        Assert.assertEquals(accountInfo, accountInfosB.single())
+        Assert.assertEquals(accountInfo, accountInfosC.single())
+    }
+
+    @Test
     fun `Accounts not shared are not found`() {
         //Validate that the account on C exists first
         val accountInfoCfromC = nodeC.startFlow(AccountInfoByUUID(accountOnNodeC.uuid)).runAndGet(network)

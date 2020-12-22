@@ -18,16 +18,21 @@ import java.util.*
  *
  * @property name the proposed name for the new account.
  * @property identifier the proposed identifier for the new account.
+ * @property externalId the proposed external ID for the new account.
  */
 @StartableByService
 @StartableByRPC
 class CreateAccount private constructor(
         private val name: String,
-        private val identifier: UUID
+        private val identifier: UUID,
+        private val externalId: String?
 ) : FlowLogic<StateAndRef<AccountInfo>>() {
 
     /** Create a new account with a specified [name] but generate a new random [id]. */
-    constructor(name: String) : this(name, UUID.randomUUID())
+    constructor(name: String) : this(name, UUID.randomUUID(), null)
+
+    /** Create a new account with a specified [name] and [externalId] but generate a new random [id]. */
+    constructor(name: String, externalId: String? = null) : this(name, UUID.randomUUID(), externalId)
 
     @Suspendable
     override fun call(): StateAndRef<AccountInfo> {
@@ -44,7 +49,7 @@ class CreateAccount private constructor(
         val newAccountInfo = AccountInfo(
                 name = name,
                 host = ourIdentity,
-                identifier = UniqueIdentifier(id = identifier)
+                identifier = UniqueIdentifier(id = identifier, externalId = externalId)
         )
         val transactionBuilder = TransactionBuilder(notary = notary).apply {
             addOutputState(newAccountInfo)

@@ -26,6 +26,8 @@ object AccountsContractsSchemaV1 : MappedSchema(
 data class PersistentAccountInfo(
         @Column(name = "identifier", unique = true, nullable = false)
         val id: UUID,
+        @Column(name = "external_id", unique = false, nullable = true)
+        val externalId: String?,
         @Column(name = "name", unique = false, nullable = false)
         val name: String,
         @Column(name = "host", unique = false, nullable = false)
