@@ -63,6 +63,23 @@ class KeyManagementBackedAccountService(val services: AppServiceHub) : AccountSe
         }
     }
 
+    override fun accountInfoByExternalId(externalId: String): List<StateAndRef<AccountInfo>> {
+        val externalIdCriteria = accountExternalIdCriteria(externalId)
+        val results = services.vaultService.queryBy<AccountInfo>(
+            accountBaseCriteria.and(externalIdCriteria)).states
+        return when (results.size) {
+            0 -> emptyList()
+            1 -> listOf(results.single())
+            else -> {
+                logger.warn("WARNING: Querying for account by externalId returned more than one account, this is likely " +
+                        "because another node shared an account with this node that has the same name as an " +
+                        "account already created on this node. Filtering the results by host will allow you to access" +
+                        "the AccountInfo you need.")
+                results
+            }
+        }
+    }
+
     @Suspendable
     override fun createAccount(name: String): CordaFuture<StateAndRef<AccountInfo>> {
         return flowAwareStartFlow(CreateAccount(name))

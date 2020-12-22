@@ -110,6 +110,17 @@ interface AccountService : SerializeAsToken {
     fun accountInfo(name: String): List<StateAndRef<AccountInfo>>
 
     /**
+     * Returns the [AccountInfo]s for an accounts specified by [externalId]. The assumption here is that Account external
+     * IDs are not guaranteed to be unique at either network or node level as this is the responsibility of the client
+     * application.
+     *
+     * This method may return more than one [AccountInfo].
+     *
+     * @param externalId the account external ID to return [AccountInfo]s for.
+     */
+    fun accountInfoByExternalId(externalId: String): List<StateAndRef<AccountInfo>>
+
+    /**
      * Shares an [AccountInfo] [StateAndRef] with the specified [Party]. The [AccountInfo]is always stored by the
      * recipient using [StatesToRecord.ALL_VISIBLE].
      *
