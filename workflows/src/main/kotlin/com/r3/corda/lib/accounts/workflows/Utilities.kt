@@ -56,6 +56,14 @@ fun accountUUIDCriteria(id: UUID): QueryCriteria {
     }
 }
 
+/** To query [AccountInfo]s by external ID. */
+fun accountExternalIdCriteria(externalId: String): QueryCriteria {
+    return builder {
+        val externalIdSelector = PersistentAccountInfo::externalId.equal(externalId)
+        QueryCriteria.VaultCustomQueryCriteria(externalIdSelector)
+    }
+}
+
 /** To query [ContractState]s by which an account has been allowed to see an an observer. */
 fun allowedToSeeCriteria(accountIds: List<UUID>): QueryCriteria {
     return builder {

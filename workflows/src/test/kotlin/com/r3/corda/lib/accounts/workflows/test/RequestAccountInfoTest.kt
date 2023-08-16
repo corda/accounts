@@ -83,16 +83,20 @@ class RequestAccountInfoTest {
     fun `should throw error if the UUID of account passed is wrong and compare the expected account's and actual account's identifier`() {
 
         //Create an account in host B
-        val accountB = nodeB.startFlow(CreateAccount("Test_AccountB")).runAndGet(network)
+        val accountB = nodeB.startFlow(CreateAccount("Test_AccountB", "Test_AccountB_ext")).runAndGet(network)
 
         //Create an account in host C
-        val accountC = nodeC.startFlow(CreateAccount("Test_AccountC")).runAndGet(network)
+        val accountC = nodeC.startFlow(CreateAccount("Test_AccountC", "Test_AccountC_ext")).runAndGet(network)
 
         //To avail the account info of account B for node A, passing UUID of account C which is wrong UUID
         val accountBInfo = nodeA.startFlow(RequestAccountInfo(accountC.uuid, nodeB.info.legalIdentities.first())).runAndGet(network)
+        val accountBInfoByExt = nodeA.startFlow(RequestHostedAccountInfoByExternalId(
+                accountC.state.data.identifier.externalId!!,
+                nodeB.info.legalIdentities.first())).runAndGet(network)
 
         //Comparing actual account's identifier with expected account(account B)'s identifier
         val resultOfAccountIdentifierComparison = Assert.assertEquals(accountBInfo?.identifier, accountB.state.data.identifier)
+        val resultOfAccountIdentifierComparisonExt = Assert.assertEquals(accountBInfoByExt?.identifier, accountB.state.data.identifier)
 
         //result will throw error since the identifier comparison do not match
         assertFailsWith<AssertionError> { resultOfAccountIdentifierComparison }

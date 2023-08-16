@@ -43,4 +43,10 @@
 
     </changeSet>
 
+    <changeSet author="R3.Corda" id="accounts-contracts-schema-migrations-v1.0-external-id" dbms="postgresql">
+        <addColumn tableName="accounts">
+            <column name="external_id" type="NVARCHAR(255)" />
+        </addColumn>
+    </changeSet>
+
 </databaseChangeLog>
