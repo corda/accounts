@@ -108,10 +108,11 @@ CorDapps. Corda nodes have:
 
 ### Do I need to add account IDs to my state objects?
 
-No! The motivation behind the design which uses `PublicKey`s mapped to account IDs is so that the notion of accounts is
-not tightly coupled to state objects. The benefits are that you can use the same state objects for accounts and 
-non-accounts enabled workflows. To find out which account the state belongs to, you can look-up the participation/owning 
-keys to the account ID they are allocated to.
+Not explicitly. The motivation behind the design which uses `PublicKey`s mapped to account IDs is so that the notion of accounts is not tightly coupled to state objects.
+
+A `PublicKey` can substitute a `Party` in a state object in the form of `AnonymousParty` both of which are of type `AbstractParty` and thus, valid as participants. This allows you to both, assign `PublicKey`s to state level properties such as owner or manufacturer or return `PublicKey`s through the `getParticipants()` method.
+
+The benefits are that you can use the same state objects for accounts and non-accounts enabled workflows. To find out which account the state belongs to, you can look-up the participation/owning keys to the account ID they are allocated to.
 
 ### How do we assign identities to accounts?
 
