@@ -1,12 +1,12 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
-apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.kotlin.jvm'
 apply plugin: 'idea'
 
 
 repositories {
     mavenLocal()
-    maven { url "https://software.r3.com/artifactory/freighter-dev" }
+    maven { url "$publicArtifactURL/freighter-dev" }
 }
 
 sourceSets {
@@ -31,26 +31,13 @@ task freighterTest(type: Test, dependsOn: []) {
 }
 
 configurations {
-    freighterTestCompile.extendsFrom testCompile
-    freighterTestRuntime.extendsFrom testRuntime
+    freighterTestImplementation.extendsFrom testImplementation
+    freighterTestRuntimeOnly.extendsFrom testRuntimeOnly
 }
 
 dependencies {
-    freighterTestCompile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    freighterTestCompile "freighter:freighter-testing-core-junit5:0.7.1-SNAPSHOT"
+    freighterTestImplementation "freighter:freighter-testing-core-junit5:0.7.1-SNAPSHOT"
 
-    freighterTestCompile project(":contracts")
-    freighterTestCompile project(":workflows")
+    freighterTestImplementation project(":contracts")
+    freighterTestImplementation project(":workflows")
 }
-
-
-tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-    kotlinOptions {
-        languageVersion = "1.2"
-        apiVersion = "1.2"
-        jvmTarget = "1.8"
-        javaParameters = true   // Useful for reflection.
-    }
-}
-
-

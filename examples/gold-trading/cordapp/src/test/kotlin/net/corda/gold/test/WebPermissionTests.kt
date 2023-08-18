@@ -25,7 +25,7 @@ class WebPermissionTests {
     @Before
     fun setup() {
         network = MockNetwork(
-            listOf("net.corda.gold.trading", "net.corda.accounts"),
+            listOf("net.corda.gold.trading", "com.r3.corda.lib.accounts"),
             MockNetworkParameters(
                 networkParameters = testNetworkParameters(
                     minimumPlatformVersion = 4

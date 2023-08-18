@@ -1,29 +1,13 @@
-buildscript {
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        jcenter()
-        maven {
-            url 'https://software.r3.com/artifactory/corda'
-        }
-    }
-
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
-    }
-}
-
-apply plugin: 'kotlin'
-apply plugin: 'kotlin-jpa'
+apply plugin: 'org.jetbrains.kotlin.jvm'
+apply plugin: 'org.jetbrains.kotlin.plugin.jpa'
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
-
-jar.baseName = "accounts-workflows"
+apply plugin: 'corda.common-publishing'
 
 cordapp {
-    targetPlatformVersion 4
-    minimumPlatformVersion 4
+    targetPlatformVersion 14
+    minimumPlatformVersion 14
     contract {
         name "Accounts - Flows"
         vendor "R3"
@@ -36,11 +20,8 @@ cordapp {
 }
 
 dependencies {
-    // Kotlin.
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-
     // Corda integration dependencies.
-    cordaCompile("$corda_release_group:corda-core:$corda_release_version") {
+    cordaProvided("$corda_release_group:corda-core:$corda_release_version") {
         changing = true
     }
 
@@ -48,12 +29,21 @@ dependencies {
     cordapp project(":contracts")
 
     // Confidential Identities flows.
-    cordaCompile "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+    cordaProvided "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+    cordaProvided "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version"
+    cordaProvided "org.hibernate:hibernate-core:$hibernate_version"
+    cordaProvided "javax.persistence:javax.persistence-api:2.2"
 
     // Testing.
-    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
-    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile "junit:junit:$junit_version"
+    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
+    testImplementation "$corda_release_group:corda-test-common:$corda_release_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "junit:junit:$junit_version"
+    testImplementation "org.assertj:assertj-core:$assertj_version"
+    testImplementation "org.hamcrest:hamcrest-library:$hamcrest_version"
+    testImplementation "co.paralleluniverse:quasar-core:$quasar_version"
+
+    testRuntimeOnly "org.iq80.snappy:snappy:$snappy_version"
 }
 
 sourceSets {
@@ -65,6 +55,20 @@ sourceSets {
     test {
         resources {
             srcDir rootProject.file("config/test")
+        }
+    }
+}
+
+test {
+    jvmArgs test_module_opens
+    jvmArgs test_module_exports
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            artifactId 'accounts-workflows'
+            from components.cordapp
         }
     }
 }
