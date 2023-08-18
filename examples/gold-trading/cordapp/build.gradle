@@ -1,14 +1,16 @@
-apply plugin: 'kotlin'
+apply plugin: 'org.jetbrains.kotlin.jvm'
 apply plugin: 'net.corda.plugins.cordapp'
 apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
 cordapp {
-    info {
+    targetPlatformVersion 14
+    minimumPlatformVersion 14
+
+    workflow {
         name "Loan Book Trading"
         vendor "Corda Open Source"
-        targetPlatformVersion 4
-        minimumPlatformVersion 4
+        versionId 1
     }
 }
 
@@ -26,27 +28,34 @@ sourceSets {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
-    testCompile "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
-    testCompile "junit:junit:$junit_version"
+    testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
+    testImplementation "junit:junit:$junit_version"
 
     // Corda integration dependencies
-    cordaCompile group: "$corda_release_group", name: "corda-core", version: "$corda_release_version"
-    cordaCompile "$corda_release_group:corda-jackson:$corda_release_version"
-    cordaCompile "$corda_release_group:corda-rpc:$corda_release_version"
-    cordaRuntime "$corda_release_group:corda:$corda_release_version"
+    corda "$corda_release_group:corda:$corda_release_version"
+
+    cordaProvided group: "$corda_release_group", name: "corda-core", version: "$corda_release_version"
+    cordaProvided "$corda_release_group:corda-jackson:$corda_release_version"
+    cordaProvided "$corda_release_group:corda-rpc:$corda_release_version"
+    cordaProvided "org.hibernate:hibernate-core:$hibernate_version"
+    cordaProvided "javax.persistence:javax.persistence-api:2.2"
 
     cordapp project(":contracts")
     cordapp project(":workflows")
 
-    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+    testImplementation "$corda_release_group:corda-node-driver:$corda_release_version"
+    testImplementation "$corda_release_group:corda-test-common:$corda_release_version"
+    testImplementation "io.reactivex:rxjava:$rxjava_version"
 
+    testRuntimeOnly "org.iq80.snappy:snappy:$snappy_version"
 }
 
-test{
+test {
     forkEvery 1
-}
 
+    jvmArgs test_module_opens
+    jvmArgs test_module_exports
+}
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
 
