@@ -2,7 +2,6 @@ package net.corda.gold.trading.contracts
 
 import net.corda.core.contracts.Contract
 import net.corda.core.contracts.requireSingleCommand
-import net.corda.core.internal.sumByLong
 import net.corda.core.transactions.LedgerTransaction
 import net.corda.gold.trading.contracts.commands.LoanCommands
 import net.corda.gold.trading.contracts.states.LoanBook
@@ -41,7 +40,7 @@ class LoanBookContract : Contract {
                 val inputGold = tx.inputsOfType(LoanBook::class.java).single()
                 val outputGolds = tx.outRefsOfType(LoanBook::class.java)
 
-                require(outputGolds.sumByLong { it.state.data.valueInUSD } == inputGold.valueInUSD) { "Value of split coins must be equal to original value" }
+                require(outputGolds.sumOf { it.state.data.valueInUSD } == inputGold.valueInUSD) { "Value of split coins must be equal to original value" }
                 for (outputGold in outputGolds) {
                     require(inputGold.dealId == outputGold.state.data.dealId) { "Loans can only be split whilst maintaining original deal" }
                 }

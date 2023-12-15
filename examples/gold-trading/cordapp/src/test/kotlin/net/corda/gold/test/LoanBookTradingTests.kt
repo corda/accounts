@@ -3,7 +3,6 @@ package net.corda.gold.test
 import com.r3.corda.lib.accounts.workflows.flows.ReceiveStateForAccount
 import com.r3.corda.lib.accounts.workflows.internal.accountObservedQueryBy
 import com.r3.corda.lib.accounts.workflows.internal.accountService
-import net.corda.core.internal.sumByLong
 import net.corda.core.node.services.Vault
 import net.corda.core.node.services.queryBy
 import net.corda.core.node.services.vault.QueryCriteria
@@ -267,7 +266,7 @@ class LoanBookTradingTests {
         //THERE SHOULD NOW BE 2 LOAN BOOKS
         Assert.assertThat(loansInAccount1AfterMove.size, `is`(2))
         //WITH VALUE 100 + 101
-        Assert.assertThat(loansInAccount1AfterMove.sumByLong { it.state.data.valueInUSD }, `is`(201L))
+        Assert.assertThat(loansInAccount1AfterMove.sumOf { it.state.data.valueInUSD }, `is`(201L))
 
         val account3States = a.transaction {
             val criteria = QueryCriteria.VaultQueryCriteria(externalIds = listOf(account3Future.get().state.data.identifier.id))
@@ -336,7 +335,7 @@ class LoanBookTradingTests {
         //THERE SHOULD NOW BE 2 LOAN BOOKS
         Assert.assertThat(loansInAccount1AfterMove.size, `is`(2))
         //WITH VALUE 100 + 101
-        Assert.assertThat(loansInAccount1AfterMove.sumByLong { it.state.data.valueInUSD }, `is`(201L))
+        Assert.assertThat(loansInAccount1AfterMove.sumOf { it.state.data.valueInUSD }, `is`(201L))
 
 
         val account2States = b.transaction {
