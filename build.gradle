@@ -2,12 +2,10 @@ import static org.gradle.api.JavaVersion.VERSION_17
 
 buildscript {
     ext {
-        corda_release_group = 'net.corda'
-        corda_release_version = '4.12-SNAPSHOT'
-        tokens_release_group = 'com.r3.corda.lib.tokens'
-        tokens_release_version = '1.3-SNAPSHOT'
         accounts_release_group = 'com.r3.corda.lib.accounts'
         accounts_release_version = '1.2-SNAPSHOT'
+        corda_release_group = 'net.corda'
+        corda_release_version = '4.12-SNAPSHOT'
         tokens_release_group = 'com.r3.corda.lib.tokens'
         tokens_release_version = '1.3-SNAPSHOT'
         confidential_id_release_group = "com.r3.corda.lib.ci"
@@ -83,9 +81,19 @@ subprojects {
         mavenLocal()
         jcenter()
         mavenCentral()
-        maven { url "${publicArtifactURL}/corda-releases" }
+        maven {
+            url "${publicArtifactURL}/corda-releases"
+            mavenContent {
+                releasesOnly()
+            }
+        }
         maven { url "${publicArtifactURL}/corda-dependencies" }
-        maven { url "${publicArtifactURL}/corda-lib" }
+        maven {
+            url "${publicArtifactURL}/corda-lib"
+            mavenContent {
+                releasesOnly()
+            }
+        }
         maven {
             url "${artifactoryContextUrl}/corda-dev"
             credentials {
