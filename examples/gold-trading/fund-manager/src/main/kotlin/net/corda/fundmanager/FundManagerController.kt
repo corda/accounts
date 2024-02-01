@@ -81,7 +81,7 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
     fun splitLoan(@PathVariable("txHash") txHash: String, @PathVariable("txIdx") txIdx: Int, request: HttpServletRequest): List<LoanBookView> {
         val contextUser = validateSessionUser(request)
         val loanToSplit = getAllLoans(contextUser).filter { it.ref.txhash.toString() == txHash }.filter { it.ref.index == txIdx }.single()
-        val resultOfSplit = rpcConnection.proxy.startFlowDynamic(SplitLoanFlow::class.java, loanToSplit, loanToSplit.state.data.valueInUSD / 2).returnValue.get()
+        rpcConnection.proxy.startFlowDynamic(SplitLoanFlow::class.java, loanToSplit, loanToSplit.state.data.valueInUSD / 2).returnValue.get()
         return getAllLoans(contextUser).map { it.toLoanBookView() }
     }
 
@@ -90,7 +90,7 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
         val contextUser = validateSessionUser(request)
         val loanToMove = getAllLoans(contextUser).filter { it.ref.txhash.toString() == txHash }.single { it.ref.index == txIdx }
         val accountToMoveInto = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
-        val resultOfMove = rpcConnection.proxy.startFlowDynamic(MoveLoanBookToNewAccount::class.java, accountToMoveInto.state.data.identifier.id, loanToMove).returnValue.get()
+        rpcConnection.proxy.startFlowDynamic(MoveLoanBookToNewAccount::class.java, accountToMoveInto.state.data.identifier.id, loanToMove).returnValue.get()
         return getAllLoans(contextUser).map { it.toLoanBookView() }
     }
 
@@ -112,6 +112,7 @@ class ManagerController(@Autowired private val rpcConnection: NodeRPCConnection)
         return "OK"
     }
 
+    @Suppress("UNUSED_PARAMETER")
     @RequestMapping("/users/permission/{userName}/{accountKey}", method = [RequestMethod.GET])
     fun permissionUserToAccount(@PathVariable("userName") userName: String, @PathVariable("accountKey") accountKey: String, request: HttpServletRequest): String {
         val accountToUse = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }

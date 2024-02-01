@@ -72,6 +72,7 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
         return "OK"
     }
 
+    @Suppress("UNUSED_PARAMETER")
     @RequestMapping("/users/permission/{userName}/{accountKey}", method = [RequestMethod.GET])
     fun permissionUserToAccount(@PathVariable("userName") userName: String, @PathVariable("accountKey") accountKey: String, request: HttpServletRequest): String {
         val accountToUse = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }

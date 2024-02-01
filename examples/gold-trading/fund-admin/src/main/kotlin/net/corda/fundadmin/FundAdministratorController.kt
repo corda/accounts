@@ -54,6 +54,7 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
         return "OK"
     }
 
+    @Suppress("UNUSED_PARAMETER")
     @RequestMapping("/users/permission/{userName}/{accountKey}", method = [RequestMethod.GET])
     fun permissionUserToAccount(@PathVariable("userName") userName: String, @PathVariable("accountKey") accountKey: String, request: HttpServletRequest): String {
         val accountToUse = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
@@ -73,7 +74,7 @@ class FundAdministratorController(@Autowired private val rpcConnection: NodeRPCC
 
     @RequestMapping("/accounts/create/{accountName}/{administratorAccountKey}", method = [RequestMethod.GET])
     fun createAccount(@PathVariable("accountName") accountName: String, @PathVariable("administratorAccountKey") administratorAccountKey: String?): AccountInfoView {
-        val adminAccountList = if (administratorAccountKey == "null") {
+        if (administratorAccountKey == "null") {
             listOf()
         } else {
             listOf(getAllAccounts().single { it.state.data.identifier.id.toString() == administratorAccountKey }.state.data)
