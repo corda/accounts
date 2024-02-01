@@ -15,10 +15,10 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.hamcrest.core.IsEqual
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.concurrent.CompletableFuture
@@ -158,11 +158,11 @@ class AccountsFlowTests {
         }.map { it.ref }
 
         //AccountB1 should be permissioned to look at AccountA1
-        Assert.assertThat(permissionedStatesForAccountB1, `is`(IsEqual.equalTo(listOf(a1.ref))))
+        assertThat(permissionedStatesForAccountB1, `is`(IsEqual.equalTo(listOf(a1.ref))))
         //AccountB2 should be permissioned to look at AccountA2
-        Assert.assertThat(permissionedStatesForAccountB2, `is`(IsEqual.equalTo(listOf(a2.ref))))
+        assertThat(permissionedStatesForAccountB2, `is`(IsEqual.equalTo(listOf(a2.ref))))
         //AccountB3 should be permissioned to look at AccountA3
-        Assert.assertThat(permissionedStatesForAccountB3, `is`(IsEqual.equalTo(listOf(a3.ref))))
+        assertThat(permissionedStatesForAccountB3, `is`(IsEqual.equalTo(listOf(a3.ref))))
 
         //share accountA1 with ONLY accountB3 rather than the entire B node
         val resultOfPermissionedShareA1B3 = accountServiceOnA.shareStateWithAccount(b3.uuid, a1)
@@ -176,6 +176,6 @@ class AccountsFlowTests {
             ).states
         }.map { it.ref }
 
-        Assert.assertThat(permissionedStatesForAccountB3AfterA1Shared, (containsInAnyOrder(a3.ref, a1.ref)))
+        assertThat(permissionedStatesForAccountB3AfterA1Shared, (containsInAnyOrder(a3.ref, a1.ref)))
     }
 }

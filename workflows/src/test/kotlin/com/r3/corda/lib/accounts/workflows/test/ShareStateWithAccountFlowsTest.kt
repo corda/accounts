@@ -99,7 +99,7 @@ class ShareStateWithAccountFlowsTest {
         val testAccountB2 = nodeB.startFlow(CreateAccount("Test_AccountB2")).runAndGet(network)
 
         //create another account on node A
-        val testAccountToShare = nodeA.startFlow(CreateAccount("Test_Account_To_Share")).runAndGet(network)
+        nodeA.startFlow(CreateAccount("Test_Account_To_Share")).runAndGet(network)
 
         //share a state of an account with testAccount1
         nodeA.startFlow(ShareStateWithAccount(testAccountB1.state.data, testAccountA1)).runAndGet(network)
@@ -120,7 +120,7 @@ class ShareStateWithAccountFlowsTest {
                 QueryCriteria.VaultQueryCriteria(contractStateTypes = setOf(AccountInfo::class.java))
             ).states
         }.map { it.ref }
-        val allAccountInfoA = nodeA.startFlow(AllAccounts()).runAndGet(network)
+        nodeA.startFlow(AllAccounts()).runAndGet(network)
         val allAccountInfoB = nodeB.startFlow(AllAccounts()).runAndGet(network)
 
         //checking permissioned state for nodeB

@@ -12,6 +12,7 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.*
+import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.junit.After
 import org.junit.Assert
@@ -60,9 +61,9 @@ class GetAccountsFlowTests {
         val accountService = a.services.accountService
 
         a.transaction {
-            Assert.assertThat(accountService.accountInfo(account4.uuid), `is`(account4))
-            Assert.assertThat(accountService.ourAccounts(), containsInAnyOrder(account1, account2, account3))
-            Assert.assertThat(accountService.ourAccounts(), not(hasItem(account4)))
+            assertThat(accountService.accountInfo(account4.uuid), `is`(account4))
+            assertThat(accountService.ourAccounts(), containsInAnyOrder(account1, account2, account3))
+            assertThat(accountService.ourAccounts(), not(hasItem(account4)))
         }
 
     }
@@ -79,7 +80,7 @@ class GetAccountsFlowTests {
         val accountService = a.services.accountService
 
         a.transaction {
-            Assert.assertThat(accountService.allAccounts(), containsInAnyOrder(account1, account2, account3, account4))
+            assertThat(accountService.allAccounts(), containsInAnyOrder(account1, account2, account3, account4))
         }
 
     }
@@ -98,7 +99,7 @@ class GetAccountsFlowTests {
         val accountService = a.services.accountService
         a.transaction {
             val foundAccount = accountService.accountInfo(result.uuid)
-            Assert.assertThat(foundAccount, `is`(storedAccount))
+            assertThat(foundAccount, `is`(storedAccount))
         }
     }
 

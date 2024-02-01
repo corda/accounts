@@ -15,8 +15,8 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers
 import org.hamcrest.core.IsEqual
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -69,17 +69,17 @@ class AccountGroupingFlowTests {
 
         val aliceGroupStates = aliceNode.services.vaultService.queryBy<AccountGroup>().states
 
-        Assert.assertThat(aliceGroupStates.size, CoreMatchers.`is`(IsEqual.equalTo(accounts.size / 4)))
+        assertThat(aliceGroupStates.size, CoreMatchers.`is`(IsEqual.equalTo(accounts.size / 4)))
 
         // There should be 4 accounts in each group
         aliceGroupStates.forEach {
-            Assert.assertThat(it.state.data.accounts.size, CoreMatchers.`is`(IsEqual.equalTo(4)))
+            assertThat(it.state.data.accounts.size, CoreMatchers.`is`(IsEqual.equalTo(4)))
         }
 
         val group1 = aliceGroupStates[0].state.data
         val group2 = aliceGroupStates[1].state.data
 
         // Verify no account is assigned to both groups
-        Assert.assertThat(group1.accounts.toMutableList().retainAll(group2.accounts.toMutableList()), CoreMatchers.`is`(IsEqual.equalTo(true)))
+        assertThat(group1.accounts.toMutableList().retainAll(group2.accounts.toMutableList()), CoreMatchers.`is`(IsEqual.equalTo(true)))
     }
 }

@@ -13,6 +13,7 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -163,7 +164,7 @@ class AccountsForHostTest {
 
         //Checking if it is possible to look-up the account info using UUID and again checking if that account info is of accountA
         nodeA.transaction {
-            Assert.assertThat(accountService.accountInfo(accountA.uuid), `is`(accountA))
+            assertThat(accountService.accountInfo(accountA.uuid), `is`(accountA))
         }
     }
 

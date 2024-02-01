@@ -79,6 +79,7 @@ class RequestAccountInfoTest {
      */
 
 
+    @Suppress("UNUSED_EXPRESSION")
     @Test(expected = AssertionError::class)
     fun `should throw error if the UUID of account passed is wrong and compare the expected account's and actual account's identifier`() {
 
@@ -105,6 +106,7 @@ class RequestAccountInfoTest {
      */
 
 
+    @Suppress("UNUSED_EXPRESSION")
     @Test(expected = AssertionError::class)
     fun `should throw error if the account's host is wrong and compare expected account's and actual account's identifier`() {
 
@@ -129,7 +131,7 @@ class RequestAccountInfoTest {
     fun `should return null if account id is not found when searching by UUID`() {
 
         //Create an account in host B
-        val accountB = nodeB.startFlow(CreateAccount("Test_AccountB")).runAndGet(network)
+        nodeB.startFlow(CreateAccount("Test_AccountB")).runAndGet(network)
 
         //Create an account in host C
         val accountC = nodeC.startFlow(CreateAccount("Test_AccountC")).runAndGet(network)

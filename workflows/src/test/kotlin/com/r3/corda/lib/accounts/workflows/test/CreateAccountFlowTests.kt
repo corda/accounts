@@ -10,6 +10,7 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.hamcrest.Matchers
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -102,7 +103,7 @@ class CreateAccountFlowTests {
         val accountA2 = nodeA.startFlow(CreateAccount("Test_AccountA2")).runAndGet(network)
 
         //check whether the AccountInfo of  host node A matches with the created accounts in node A
-        Assert.assertThat(nodeA.services.vaultService.queryBy(AccountInfo::class.java).states, Matchers.containsInAnyOrder(accountA1, accountA2))
+        assertThat(nodeA.services.vaultService.queryBy(AccountInfo::class.java).states, Matchers.containsInAnyOrder(accountA1, accountA2))
 
     }
 

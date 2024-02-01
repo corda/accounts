@@ -19,6 +19,7 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -63,7 +64,7 @@ class ShareStateAndSyncAccountsFlowTests {
             it.getOrThrow()
         }
 
-        val accountServiceOnA = nodeA.accountService()
+        nodeA.accountService()
 
         // Sharing AccountInfo for ownedByAccountState StateAndRef and the StateAndRef to nodeB.
         nodeA.startFlow(ShareStateAndSyncAccounts(ownedByAccountState, nodeB.identity())).let {
@@ -75,7 +76,7 @@ class ShareStateAndSyncAccountsFlowTests {
 
         nodeB.transaction {
             // Check if the account 'result' is available in nodeB
-            Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), CoreMatchers.`is`(result))
+            assertThat(accountServiceOnB.accountInfo(result.uuid), CoreMatchers.`is`(result))
             //now check IssueAccountState is available on nodeB
             Assert.assertEquals(nodeB.services.vaultService.queryBy(IssueAccountState::class.java).states.single(),ownedByAccountState)
         }

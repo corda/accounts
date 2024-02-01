@@ -19,8 +19,8 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.core.IsEqual
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -85,11 +85,11 @@ class DistributeWinningsTest {
 
         val issuerCriteria = tokenAmountWithIssuerCriteria(GBP, aliceNode.services.myInfo.legalIdentities.first())
         val tokens = aliceNode.services.vaultService.queryBy<FungibleToken>(issuerCriteria).states
-        Assert.assertThat(tokens.size, `is`(IsEqual.equalTo(winningParties.size)))
+        assertThat(tokens.size, `is`(IsEqual.equalTo(winningParties.size)))
 
         val winningQuantity = 200L/(winningParties.size) * 100
         tokens.forEach {
-            Assert.assertThat(it.state.data.amount.quantity, `is`(IsEqual.equalTo(winningQuantity)))
+            assertThat(it.state.data.amount.quantity, `is`(IsEqual.equalTo(winningQuantity)))
         }
     }
 }

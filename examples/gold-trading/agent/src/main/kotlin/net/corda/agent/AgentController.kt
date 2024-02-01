@@ -42,7 +42,7 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
     @RequestMapping("/loan/split/{txHash}/{txIdx}", method = [RequestMethod.GET])
     fun splitLoan(@PathVariable("txHash") txHash: String, @PathVariable("txIdx") txIdx: Int): List<LoanBookView> {
         val loanToSplit = getAllLoans().filter { it.ref.txhash.toString() == txHash }.filter { it.ref.index == txIdx }.single()
-        val resultOfSplit = rpcConnection.proxy.startFlowDynamic(SplitLoanFlow::class.java, loanToSplit, loanToSplit.state.data.valueInUSD / 2).returnValue.get()
+        rpcConnection.proxy.startFlowDynamic(SplitLoanFlow::class.java, loanToSplit, loanToSplit.state.data.valueInUSD / 2).returnValue.get()
         return getAllLoans().map { it.toLoanBookView() }
     }
 
@@ -50,7 +50,7 @@ class AgentController(@Autowired private val rpcConnection: NodeRPCConnection, @
     fun moveLoan(@PathVariable("txHash") txHash: String, @PathVariable("txIdx") txIdx: Int, @PathVariable("accountKey") accountKey: String): List<LoanBookView> {
         val loanToMove = getAllLoans().filter { it.ref.txhash.toString() == txHash }.single { it.ref.index == txIdx }
         val accountToMoveInto = getAllAccounts().single { it.state.data.identifier.id.toString() == accountKey }
-        val resultOfMove = rpcConnection.proxy.startFlowDynamic(MoveLoanBookToNewAccount::class.java, accountToMoveInto.state.data.identifier.id, loanToMove).returnValue.get()
+        rpcConnection.proxy.startFlowDynamic(MoveLoanBookToNewAccount::class.java, accountToMoveInto.state.data.identifier.id, loanToMove).returnValue.get()
         return getAllLoans().map { it.toLoanBookView() }
     }
 
