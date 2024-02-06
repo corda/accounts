@@ -50,7 +50,7 @@ pipeline {
     stages {
         stage('Compile') {
             steps {
-                sh './gradlew clean build -x test --parallel'
+                sh './gradlew -Pcompilation.warningsAsErrors=true clean build -x test --parallel'
             }
         }
 
