@@ -12,6 +12,7 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.*
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -84,7 +85,7 @@ class AllAccountTests {
 
         val allAccountInfoB = nodeB.services.vaultService.queryBy(AccountInfo::class.java).states
         //to check if the account is not present even before creating account
-        Assert.assertThat(allAccountInfoB.size ,`is`(0))
+        assertThat(allAccountInfoB.size ,`is`(0))
 
     }
 

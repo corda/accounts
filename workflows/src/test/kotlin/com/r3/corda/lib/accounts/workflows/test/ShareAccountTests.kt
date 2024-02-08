@@ -20,6 +20,7 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -66,7 +67,7 @@ class ShareAccountTests {
         val aAccountService = a.services.accountService
         a.transaction {
             val foundAccount = aAccountService.accountInfo(result.uuid)
-            Assert.assertThat(foundAccount, `is`(storedAccount))
+            assertThat(foundAccount, `is`(storedAccount))
         }
 
         aAccountService.shareAccountInfoWithParty(result.uuid, b.info.legalIdentities.first()).let {
@@ -79,7 +80,7 @@ class ShareAccountTests {
         val accountOnB = b.transaction {
             bAccountService.accountInfo(result.uuid)
         }
-        Assert.assertThat(accountOnB, `is`(storedAccount))
+        assertThat(accountOnB, `is`(storedAccount))
     }
 
     @Test
@@ -103,10 +104,10 @@ class ShareAccountTests {
 
         val accountServiceOnB = b.accountService()
         b.transaction {
-            Assert.assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
-            Assert.assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
+            assertThat(accountServiceOnB.accountInfo(result.uuid), `is`(result))
+            assertThat(accountServiceOnB.accountInfo(ownedByAccountState.state.data.owner.owningKey), `is`(result))
             // now check that nodeB knows who the account key really is
-            Assert.assertThat(b.services.identityService.wellKnownPartyFromAnonymous(ownedByAccountState.state.data.owner), `is`(a.identity()))
+            assertThat(b.services.identityService.wellKnownPartyFromAnonymous(ownedByAccountState.state.data.owner), `is`(a.identity()))
         }
     }
 }

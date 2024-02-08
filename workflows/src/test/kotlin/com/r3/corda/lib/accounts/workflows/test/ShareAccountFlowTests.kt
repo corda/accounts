@@ -9,6 +9,7 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.Matchers.*
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -104,9 +105,9 @@ class ShareAccountFlowTests {
         //checking whether accountB is present in node B's hosted accounts
         Assert.assertEquals(accountB,hostedAccountOfB[0])
         //checking whether accountA1 and accountB is present in node B's account states
-        Assert.assertThat(accountsOfB, containsInAnyOrder(accountA1,accountB))
+        assertThat(accountsOfB, containsInAnyOrder(accountA1,accountB))
         //checking whether accountA2 is not present in node B's account states
-        Assert.assertThat(accountsOfB,not(hasItem(accountA2)))
+        assertThat(accountsOfB,not(hasItem(accountA2)))
 
     }
 

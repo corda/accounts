@@ -74,8 +74,8 @@ class AccountSigningResponder(val otherSession: FlowSession) : FlowLogic<Unit>()
     override fun call() {
         val accountMovedTo = AtomicReference<AccountInfo>()
         val transactionSigner = object : SignTransactionFlow(otherSession) {
-            override fun checkTransaction(tx: SignedTransaction) {
-                val keyStateMovedTo = tx.coreTransaction.outRefsOfType(LoanBook::class.java).first().state.data.owningAccount
+            override fun checkTransaction(stx: SignedTransaction) {
+                val keyStateMovedTo = stx.coreTransaction.outRefsOfType(LoanBook::class.java).first().state.data.owningAccount
                 keyStateMovedTo?.let {
                     accountMovedTo.set(accountService.accountInfo(keyStateMovedTo)?.state?.data)
                 }

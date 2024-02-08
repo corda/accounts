@@ -22,8 +22,8 @@ import net.corda.testing.node.MockNetwork
 import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -110,7 +110,7 @@ class MatchDayFlowTests {
             charlieAccountService.accountInfo(matchResult.state.data.owningKey!!)
         }
 
-        Assert.assertThat(accountOfWinner!!.state.data.identifier, `is`(testAccountB.state.data.identifier))
+        assertThat(accountOfWinner!!.state.data.identifier, `is`(testAccountB.state.data.identifier))
     }
 
 
@@ -158,7 +158,7 @@ class MatchDayFlowTests {
             tournamentServiceA.getWinningTeamStates()
         }
 
-        Assert.assertThat(winningTeams.size, `is`(4))
+        assertThat(winningTeams.size, `is`(4))
 
         for (i in 1..winningTeams.size step 2) {
             val teamA = winningTeams[i - 1]
@@ -171,6 +171,6 @@ class MatchDayFlowTests {
         }
 
         val result = tournamentServiceA.getWinningTeamStates()
-        Assert.assertThat(result.size, `is`(2))
+        assertThat(result.size, `is`(2))
     }
 }

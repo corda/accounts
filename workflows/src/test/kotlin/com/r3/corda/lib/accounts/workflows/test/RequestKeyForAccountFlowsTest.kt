@@ -9,6 +9,7 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.hamcrest.CoreMatchers.`is`
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
 import org.junit.Assert
 import org.junit.Before
@@ -72,7 +73,7 @@ class RequestKeyForAccountFlowsTest {
         nodeA.transaction{
             //access the account using accountInfo method ,passing the Public key as parameter
             // and check if the account returned is 'accountA'.
-            Assert.assertThat(accountService.accountInfo(confidentIdentityA.owningKey), `is`(accountA))
+            assertThat(accountService.accountInfo(confidentIdentityA.owningKey), `is`(accountA))
         }
 
 

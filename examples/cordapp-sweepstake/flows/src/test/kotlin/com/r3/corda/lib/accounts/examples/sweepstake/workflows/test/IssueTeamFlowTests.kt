@@ -21,8 +21,8 @@ import org.assertj.core.api.Assertions.assertThat
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.CoreMatchers.notNullValue
 import org.hamcrest.core.IsEqual
+import org.hamcrest.MatcherAssert.assertThat
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -80,12 +80,12 @@ class IssueTeamFlowTests {
         aliceService.shareAccountInfoWithParty(aliceAccount.state.data.identifier.id, bobNode.info.singleIdentity())
         val teamState = aliceNode.startFlow(IssueTeamWrapper(aliceAccount, WorldCupTeam(JAPAN, true))).getOrThrow()
 
-        Assert.assertThat(teamState.state.data, `is`(notNullValue(TeamState::class.java)))
-        Assert.assertThat(teamState.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
+        assertThat(teamState.state.data, `is`(notNullValue(TeamState::class.java)))
+        assertThat(teamState.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
 
         aliceNode.transaction {
             val owningAccount = aliceService.accountInfo(teamState.state.data.owningKey!!)
-            Assert.assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
+            assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
         }
     }
 
@@ -100,14 +100,14 @@ class IssueTeamFlowTests {
 
         val aliceAccounts = aliceNode.startFlow(OurAccounts()).getOrThrow()
         val bobAccounts = bobNode.startFlow(AllAccounts()).getOrThrow()
-        Assert.assertThat(bobAccounts, `is`(IsEqual.equalTo(aliceAccounts)))
+        assertThat(bobAccounts, `is`(IsEqual.equalTo(aliceAccounts)))
 
-        Assert.assertThat(teamState.state.data, `is`(notNullValue(TeamState::class.java)))
-        Assert.assertThat(teamState.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
+        assertThat(teamState.state.data, `is`(notNullValue(TeamState::class.java)))
+        assertThat(teamState.state.data.team.teamName, `is`(IsEqual.equalTo(JAPAN)))
 
         aliceNode.transaction {
             val owningAccount = aliceService.accountInfo(teamState.state.data.owningKey!!)
-            Assert.assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
+            assertThat(owningAccount!!.state.data.identifier, `is`(IsEqual.equalTo(aliceAccount.state.data.identifier)))
         }
     }
 }

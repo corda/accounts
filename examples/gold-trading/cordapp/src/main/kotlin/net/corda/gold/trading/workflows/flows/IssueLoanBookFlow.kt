@@ -29,7 +29,7 @@ class IssueLoanBookFlow(
             if (accountToMineInto.state.data.host == ourIdentity) {
                 serviceHub.createKeyForAccount(accountToMineInto.state.data).owningKey
             } else {
-                subFlow(RequestKeyForAccount(accountToMineInto?.state?.data!!)).owningKey
+                subFlow(RequestKeyForAccount(accountToMineInto.state.data)).owningKey
             }
         }
 

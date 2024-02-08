@@ -10,10 +10,10 @@ import net.corda.testing.node.MockNetworkParameters
 import net.corda.testing.node.StartedMockNode
 import net.corda.testing.node.TestCordapp
 import org.assertj.core.api.Assertions.assertThat
+import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.CoreMatchers.`is`
 import org.hamcrest.collection.IsIterableContainingInAnyOrder.containsInAnyOrder
 import org.junit.After
-import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import java.util.*
@@ -86,8 +86,8 @@ class AccountKeysTests {
         val foundKeysForAccount2 = a.transaction {
             accountService.accountKeys(account2.state.data.identifier.id)
         }
-        Assert.assertThat(foundKeysForAccount1, containsInAnyOrder(keyToUse1.owningKey, keyToUse2.owningKey))
-        Assert.assertThat(foundKeysForAccount2, containsInAnyOrder(keyToUse3.owningKey))
+        assertThat(foundKeysForAccount1, containsInAnyOrder(keyToUse1.owningKey, keyToUse2.owningKey))
+        assertThat(foundKeysForAccount2, containsInAnyOrder(keyToUse3.owningKey))
     }
 
     @Test
@@ -116,8 +116,8 @@ class AccountKeysTests {
         val accountService = a.services.accountService
 
         a.transaction {
-            Assert.assertThat(accountService.accountInfo(keyToUse1.owningKey), `is`(account1))
-            Assert.assertThat(accountService.accountInfo(keyToUse2.owningKey), `is`(account2))
+            assertThat(accountService.accountInfo(keyToUse1.owningKey), `is`(account1))
+            assertThat(accountService.accountInfo(keyToUse2.owningKey), `is`(account2))
         }
     }
 
