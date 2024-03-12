@@ -5,8 +5,8 @@ apply plugin: 'net.corda.plugins.quasar-utils'
 apply plugin: 'corda.common-publishing'
 
 cordapp {
-    targetPlatformVersion 14
-    minimumPlatformVersion 14
+    targetPlatformVersion 140
+    minimumPlatformVersion 140
     contract {
         name "Accounts - Flows"
         vendor "R3"
