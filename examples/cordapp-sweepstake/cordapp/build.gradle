@@ -4,8 +4,8 @@ apply plugin: 'net.corda.plugins.cordformation'
 apply plugin: 'net.corda.plugins.quasar-utils'
 
 cordapp {
-    targetPlatformVersion 14
-    minimumPlatformVersion 14
+    targetPlatformVersion 140
+    minimumPlatformVersion 140
 }
 
 jar {
