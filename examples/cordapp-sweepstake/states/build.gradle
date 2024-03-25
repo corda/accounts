@@ -11,10 +11,7 @@ cordapp {
     contract {
         name "World Cup Sweepstake - Contracts"
         vendor "Corda Open Source"
-        versionId 1
-    }
-    signing {
-        enabled false
+        versionId 2
     }
 }
 
