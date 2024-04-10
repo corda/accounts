@@ -29,7 +29,7 @@ dependencies {
 
     // Confidential Identities flows.
     cordaProvided "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
-    cordaProvided "org.apache.logging.log4j:log4j-slf4j-impl:$log4j_version"
+    cordaProvided "org.apache.logging.log4j:log4j-slf4j2-impl:$log4j_version"
     cordaProvided "org.hibernate:hibernate-core:$hibernate_version"
     cordaProvided "javax.persistence:javax.persistence-api:2.2"
 
