@@ -21,7 +21,7 @@ buildscript {
     }
 
     repositories {
-        jcenter()
+        maven { url "${publicArtifactURL}/jcenter-backup" }
         mavenCentral()
         maven { url "${publicArtifactURL}/corda-releases" }
     }
@@ -58,7 +58,7 @@ allprojects {
 subprojects {
     buildscript {
         repositories {
-            jcenter()
+            maven { url "${publicArtifactURL}/jcenter-backup" }
             mavenCentral()
         }
     }
@@ -67,7 +67,7 @@ subprojects {
 
     repositories {
         mavenLocal()
-        jcenter()
+        maven { url "${publicArtifactURL}/jcenter-backup" }
         mavenCentral()
         maven { url "${publicArtifactURL}/corda-dev" }
         maven { url "${publicArtifactURL}/corda-releases" }
