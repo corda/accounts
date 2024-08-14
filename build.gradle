@@ -21,9 +21,10 @@ buildscript {
     }
 
     repositories {
-        jcenter()
         mavenCentral()
         maven { url "${publicArtifactURL}/corda-releases" }
+        // as last resort, check our backup of now defunc JCenter repo
+        maven { url "${publicArtifactURL}/jcenter-backup" }
     }
 
     dependencies {
@@ -36,7 +37,7 @@ buildscript {
 }
 
 plugins {
-    id "com.jfrog.artifactory" version "4.7.5"
+    id "com.jfrog.artifactory" version "4.16.1"
 }
 
 allprojects {
@@ -58,8 +59,9 @@ allprojects {
 subprojects {
     buildscript {
         repositories {
-            jcenter()
             mavenCentral()
+           // as last resort, check our backup of now defunc JCenter repo
+           maven { url "${publicArtifactURL}/jcenter-backup" }
         }
     }
 
@@ -67,7 +69,6 @@ subprojects {
 
     repositories {
         mavenLocal()
-        jcenter()
         mavenCentral()
         maven { url "${publicArtifactURL}/corda-dev" }
         maven { url "${publicArtifactURL}/corda-releases" }
@@ -76,6 +77,8 @@ subprojects {
         maven { url "${publicArtifactURL}/corda-lib-dev" }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
+        // as last resort, check our backup of now defunc JCenter repo
+        maven { url "${publicArtifactURL}/jcenter-backup" }
     }
 
     tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {

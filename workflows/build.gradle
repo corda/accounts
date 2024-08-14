@@ -2,11 +2,12 @@ buildscript {
     repositories {
         mavenLocal()
         mavenCentral()
-        jcenter()
         maven {
             url 'https://software.r3.com/artifactory/corda'
         }
-    }
+         // as last resort, check our backup of now defunc JCenter repo
+        maven { url "${publicArtifactURL}/jcenter-backup" }
+   }
 
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-noarg:$kotlin_version"
