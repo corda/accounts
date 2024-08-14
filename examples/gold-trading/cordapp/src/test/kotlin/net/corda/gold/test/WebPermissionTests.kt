@@ -1,5 +1,6 @@
 package net.corda.gold.test
 
+import net.corda.core.node.NetworkParameters
 import net.corda.core.utilities.getOrThrow
 import net.corda.gold.trading.workflows.flows.GetAllWebUsersFlow
 import net.corda.gold.trading.workflows.flows.NewWebAccountFlow
@@ -24,14 +25,14 @@ class WebPermissionTests {
 
     @Before
     fun setup() {
-        network = MockNetwork(
-            listOf("net.corda.gold.trading", "net.corda.accounts"),
-            MockNetworkParameters(
-                networkParameters = testNetworkParameters(
-                    minimumPlatformVersion = 4
-                )
-            )
-        )
+        network = MockNetwork(MockNetworkParameters(
+            networkParameters = testNetworkParameters(
+                    minimumPlatformVersion = 4),
+            cordappsForAllNodes = listOf(TestCordapp.findCordapp("net.corda.gold.trading"),
+                TestCordapp.findCordapp("com.r3.corda.lib.accounts.contracts"),
+                TestCordapp.findCordapp("com.r3.corda.lib.accounts.workflows"))
+
+        ))
         a = network.createPartyNode()
 
     }
