@@ -6,7 +6,7 @@ apply plugin: 'idea'
 
 repositories {
     mavenLocal()
-    maven { url "https://software.r3.com/artifactory/freighter-dev" }
+    maven { url "${publicArtifactURL}/freighter-dev" }
 }
 
 sourceSets {
