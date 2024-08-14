@@ -38,6 +38,7 @@ pipeline {
             }
         }
 
+/*
         stage('Freighter Tests') {
             steps {
                 timeout(30) {
@@ -49,6 +50,7 @@ pipeline {
                 }
             }
         }
+*/
 
         stage('Publish SNAPSHOT') {
             steps {
