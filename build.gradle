@@ -38,6 +38,7 @@ buildscript {
     }
 
     repositories {
+        mavenLocal()
         mavenCentral()
         maven { url "${publicArtifactURL}/corda-releases" }
         // as last resort, check our backup of now defunc JCenter repo
@@ -174,7 +175,9 @@ configure(publishProjects) { subproject ->
         from javadoc.destinationDir
     }
 
-    task install(dependsOn: 'publishToMavenLocal')
+    if (System.getenv("R3_EXTERNAL") != "1") {
+        task install(dependsOn: 'publishToMavenLocal')
+    }
 
     publishing {
         publications {
