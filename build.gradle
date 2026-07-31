@@ -5,7 +5,7 @@ buildscript {
         accounts_release_group = 'com.r3.corda.lib.accounts'
         accounts_release_version = '1.1'
         corda_release_group = 'net.corda'
-        corda_release_version = '4.12.5'
+        corda_release_version = '4.12-SNAPSHOT'
         tokens_release_group = 'com.r3.corda.lib.tokens'
         tokens_release_version = '1.3.2'
         confidential_id_release_group = "com.r3.corda.lib.ci"
@@ -74,6 +74,18 @@ if (ext.versionSuffix != "") {
 
 allprojects {
     version accounts_release_version
+    configurations.all {
+        resolutionStrategy {
+            eachDependency { details ->
+                if (details.requested.group == 'net.corda'
+                        && details.requested.version?.startsWith('4.12')) {
+                    details.useVersion corda_release_version
+                    details.because 'pin all Corda modules to 4.12-SNAPSHOT for Snyk scanning'
+                }
+            }
+            cacheChangingModulesFor 0, 'seconds'
+        }
+    }
 }
 
 subprojects {
