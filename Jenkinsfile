@@ -17,6 +17,11 @@ pipeline {
     }
     options { timestamps() }
 
+    parameters {
+        // freighter-tests module has been disabled since Aug 2024
+        booleanParam name: 'RUN_FREIGHTER_TESTS', defaultValue: false, description: 'Run freighter tests'
+    }
+
     environment {
         EXECUTOR_NUMBER = "${env.EXECUTOR_NUMBER}"
         LOOPBACK_ADDRESS = "172.17.0.1"
@@ -29,6 +34,7 @@ pipeline {
 
         stage("Auth Docker for Oracle Images") {
             steps {
+                echo "DEBUG BRANCH_NAME=${env.BRANCH_NAME}"
                 sh '''
                     docker login --username ${DOCKER_CREDENTIALS_USR} --password ${DOCKER_CREDENTIALS_PSW}
                    '''
@@ -59,6 +65,9 @@ pipeline {
         }
 
         stage('Freighter Tests') {
+            when {
+                expression { params.RUN_FREIGHTER_TESTS }
+            }
             steps {
                 timeout(30) {
                     sh '''
