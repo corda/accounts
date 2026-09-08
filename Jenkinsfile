@@ -3,8 +3,12 @@ import static com.r3.build.BuildControl.killAllExistingBuildsForJob
 
 killAllExistingBuildsForJob(env.JOB_NAME, env.BUILD_NUMBER.toInteger())
 
+def sourceBranch() {
+    return env.CHANGE_BRANCH ?: env.BRANCH_NAME
+}
+
 def isReleaseBranch() {
-    return (env.BRANCH_NAME =~ /^(release|devs\/release)\/.*$/)
+    return (sourceBranch() =~ /^(release|devs\/release)\/.*$/)
 }
 
 pipeline {
@@ -34,7 +38,6 @@ pipeline {
 
         stage("Auth Docker for Oracle Images") {
             steps {
-                echo "DEBUG BRANCH_NAME=${env.BRANCH_NAME}"
                 sh '''
                     docker login --username ${DOCKER_CREDENTIALS_USR} --password ${DOCKER_CREDENTIALS_PSW}
                    '''
@@ -50,7 +53,7 @@ pipeline {
                     // Invoke Snyk for each Gradle sub project we wish to scan
                     def modulesToScan = ['contracts', 'workflows']
                     modulesToScan.each { module ->
-                        snykSecurityScan(env.SNYK_TOKEN, "--sub-project=$module --configuration-matching='^runtimeClasspath\$' --prune-repeated-subdependencies --debug --remote-repo-url='${env.GIT_URL}' --target-reference='${env.BRANCH_NAME}' --project-tags=Branch='${env.BRANCH_NAME.replaceAll("[^0-9|a-z|A-Z]+","_")}'", false, true)
+                        snykSecurityScan(env.SNYK_TOKEN, "--sub-project=$module --configuration-matching='^runtimeClasspath\$' --prune-repeated-subdependencies --debug --remote-repo-url='${env.GIT_URL}' --target-reference='${sourceBranch()}' --project-tags=Branch='${sourceBranch().replaceAll("[^0-9|a-z|A-Z]+","_")}'", false, true)
                     }
                 }
             }
