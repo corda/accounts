@@ -45,6 +45,7 @@ pipeline {
         }
 
         stage('Snyk Security') {
+            agent { label 'standard' }
             when {
                 expression { isReleaseBranch() }
             }
