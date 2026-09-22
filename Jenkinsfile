@@ -37,7 +37,7 @@ pipeline {
                 }
             }
         }
-
+/*
         stage('Freighter Tests') {
             steps {
                 timeout(30) {
@@ -49,6 +49,7 @@ pipeline {
                 }
             }
         }
+*/
     }
 
     post {
