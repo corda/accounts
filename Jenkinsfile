@@ -37,20 +37,6 @@ pipeline {
                 }
             }
         }
-
-/*
-        stage('Freighter Tests') {
-            steps {
-                timeout(30) {
-                    sh '''
-                        export ARTIFACTORY_USERNAME=\"\${ARTIFACTORY_CREDENTIALS_USR}\"
-                        export ARTIFACTORY_PASSWORD=\"\${ARTIFACTORY_CREDENTIALS_PSW}\"
-                        ./gradlew freighterTest --info
-                        '''
-                }
-            }
-        }
-*/
     }
 
     post {
