@@ -77,10 +77,9 @@ allprojects {
     configurations.all {
         resolutionStrategy {
             eachDependency { details ->
-                if (details.requested.group == 'net.corda'
-                        && details.requested.version?.startsWith('4.12')) {
+                if (details.requested.group == 'net.corda') {
                     details.useVersion corda_release_version
-                    details.because 'pin all Corda modules to 4.12-SNAPSHOT for Snyk scanning'
+                    details.because 'pin all Corda modules to corda_release_version for Snyk scanning'
                 }
             }
             cacheChangingModulesFor 0, 'seconds'
