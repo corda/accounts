@@ -20,9 +20,10 @@
 * The gold-trading example stores its `UUID` element collections through a JPA `AttributeConverter` (the same 36-character
   string that Hibernate's `uuid-char` type wrote) instead of the Hibernate-specific `@Type` annotation; its `UUID` id uses
   Hibernate's default mapping, as Hibernate 7 does not allow a converter on an id.
-* The examples that use the Token SDK drop the `org.hibernate:hibernate-core` dependency that `tokens-workflows` 1.3.4 and
-  earlier declare at runtime scope (the node provides Hibernate), so they resolve against Corda 4.15 as well. The Token SDK
-  version the examples use is a Gradle property too: `-PtokensReleaseVersion=...` overrides the default in `gradle.properties`.
+* The examples use Token SDK 1.3.5, the first release whose schema classes run on Corda 4.15 and which no longer declares
+  `org.hibernate:hibernate-core`. The Token SDK version is a Gradle property too: `-PtokensReleaseVersion=...` overrides the
+  default in `gradle.properties`. For `tokens-workflows` 1.3.4 and earlier, which declare Hibernate 5 at runtime scope, the
+  build drops that dependency (the node provides Hibernate), so those versions resolve against Corda 4.15 as well.
 
 ### V1
 
