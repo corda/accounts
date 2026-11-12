@@ -19,7 +19,11 @@ cordapp {
 dependencies {
     // Corda integration dependencies
     cordaProvided "$corda_release_group:corda-core:$corda_release_version"
-    cordaProvided "javax.persistence:javax.persistence-api:2.2"
+
+    // Both persistence APIs are compile-only and neither is bundled: the node provides the one its Hibernate version
+    // implements (javax.persistence on Corda 4.14 and earlier, jakarta.persistence on Corda 4.15).
+    compileOnly "javax.persistence:javax.persistence-api:$javax_persistence_version"
+    compileOnly "jakarta.persistence:jakarta.persistence-api:$jakarta_persistence_version"
 
     testImplementation "org.jetbrains.kotlin:kotlin-test:$kotlin_version"
     testImplementation "junit:junit:$junit_version"

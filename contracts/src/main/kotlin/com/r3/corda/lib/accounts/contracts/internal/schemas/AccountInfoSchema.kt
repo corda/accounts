@@ -3,8 +3,12 @@ package com.r3.corda.lib.accounts.contracts.internal.schemas
 import net.corda.core.identity.Party
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentState
-import java.util.*
-import javax.persistence.*
+import java.util.UUID
+import javax.persistence.Column
+import javax.persistence.Entity
+import javax.persistence.Index
+import javax.persistence.Table
+import javax.persistence.UniqueConstraint
 
 object AccountsContractsSchema
 

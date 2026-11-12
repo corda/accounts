@@ -3,9 +3,15 @@ package com.r3.corda.lib.accounts.workflows.internal.schemas
 import net.corda.core.schemas.DirectStatePersistable
 import net.corda.core.schemas.MappedSchema
 import net.corda.core.schemas.PersistentStateRef
-import org.hibernate.annotations.Type
-import java.util.*
-import javax.persistence.*
+import java.util.UUID
+import javax.persistence.Column
+import javax.persistence.Embedded
+import javax.persistence.Entity
+import javax.persistence.GeneratedValue
+import javax.persistence.GenerationType
+import javax.persistence.Id
+import javax.persistence.Index
+import javax.persistence.Table
 
 object AccountsWorkflowsSchema
 

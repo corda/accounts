@@ -5,9 +5,13 @@ buildscript {
         accounts_release_group = 'com.r3.corda.lib.accounts'
         accounts_release_version = '1.1'
         corda_release_group = 'net.corda'
-        corda_release_version = '4.12-SNAPSHOT'
+        // The Corda version to build and test against: the default is in gradle.properties, -PcordaReleaseVersion=4.15-RC02
+        // on the command line gives a Corda 4.15 (Hibernate 7) build. A jar built against 4.12 runs on both 4.12 and 4.15
+        // nodes; one built against 4.15 runs on 4.15 only.
+        corda_release_version = cordaReleaseVersion
         tokens_release_group = 'com.r3.corda.lib.tokens'
-        tokens_release_version = '1.3.2'
+        // The Token SDK version the examples use: the default is in gradle.properties, -PtokensReleaseVersion=... overrides it.
+        tokens_release_version = tokensReleaseVersion
         confidential_id_release_group = "com.r3.corda.lib.ci"
         confidential_id_release_version = "1.2.7"
 
@@ -19,7 +23,6 @@ buildscript {
         quasar_version = '0.9.1_r3'
         log4j_version = '2.25.5'
         spring_boot_version = '3.1.2'
-        hibernate_version = '5.6.14.Final'
         servlet_version = '4.0.1'
 
         test_module_opens = [
@@ -85,6 +88,20 @@ allprojects {
             cacheChangingModulesFor 0, 'seconds'
         }
     }
+    dependencies {
+        components {
+            // tokens-workflows 1.3.4 and earlier declare org.hibernate:hibernate-core 5.6 at runtime scope, which Gradle cannot put
+            // on one classpath with Corda 4.15 (Hibernate 7 claims the same capability). The node provides Hibernate, so the
+            // dependency is dropped here (ENT-15178); Token SDK 1.3.5 no longer declares it.
+            withModule("${tokens_release_group}:tokens-workflows") { ComponentMetadataDetails details ->
+                details.allVariants {
+                    withDependencies { deps ->
+                        deps.removeAll { it.group == 'org.hibernate' }
+                    }
+                }
+            }
+        }
+    }
 }
 
 subprojects {
@@ -121,6 +138,17 @@ subprojects {
                 password = System.getenv('CORDA_ARTIFACTORY_PASSWORD')
             }
         }
+        // Corda release candidates (for example 4.15-RC02) that are not yet on the public download site.
+        maven {
+            url "${artifactoryContextUrl}/corda-releases"
+            authentication {
+                basic(BasicAuthentication)
+            }
+            credentials {
+                username = System.getenv('CORDA_ARTIFACTORY_USERNAME')
+                password = System.getenv('CORDA_ARTIFACTORY_PASSWORD')
+            }
+        }
         maven { url "https://repo.gradle.org/gradle/libs-releases-local" }
         maven { url 'https://jitpack.io' }
         // as last resort, check our backup of now defunc JCenter repo
@@ -140,6 +168,10 @@ subprojects {
     tasks.withType(Test).all {
         minHeapSize = "128m"
         maxHeapSize = "4096m"
+        // TestCordapp.findCordapp builds a sibling project's jar in a nested Gradle build (Tooling API) from inside the test JVM,
+        // which inherits the environment but not the command line: hand the Corda version over, or the nested build rebuilds the
+        // jar against the default version and overwrites it under the running tests.
+        environment 'ORG_GRADLE_PROJECT_cordaReleaseVersion', corda_release_version
     }
 
     quasar {
