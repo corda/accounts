@@ -1,5 +1,30 @@
 ## CHANGELOG
 
+### V1.1.x (unreleased)
+
+#### General
+
+* The Accounts SDK no longer depends on Hibernate (ENT-15178). `accounts-workflows` used to declare
+  `org.hibernate:hibernate-core:5.6.14.Final` as a Corda-provided dependency, which Corda 4.15 (Hibernate 7) no longer provides.
+  The `javax.persistence` and `jakarta.persistence` APIs are compile-only dependencies now; neither is bundled, the node provides
+  the one its Hibernate version implements. The column mappings are unchanged.
+* The schema classes carry both the `javax.persistence` (Corda 4.14 and earlier) and the `jakarta.persistence` (Corda 4.15)
+  annotations, so one jar runs on both. Build the SDK against Corda 4.12 (the default) for a jar that runs on 4.12 and 4.15
+  nodes; a jar built against 4.15 runs on 4.15 only, because its `withEntityManager` code is bound to the Jakarta
+  `EntityManager`.
+* The Corda version to build and test against is a Gradle property: `./gradlew build -PcordaReleaseVersion=4.15-RC02`.
+  The default, `4.12.13` (the latest Corda 4.12 release, instead of the `4.12-SNAPSHOT` the build used to pin), is
+  `cordaReleaseVersion` in `gradle.properties`. Corda release candidates resolve from the
+  `corda-releases` repository on `software.r3.com`, with the `CORDA_ARTIFACTORY_USERNAME` and `CORDA_ARTIFACTORY_PASSWORD`
+  environment variables.
+* The gold-trading example stores its `UUID` element collections through a JPA `AttributeConverter` (the same 36-character
+  string that Hibernate's `uuid-char` type wrote) instead of the Hibernate-specific `@Type` annotation; its `UUID` id uses
+  Hibernate's default mapping, as Hibernate 7 does not allow a converter on an id.
+* The examples use Token SDK 1.3.5, the first release whose schema classes run on Corda 4.15 and which no longer declares
+  `org.hibernate:hibernate-core`. The Token SDK version is a Gradle property too: `-PtokensReleaseVersion=...` overrides the
+  default in `gradle.properties`. For `tokens-workflows` 1.3.4 and earlier, which declare Hibernate 5 at runtime scope, the
+  build drops that dependency (the node provides Hibernate), so those versions resolve against Corda 4.15 as well.
+
 ### V1
 
 We are pleased to announce the first release of long requested functionality - accounts!

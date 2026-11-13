@@ -37,8 +37,10 @@ dependencies {
     cordaProvided group: "$corda_release_group", name: "corda-core", version: "$corda_release_version"
     cordaProvided "$corda_release_group:corda-jackson:$corda_release_version"
     cordaProvided "$corda_release_group:corda-rpc:$corda_release_version"
-    cordaProvided "org.hibernate:hibernate-core:$hibernate_version"
-    cordaProvided "javax.persistence:javax.persistence-api:2.2"
+    // Both persistence APIs are compile-only and neither is bundled: the node provides the one its Hibernate version
+    // implements (javax.persistence on Corda 4.14 and earlier, jakarta.persistence on Corda 4.15). No Hibernate dependency.
+    compileOnly "javax.persistence:javax.persistence-api:$javax_persistence_version"
+    compileOnly "jakarta.persistence:jakarta.persistence-api:$jakarta_persistence_version"
 
     cordapp project(":contracts")
     cordapp project(":workflows")
