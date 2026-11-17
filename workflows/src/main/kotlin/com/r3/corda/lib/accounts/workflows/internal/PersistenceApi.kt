@@ -2,6 +2,8 @@ package com.r3.corda.lib.accounts.workflows.internal
 
 import net.corda.core.node.ServiceHub
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Persists [entity] with the node's entity manager without binding to either persistence API.
@@ -15,17 +17,41 @@ import java.lang.reflect.InvocationTargetException
  * the object implements.
  */
 internal fun ServiceHub.persistWithEitherPersistenceApi(entity: Any) {
-    val persist: (Any) -> Unit = { entityManager ->
-        val api = persistenceApiInterfaces(entityManager.javaClass).firstOrNull { it.simpleName == "EntityManager" }
-                ?: throw IllegalStateException("${entityManager.javaClass.name} implements neither javax.persistence.EntityManager nor jakarta.persistence.EntityManager")
-        try {
-            api.getMethod("persist", Any::class.java).invoke(entityManager, entity)
+    // An (Any) -> Unit is an EntityManager.() -> Unit, but its compiled code does not cast to either EntityManager interface.
+    val persist: (Any) -> Unit = { entityManager -> entityManagerPersist.call(entityManager, entity) }
+    withEntityManager(persist)
+}
+
+/** `EntityManager.persist(Object)`. */
+private val entityManagerPersist = PersistenceApiMethod("persist", Any::class.java)
+
+/**
+ * A method of the persistence API, called through the `javax.persistence` or `jakarta.persistence` interface that declares it. The
+ * interface method is looked up on the first call for each implementation class (the node's entity manager class, which does not
+ * change while it runs) and reused after that.
+ */
+private class PersistenceApiMethod(private val name: String, private vararg val parameterTypes: Class<*>) {
+    private val methodByImplementation = ConcurrentHashMap<Class<*>, Method>()
+
+    fun call(target: Any, vararg arguments: Any?): Any? {
+        val method = methodByImplementation.computeIfAbsent(target.javaClass, ::findMethod)
+        return try {
+            method.invoke(target, *arguments)
         } catch (e: InvocationTargetException) {
             throw e.targetException
         }
     }
-    // An (Any) -> Unit is an EntityManager.() -> Unit, but its compiled code does not cast to either EntityManager interface.
-    withEntityManager(persist)
+
+    private fun findMethod(implementation: Class<*>): Method {
+        return persistenceApiInterfaces(implementation).mapNotNull { api ->
+            try {
+                api.getMethod(name, *parameterTypes)
+            } catch (e: NoSuchMethodException) {
+                null
+            }
+        }.firstOrNull() ?: throw IllegalStateException(
+                "${implementation.name} implements no persistence API interface with $name(${parameterTypes.joinToString { it.simpleName }})")
+    }
 }
 
 /** The `javax.persistence` and `jakarta.persistence` interfaces that [type] implements, directly or through its supertypes. */
