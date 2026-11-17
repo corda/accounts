@@ -2,6 +2,7 @@ package com.r3.corda.lib.accounts.workflows.flows
 
 import co.paralleluniverse.fibers.Suspendable
 import com.r3.corda.lib.accounts.contracts.states.AccountInfo
+import com.r3.corda.lib.accounts.workflows.internal.persistWithEitherPersistenceApi
 import com.r3.corda.lib.accounts.workflows.internal.schemas.AllowedToSeeStateMapping
 import net.corda.core.contracts.ContractState
 import net.corda.core.contracts.StateAndRef
@@ -70,14 +71,12 @@ class ReceiveStateForAccountFlow(val otherSession: FlowSession) : FlowLogic<Unit
         val stateToPermission = otherSession.receive<StateRef>().unwrap { it }
         val accountInfo = otherSession.receive<AccountInfo>().unwrap { it }
         try {
-            serviceHub.withEntityManager {
-                val newEntry = AllowedToSeeStateMapping(
-                        id = null,
-                        externalId = accountInfo.linearId.id,
-                        stateRef = PersistentStateRef(stateToPermission)
-                )
-                persist(newEntry)
-            }
+            val newEntry = AllowedToSeeStateMapping(
+                    id = null,
+                    externalId = accountInfo.linearId.id,
+                    stateRef = PersistentStateRef(stateToPermission)
+            )
+            serviceHub.persistWithEitherPersistenceApi(newEntry)
             otherSession.send(ResultOfPermissioning.OK)
         } catch (e: Exception) {
             contextLogger().error("Permissioning error:", e)
