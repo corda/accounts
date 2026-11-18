@@ -45,7 +45,7 @@ pipeline {
         LOOPBACK_ADDRESS = "172.17.0.1"
         DOCKER_CREDENTIALS = credentials('docker-for-oracle-login')
         SNYK_TOKEN = credentials('c4-ent-snyk-api-token-secret')
-        SNYK_API_KEY = "c4-ent-snyk"
+        SNYK_API_KEY = "c4-ent-snyk-api-token-secret"
         JAVA_HOME="/usr/lib/jvm/java-17-amazon-corretto"
     }
 
